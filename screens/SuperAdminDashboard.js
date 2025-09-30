@@ -11,40 +11,65 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
-const BASE_URL = "http://192.168.1.6:8080/api";
+const BASE_URL = "http://10.90.169.218:8080/api";
 
 export default function SuperAdminDashboard({ navigation }) {
   const [doers, setDoers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
-    fetchDoers();
+    fetchDoers(1, true);
   }, []);
 
-  const fetchDoers = async () => {
-    setLoading(true);
+  // 🔹 Fetch Doers API
+  const fetchDoers = async (pageNum = 1, reset = false) => {
+    if (pageNum > totalPages && !reset) return;
+
+    if (reset) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
+
     try {
       const token = await AsyncStorage.getItem("superAdminToken");
       if (!token) return navigation.replace("SuperAdminLogin");
 
-      const doerRes = await axios.get(`${BASE_URL}/superadmin/doers`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(
+        `${BASE_URL}/admin/all_doers?page=${pageNum}&size=5&sort=createdAt&sort=asc`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-      setDoers(doerRes.data.data || []);
+      const data = res.data?.data;
+      if (reset) {
+        setDoers(data?.content || []);
+      } else {
+        setDoers((prev) => [...prev, ...(data?.content || [])]);
+      }
+
+      setPage(data?.page || 1);
+      setTotalPages(data?.totalPages || 1);
     } catch (err) {
       console.error(err.response?.data || err.message);
       Alert.alert("Error", "Failed to fetch doers");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
+  // 🔹 Logout
   const handleLogout = async () => {
     await AsyncStorage.removeItem("superAdminToken");
     navigation.replace("RoleSelect");
   };
 
+  // 🔹 Navigate to Register Admin
   const handleRegisterNavigation = async () => {
     const token = await AsyncStorage.getItem("superAdminToken");
     if (!token) {
@@ -79,13 +104,28 @@ export default function SuperAdminDashboard({ navigation }) {
         <Text style={styles.empty}>No doers found</Text>
       ) : (
         doers.map((d) => (
-          <View key={d.id} style={styles.card}>
+          <View key={d.userId} style={styles.card}>
             <Text style={styles.name}>{d.name}</Text>
-            <Text>Email: {d.email}</Text>
-            <Text>Phone: {d.phone}</Text>
-            <Text>KYC: {d.kycVerified ? "✅ Verified" : "❌ Pending"}</Text>
+            <Text>Bio: {d.bio}</Text>
+            <Text>Skills: {d.skills?.join(", ")}</Text>
+            <Text>KYC Level: {d.kycLevel}</Text>
+            <Text>Status: {d.verificationStatus}</Text>
+            <Text>Verified: {d.isVerified ? "✅ Yes" : "❌ No"}</Text>
           </View>
         ))
+      )}
+
+      {/* 🔹 Load More Pagination */}
+      {page < totalPages && (
+        <TouchableOpacity
+          style={styles.loadMoreBtn}
+          onPress={() => fetchDoers(page + 1)}
+          disabled={loadingMore}
+        >
+          <Text style={styles.loadMoreText}>
+            {loadingMore ? "Loading..." : "Load More"}
+          </Text>
+        </TouchableOpacity>
       )}
     </ScrollView>
   );
@@ -119,4 +159,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   registerText: { color: "#fff", fontWeight: "bold", fontSize: 18 },
+  loadMoreBtn: {
+    backgroundColor: "#2196f3",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 20,
+    alignItems: "center",
+  },
+  loadMoreText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
 });

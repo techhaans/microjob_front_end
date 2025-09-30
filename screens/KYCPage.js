@@ -55,7 +55,7 @@ export default function KYCPage({ navigation }) {
       });
 
       const res = await axios.post(
-        `http://192.168.1.6:8080/api/doer/doc/upload?docType=PAN`,
+        `http://10.90.169.218:8080/api/doer/doc/upload?docType=PAN`,
         formData,
         {
           headers: {

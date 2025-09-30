@@ -521,8 +521,8 @@ export default function RegisterPage({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, padding: 20, backgroundColor: "#f9f9f9" },
-  title: { fontSize: 22, fontWeight: "bold", marginBottom: 20 },
+  container: { flexGrow: 1, padding: 30, backgroundColor: "#f9f9f9" },
+  title: { fontSize: 32, fontWeight: "bold", marginBottom: 50 },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
@@ -532,7 +532,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   button: {
-    backgroundColor: "#28a745",
+    backgroundColor: "#1877F2",  
     padding: 14,
     borderRadius: 8,
     alignItems: "center",
