@@ -1,239 +1,36 @@
-// import React, { useEffect, useState } from "react";
-// import { View, ActivityIndicator } from "react-native";
-// import { NavigationContainer } from "@react-navigation/native";
-// import { createNativeStackNavigator } from "@react-navigation/native-stack";
-// import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// // Screens
-// import RoleSelect from "./screens/RoleSelect";
-
-// // Doer Screens
-// import LoginPage from "./screens/LoginPage";
-// import RegisterPage from "./screens/RegisterPage"; // <-- Added
-// import Dashboard from "./screens/Dashboard";
-// import ProfileScreen from "./screens/DoerProfile";
-// import KYCPage from "./screens/KYCPage";
-
-// // Admin Screens
-// import AdminRegister from "./screens/AdminRegister";
-// import AdminLogin from "./screens/AdminLogin";
-// import AdminDashboard from "./screens/AdminDashboard";
-// import AdminKycScreen from "./screens/AdminKycScreen";
-
-// // Super Admin Screens
-// import SuperAdminLogin from "./screens/SuperAdminLogin";
-// import SuperAdminDashboard from "./screens/SuperAdminDashboard";
-
-// const Stack = createNativeStackNavigator();
-
-// export default function App() {
-//   const [initialRoute, setInitialRoute] = useState(null);
-
-//   useEffect(() => {
-//     const checkLogin = async () => {
-//       try {
-//         const superAdminToken = await AsyncStorage.getItem("superAdminToken");
-//         const adminToken = await AsyncStorage.getItem("adminToken");
-//         const doerToken = await AsyncStorage.getItem("authToken");
-
-//         if (superAdminToken) setInitialRoute("SuperAdminDashboard");
-//         else if (adminToken) setInitialRoute("AdminDashboard");
-//         else if (doerToken) setInitialRoute("Dashboard");
-//         else setInitialRoute("RoleSelect");
-//       } catch (err) {
-//         console.error(err);
-//         setInitialRoute("RoleSelect");
-//       }
-//     };
-//     checkLogin();
-//   }, []);
-
-//   if (!initialRoute) {
-//     return (
-//       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-//         <ActivityIndicator size="large" color="#2196f3" />
-//       </View>
-//     );
-//   }
-
-//   return (
-//     <NavigationContainer>
-//       <Stack.Navigator
-//         initialRouteName={initialRoute}
-//         screenOptions={{ headerShown: true }}
-//       >
-//         {/* Role Selection */}
-//         <Stack.Screen
-//           name="RoleSelect"
-//           component={RoleSelect}
-//           options={{ title: "Select Role" }}
-//         />
-
-//         {/* Doer */}
-//         <Stack.Screen
-//           name="LoginPage"
-//           component={LoginPage}
-//           options={{ headerShown: false }}
-//         />
-//         <Stack.Screen
-//           name="RegisterPage"
-//           component={RegisterPage}
-//           options={{ title: "Register as Doer" }}
-//         />
-//         <Stack.Screen name="Dashboard" component={Dashboard} />
-//         <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
-//         <Stack.Screen
-//           name="KYCPage"
-//           component={KYCPage}
-//           options={{ title: "Upload KYC" }}
-//         />
-
-//         {/* Admin */}
-//         <Stack.Screen name="AdminRegister" component={AdminRegister} />
-//         <Stack.Screen
-//           name="AdminLogin"
-//           component={AdminLogin}
-//           options={{ headerShown: false }}
-//         />
-//         <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
-//         <Stack.Screen name="AdminKycScreen" component={AdminKycScreen} />
-
-//         {/* Super Admin */}
-//         <Stack.Screen
-//           name="SuperAdminLogin"
-//           component={SuperAdminLogin}
-//           options={{ headerShown: false }}
-//         />
-//         <Stack.Screen
-//           name="SuperAdminDashboard"
-//           component={SuperAdminDashboard}
-//         />
-//       </Stack.Navigator>
-//     </NavigationContainer>
-//   );
-// }
-
-// import React, { useEffect, useState } from "react";
-// import { View, ActivityIndicator } from "react-native";
-// import { NavigationContainer } from "@react-navigation/native";
-// import { createNativeStackNavigator } from "@react-navigation/native-stack";
-// import AsyncStorage from "@react-native-async-storage/async-storage";
-
-// // Screens
-// import RoleSelect from "./screens/RoleSelect";
-// import SplashScreen from "./screens/SplashScreen";
-
-// // Doer Screens
-// import LoginPage from "./screens/LoginPage";
-// import RegisterPage from "./screens/RegisterPage";
-// import Dashboard from "./screens/Dashboard";
-// import ProfileScreen from "./screens/DoerProfile";
-// import KYCPage from "./screens/KYCPage";
-
-// // Admin Screens
-// import AdminRegister from "./screens/AdminRegister";
-// import AdminLogin from "./screens/AdminLogin";
-// import AdminDashboard from "./screens/AdminDashboard";
-// import AdminKycScreen from "./screens/AdminKycScreen";
-
-// // Super Admin Screens
-// import SuperAdminLogin from "./screens/SuperAdminLogin";
-// import SuperAdminDashboard from "./screens/SuperAdminDashboard";
-
-// const Stack = createNativeStackNavigator();
-
-// export default function App() {
-//   const [initialRoute, setInitialRoute] = useState(null);
-
-//   useEffect(() => {
-//     const checkLogin = async () => {
-//       try {
-//         const superAdminToken = await AsyncStorage.getItem("superAdminToken");
-//         const adminToken = await AsyncStorage.getItem("adminToken");
-//         const doerToken = await AsyncStorage.getItem("authToken");
-
-//         if (superAdminToken) setInitialRoute("SuperAdminDashboard");
-//         else if (adminToken) setInitialRoute("AdminDashboard");
-//         else if (doerToken) setInitialRoute("Dashboard");
-//         else setInitialRoute("RoleSelect");
-//       } catch (err) {
-//         console.error(err);
-//         setInitialRoute("RoleSelect");
-//       }
-//     };
-//     checkLogin();
-//   }, []);
-
-//   if (!initialRoute) {
-//     // While checking tokens, show a loading spinner
-//     return (
-//       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-//         <ActivityIndicator size="large" color="#2196f3" />
-//       </View>
-//     );
-//   }
-
-//   return (
-//     <NavigationContainer>
-//       <Stack.Navigator screenOptions={{ headerShown: false }}>
-//         {/* Splash Screen */}
-//         <Stack.Screen
-//           name="Splash"
-//           component={SplashScreen}
-//           initialParams={{ initialRoute }} // pass the initial route to SplashScreen
-//         />
-
-//         {/* Role Selection */}
-//         <Stack.Screen name="RoleSelect" component={RoleSelect} />
-
-//         {/* Doer */}
-//         <Stack.Screen name="LoginPage" component={LoginPage} />
-//         <Stack.Screen name="RegisterPage" component={RegisterPage} />
-//         <Stack.Screen name="Dashboard" component={Dashboard} />
-//         <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
-//         <Stack.Screen name="KYCPage" component={KYCPage} />
-
-//         {/* Admin */}
-//         <Stack.Screen name="AdminRegister" component={AdminRegister} />
-//         <Stack.Screen name="AdminLogin" component={AdminLogin} />
-//         <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
-//         <Stack.Screen name="AdminKycScreen" component={AdminKycScreen} />
-
-//         {/* Super Admin */}
-//         <Stack.Screen name="SuperAdminLogin" component={SuperAdminLogin} />
-//         <Stack.Screen
-//           name="SuperAdminDashboard"
-//           component={SuperAdminDashboard}
-//         />
-//       </Stack.Navigator>
-//     </NavigationContainer>
-//   );
-// }
 
 import React, { useEffect, useState } from "react";
-import { View, ActivityIndicator } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ActivityIndicator, View, Text } from "react-native";
 
 // Screens
 import RoleSelect from "./screens/RoleSelect";
-import SplashScreen from "./screens/SplashScreen";
 
-// Doer Screens
+// Doer
 import LoginPage from "./screens/LoginPage";
-import RegisterPage from "./screens/RegisterPage";
 import Dashboard from "./screens/Dashboard";
-import ProfileScreen from "./screens/DoerProfile";
+import EditProfile from "./screens/EditProfile";
+import DoerProfile from "./screens/DoerProfile";
 import KYCPage from "./screens/KYCPage";
 
-// Admin Screens
-import AdminRegister from "./screens/AdminRegister";
+// Poster
+import PosterLogin from "./screens/PosterLogin";
+import PosterDashboard from "./screens/PosterDashboard";
+import PosterProfileView from "./screens/PosterProfileView";
+import PosterProfileEdit from "./screens/PosterProfileEdit";
+import EditAddress from "./screens/EditAddress";
+import PosterKycUpload from "./screens/PosterKycUpload";
+import AddressList from "./screens/AddressList";
+
+// Admin
 import AdminLogin from "./screens/AdminLogin";
 import AdminDashboard from "./screens/AdminDashboard";
-import AdminKycScreen from "./screens/AdminKycScreen";
+import AdminKycDetail from "./screens/AdminKycDetail";
 
-// Super Admin Screens
+// Super Admin
 import SuperAdminLogin from "./screens/SuperAdminLogin";
 import SuperAdminDashboard from "./screens/SuperAdminDashboard";
 
@@ -241,63 +38,100 @@ const Stack = createNativeStackNavigator();
 
 export default function App() {
   const [initialRoute, setInitialRoute] = useState(null);
+  const [initialParams, setInitialParams] = useState(null);
 
   useEffect(() => {
-    const checkLogin = async () => {
-      try {
-        const superAdminToken = await AsyncStorage.getItem("superAdminToken");
-        const adminToken = await AsyncStorage.getItem("adminToken");
-        const doerToken = await AsyncStorage.getItem("authToken");
-
-        if (superAdminToken) setInitialRoute("SuperAdminDashboard");
-        else if (adminToken) setInitialRoute("AdminDashboard");
-        else if (doerToken) setInitialRoute("Dashboard");
-        else setInitialRoute("RoleSelect");
-      } catch (err) {
-        console.error(err);
-        setInitialRoute("RoleSelect");
-      }
-    };
-
     checkLogin();
   }, []);
 
+  const checkLogin = async () => {
+    try {
+      const token = await AsyncStorage.getItem("authToken");
+      const role = await AsyncStorage.getItem("userRole");
+
+      if (token && role) {
+        switch (role) {
+          case "DOER":
+            const profile = await AsyncStorage.getItem("doerProfile");
+            const parsedProfile = profile ? JSON.parse(profile) : null;
+
+            if (parsedProfile?.isNew) {
+              // New user → can optionally redirect to EditProfile
+              setInitialRoute("Dashboard");
+              setInitialParams({ showEditProfilePrompt: true });
+            } else {
+              setInitialRoute("Dashboard");
+              setInitialParams(null);
+            }
+            break;
+
+          case "POSTER":
+            setInitialRoute("PosterDashboard");
+            break;
+
+          case "ADMIN":
+            setInitialRoute("AdminDashboard");
+            break;
+
+          case "SUPERADMIN":
+            setInitialRoute("SuperAdminDashboard");
+            break;
+
+          default:
+            setInitialRoute("RoleSelect");
+        }
+      } else {
+        setInitialRoute("RoleSelect");
+      }
+    } catch (err) {
+      console.error("Login check error:", err);
+      setInitialRoute("RoleSelect");
+    }
+  };
+
   if (!initialRoute) {
-    // While checking tokens, show loader
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#2196f3" />
+        <ActivityIndicator size="large" color="#007bff" />
+        <Text style={{ marginTop: 10 }}>Checking session...</Text>
       </View>
     );
   }
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {/* Splash screen comes first */}
-        <Stack.Screen
-          name="Splash"
-          component={SplashScreen}
-          initialParams={{ initialRoute }}
-        />
-
-        {/* Role Selection */}
+      <Stack.Navigator
+        initialRouteName={initialRoute}
+        screenOptions={{ headerShown: false }}
+      >
         <Stack.Screen name="RoleSelect" component={RoleSelect} />
 
-        {/* Doer */}
+        {/* Doer Screens */}
         <Stack.Screen name="LoginPage" component={LoginPage} />
-        <Stack.Screen name="RegisterPage" component={RegisterPage} />
-        <Stack.Screen name="Dashboard" component={Dashboard} />
-        <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
+        <Stack.Screen
+          name="Dashboard"
+          component={Dashboard}
+          initialParams={initialParams} // pass params to Dashboard
+        />
+        <Stack.Screen name="EditProfile" component={EditProfile} />
+        <Stack.Screen name="DoerProfile" component={DoerProfile} />
         <Stack.Screen name="KYCPage" component={KYCPage} />
 
-        {/* Admin */}
-        <Stack.Screen name="AdminRegister" component={AdminRegister} />
+        {/* Poster Screens */}
+        <Stack.Screen name="PosterLogin" component={PosterLogin} />
+        <Stack.Screen name="PosterDashboard" component={PosterDashboard} />
+        <Stack.Screen name="PosterProfileView" component={PosterProfileView} />
+        <Stack.Screen name="PosterProfileEdit" component={PosterProfileEdit} />
+        <Stack.Screen name="EditAddress" component={EditAddress} />
+        <Stack.Screen name="PosterKycUpload" component={PosterKycUpload} />
+        <Stack.Screen name="AddressList" component={AddressList} />
+
+        {/* Admin Screens */}
         <Stack.Screen name="AdminLogin" component={AdminLogin} />
         <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
-        <Stack.Screen name="AdminKycScreen" component={AdminKycScreen} />
+        <Stack.Screen name="AdminKycDetail" component={AdminKycDetail} />
 
-        {/* Super Admin */}
+        {/* Super Admin Screens */}
         <Stack.Screen name="SuperAdminLogin" component={SuperAdminLogin} />
         <Stack.Screen
           name="SuperAdminDashboard"

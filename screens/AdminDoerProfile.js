@@ -331,107 +331,110 @@ import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
   ScrollView,
+  ActivityIndicator,
+  TouchableOpacity,
   Alert,
-  Linking,
-  Image,
+  StyleSheet,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
-const BASE_URL = "http://192.168.1.6:8080/api";
+const BASE_URL = "http://192.168.60.218:8080/api";
 
-export default function AdminKycDetail({ route, navigation }) {
-  const { kycId } = route.params;
-  const [kyc, setKyc] = useState(null);
+export default function AdminDashboard({ navigation }) {
+  const [kycList, setKycList] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchKycDetail();
+    fetchPendingKyc();
   }, []);
 
-  const fetchKycDetail = async () => {
+  const fetchPendingKyc = async () => {
     setLoading(true);
     try {
       const token = await AsyncStorage.getItem("adminToken");
       if (!token) return navigation.replace("AdminLogin");
 
-      const res = await axios.get(`${BASE_URL}/admin/kyc/${kycId}`, {
+      const res = await axios.get(`${BASE_URL}/admin/kyc/pending`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setKyc(res.data.data); // Assuming backend returns { data: {...} }
+      // Safely extract array
+      const list = res.data?.data?.content || [];
+      setKycList(list);
     } catch (err) {
-      console.error(err.response?.data || err.message);
-      Alert.alert("Error", "Failed to fetch KYC details");
+      console.error("Fetch KYC Error:", err.response?.data || err.message);
+      Alert.alert("Error", "Failed to fetch KYC requests");
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading || !kyc) {
-    return <ActivityIndicator size="large" style={{ flex: 1 }} color="#2196f3" />;
+  const handleLogout = async () => {
+    await AsyncStorage.removeItem("adminToken");
+    navigation.replace("RoleSelect");
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#2196f3" />
+      </View>
+    );
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.label}>Name:</Text>
-      <Text style={styles.value}>{kyc.userName}</Text>
+    <ScrollView style={styles.container}>
+      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+        <Text style={styles.logoutText}>Logout</Text>
+      </TouchableOpacity>
 
-      <Text style={styles.label}>Phone:</Text>
-      <Text style={styles.value}>{kyc.userPhone}</Text>
+      <Text style={styles.title}>Pending KYC Requests</Text>
 
-      <Text style={styles.label}>Document Type:</Text>
-      <Text style={styles.value}>{kyc.docType}</Text>
-
-      <Text style={styles.label}>Status:</Text>
-      <Text style={styles.value}>{kyc.status}</Text>
-
-      {kyc.downloadUrl && (
-        <>
-          <Text style={styles.label}>KYC Document:</Text>
+      {kycList.length === 0 ? (
+        <Text style={styles.empty}>No pending KYC requests</Text>
+      ) : (
+        kycList.map((kyc) => (
           <TouchableOpacity
-            style={styles.viewBtn}
-            onPress={() => Linking.openURL(`${BASE_URL}${kyc.downloadUrl}`)}
+            key={kyc?.id}
+            style={styles.card}
+            onPress={() =>
+              navigation.navigate("AdminKycDetail", { kycId: kyc?.id })
+            }
           >
-            <Text style={styles.btnText}>View / Download</Text>
+            <Text style={styles.name}>Name: {kyc?.userName || "N/A"}</Text>
+            <Text>Phone: {kyc?.userPhone || "N/A"}</Text>
+            <Text>Document Type: {kyc?.docType || "N/A"}</Text>
+            <Text>Status: {kyc?.status || "N/A"}</Text>
+            <Text style={styles.viewText}>Tap to view details</Text>
           </TouchableOpacity>
-
-          <Image
-            source={{ uri: `${BASE_URL}${kyc.downloadUrl}` }}
-            style={styles.image}
-            resizeMode="contain"
-          />
-        </>
+        ))
       )}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    padding: 20,
-    backgroundColor: "#f4f4f4",
-  },
-  label: { fontWeight: "bold", fontSize: 16, marginTop: 10 },
-  value: { fontSize: 16, marginBottom: 5 },
-  viewBtn: {
-    backgroundColor: "#2196f3",
+  container: { flex: 1, padding: 15, backgroundColor: "#f0f4f7" },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  title: { fontSize: 22, fontWeight: "bold", marginVertical: 15 },
+  card: {
+    backgroundColor: "#fff",
     padding: 15,
-    borderRadius: 10,
-    marginVertical: 10,
-    alignItems: "center",
+    borderRadius: 12,
+    marginBottom: 15,
   },
-  btnText: { color: "#fff", fontWeight: "bold" },
-  image: {
-    width: "100%",
-    height: 300,
-    borderRadius: 10,
-    marginVertical: 10,
-    backgroundColor: "#e1e1e1",
+  name: { fontSize: 18, fontWeight: "600" },
+  empty: { fontSize: 16, color: "gray", marginVertical: 10 },
+  viewText: { marginTop: 10, color: "#2196f3", fontWeight: "600" },
+  logoutBtn: {
+    alignSelf: "flex-end",
+    backgroundColor: "#ff3b30",
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 10,
   },
+  logoutText: { color: "#fff", fontWeight: "bold" },
 });
+

@@ -18,9 +18,14 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 12,
     marginBottom: 15,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   name: {
     fontSize: 18,
     fontWeight: "600",
+    marginBottom: 5,
   },
 });

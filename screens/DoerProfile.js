@@ -2,16 +2,13 @@ import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
   ScrollView,
+  StyleSheet,
+  ActivityIndicator,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { fetchProfile } from "../api/doer";
 
-export default function DoerProfile({ navigation }) {
+export default function DoerProfile({ route }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -21,16 +18,25 @@ export default function DoerProfile({ navigation }) {
 
   const loadProfile = async () => {
     try {
-      const token = await AsyncStorage.getItem("authToken");
-      if (!token) {
-        navigation.replace("RoleSelect");
-        return;
-      }
+      const storedProfile = await AsyncStorage.getItem("doerProfile");
+      if (storedProfile) {
+        const parsed = JSON.parse(storedProfile);
+        // Safely handle nested backend response
+        const profileData = parsed?.data?.data || parsed?.data || parsed;
 
-      const res = await fetchProfile(token);
-      setProfile(res.data.data);
+        setProfile({
+          name: profileData.name,
+          phone: profileData.phone,
+          email: profileData.email || "N/A",
+          bio: profileData.bio,
+          skills: profileData.skills || [],
+          isVerified: profileData.isVerified,
+          verificationStatus: profileData.verificationStatus,
+          kycLevel: profileData.kycLevel,
+        });
+      }
     } catch (err) {
-      Alert.alert("Error", err.response?.data?.message || err.message);
+      console.log("Failed to load profile", err);
     } finally {
       setLoading(false);
     }
@@ -39,137 +45,110 @@ export default function DoerProfile({ navigation }) {
   if (loading)
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2196f3" />
-        <Text style={{ marginTop: 10 }}>Loading profile...</Text>
+        <ActivityIndicator size="large" color="#4a90e2" />
+        <Text style={{ marginTop: 10, color: "#555" }}>Loading profile...</Text>
       </View>
     );
 
-  // Profile options including KYC status and rejection reason
-  const profileOptions = [
-    { title: "Name", value: profile.name || "Not set" },
-    { title: "Bio", value: profile.bio || "Not set" },
-    { title: "Skills", value: profile.skills?.join(", ") || "No skills" },
-    {
-      title: "KYC Status",
-      value:
-        profile.verificationStatus === "VERIFIED"
-          ? "✅ Verified"
-          : profile.verificationStatus === "KYC_REJECTED"
-          ? "❌ Rejected"
-          : "⏳ Pending",
-      color:
-        profile.verificationStatus === "VERIFIED"
-          ? "green"
-          : profile.verificationStatus === "KYC_REJECTED"
-          ? "red"
-          : "orange",
-    },
-    // Show rejection reason if KYC rejected
-    ...(profile.verificationStatus === "KYC_REJECTED"
-      ? [
-          {
-            title: "Rejection Reason",
-            value: profile.rejectionReason ?? "No reason provided",
-            color: "red",
-          },
-        ]
-      : []),
-    { title: "KYC Level", value: profile.kycLevel ?? "Not verified" },
-  ];
+  if (!profile)
+    return (
+      <View style={styles.center}>
+        <Text style={{ color: "#555", fontSize: 16 }}>No profile found</Text>
+      </View>
+    );
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.headerText}>Profile Details</Text>
+      <Text style={styles.headerText}>Doer Profile</Text>
 
-      <View style={styles.grid}>
-        {profileOptions.map((item, index) => (
-          <View key={index} style={styles.gridButton}>
-            <Text style={styles.gridTitle}>{item.title}</Text>
-            <Text style={[styles.gridValue, { color: item.color || "#555" }]}>
-              {item.value}
-            </Text>
-          </View>
-        ))}
+      {/* Basic Info Card */}
+      <View style={styles.card}>
+        <Text style={styles.label}>Name</Text>
+        <Text style={styles.value}>{profile.name}</Text>
 
-        {/* Upload KYC button if not verified or rejected */}
-        {profile.verificationStatus !== "VERIFIED" && (
-          <TouchableOpacity
-            style={[styles.gridButton, styles.kycGridBtn]}
-            onPress={() => navigation.navigate("KYCPage")}
-          >
-            <Text style={styles.gridTitle}>Upload KYC</Text>
-            <Text style={styles.gridValue}>
-              {profile.verificationStatus === "KYC_REJECTED"
-                ? "Re-upload after rejection"
-                : "Click here"}
-            </Text>
-          </TouchableOpacity>
-        )}
+        <Text style={styles.label}>Phone</Text>
+        <Text style={styles.value}>{profile.phone || "N/A"}</Text>
+
+        <Text style={styles.label}>Email</Text>
+        <Text style={styles.value}>{profile.email}</Text>
+
+        <Text style={styles.label}>Bio</Text>
+        <Text style={styles.value}>{profile.bio || "No bio available"}</Text>
+
+        <Text style={styles.label}>Skills</Text>
+        <Text style={styles.value}>
+          {profile.skills.length ? profile.skills.join(", ") : "No skills added"}
+        </Text>
       </View>
 
-      {/* Logout Button */}
-      <TouchableOpacity
-        style={styles.logoutBtn}
-        onPress={async () => {
-          await AsyncStorage.removeItem("authToken");
-          navigation.replace("RoleSelect");
-        }}
-      >
-        <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
+      {/* Verification Card */}
+      <View style={styles.card}>
+        <Text style={styles.label}>KYC Level</Text>
+        <Text style={styles.value}>{profile.kycLevel || "N/A"}</Text>
+
+        <Text style={styles.label}>Verification Status</Text>
+        <Text style={styles.value}>{profile.verificationStatus || "Pending"}</Text>
+
+        <Text style={styles.label}>Verified</Text>
+        <Text
+          style={[
+            styles.value,
+            profile.isVerified ? styles.verified : styles.notVerified,
+          ]}
+        >
+          {profile.isVerified ? "Yes" : "No"}
+        </Text>
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
     padding: 20,
-    backgroundColor: "#f4f6fa",
-    alignItems: "center",
+    backgroundColor: "#f2f6fc",
+    paddingBottom: 30,
   },
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
   headerText: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "700",
-    color: "#333",
     marginBottom: 20,
+    color: "#4a90e2",
+    textAlign: "center",
   },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-  },
-  gridButton: {
-    width: "47%",
+  card: {
     backgroundColor: "#fff",
-    paddingVertical: 20,
-    paddingHorizontal: 10,
     borderRadius: 12,
-    marginBottom: 15,
-    alignItems: "center",
+    padding: 20,
+    marginBottom: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 4,
   },
-  kycGridBtn: { backgroundColor: "#2196f3" },
-  gridTitle: {
+  label: {
+    fontWeight: "700",
+    color: "#555",
+    marginTop: 10,
+    fontSize: 14,
+  },
+  value: {
     fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 5,
+    marginTop: 3,
     color: "#333",
-    textAlign: "center",
   },
-  gridValue: { fontSize: 14, textAlign: "center" },
-  logoutBtn: {
-    backgroundColor: "#ff4d4d",
-    paddingVertical: 15,
-    borderRadius: 12,
-    marginTop: 30,
-    width: "100%",
+  verified: {
+    color: "#4caf50",
+    fontWeight: "700",
+  },
+  notVerified: {
+    color: "#f44336",
+    fontWeight: "700",
+  },
+  center: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
   },
-  logoutText: { color: "#fff", fontWeight: "700", fontSize: 16 },
 });

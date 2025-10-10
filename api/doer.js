@@ -1,120 +1,107 @@
+
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
 
-// ----------------- CONFIG -----------------
-const BASE_URL = "http://10.90.169.218:8080/api"; // Change to your backend IP if needed
+// ✅ Base URL (your backend IP)
+const BASE_URL =
+  Platform.OS === "android"
+    ? "http://192.168.60.218:8080/api"
+    : "http://192.168.60.218:8080/api";
 
+// ✅ Axios instance
 const api = axios.create({
   baseURL: BASE_URL,
   headers: { "Content-Type": "application/json" },
+  timeout: 15000,
 });
 
-// ----------------- DOER APIS -----------------
-
-// Request OTP
-export const requestOtp = async (phone) => {
-  const formattedPhone = phone.startsWith("+") ? phone : "+91" + phone;
-  return api.post("/auth/doer/login", { phone: formattedPhone });
-};
-
-// Verify OTP
-export const verifyOtp = async (phone, otp, sessionId) => {
-  const formattedPhone = phone.startsWith("+") ? phone : "+91" + phone;
-  return api.post("/auth/doer/verify-otp", {
-    phone: formattedPhone,
-    otp,
-    sessionId,
-  });
-};
-
-// Register Doer
-export const registerDoer = async (payload) =>
-  api.post("/auth/doer/register", payload);
-
-// Fetch Doer Profile
-export const fetchProfile = async () => {
+// ✅ Attach token automatically
+api.interceptors.request.use(async (config) => {
   const token = await AsyncStorage.getItem("authToken");
-  if (!token) throw new Error("Doer token missing");
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
 
-  const res = await api.get("/doer/profile", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+// ============================================================
+// 🔐 AUTH (OTP LOGIN FLOW)
+// ============================================================
 
-  // Ensure KYC fields are included
-  const profileData = res.data.data;
-
-  // Map backend fields to frontend-friendly ones
-  profileData.kycStatus = profileData.verificationStatus || "PENDING";
-  profileData.rejectionReason = profileData.rejectionReason || null;
-
-  return { data: { data: profileData } };
-};
-
-// Upload KYC for Doer
-export const uploadKYC = async (formData, docType = "PAN") => {
-  const token = await AsyncStorage.getItem("authToken");
-  if (!token) throw new Error("Doer token missing");
-
-  return api.post(`/doer/doc/upload?docType=${docType}`, formData, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "multipart/form-data",
-    },
-  });
-};
-
-// ----------------- SUPER ADMIN APIS -----------------
-
-// Login Super Admin
-export const loginSuperAdmin = async (email, password) => {
-  const res = await api.post("/auth/superadmin/login", { email, password });
-  if (res.status === 200 && res.data?.data?.token) {
-    await AsyncStorage.setItem("superAdminToken", res.data.data.token);
-  }
+// ✅ Send OTP
+export const sendDoerOtp = async (phone) => {
+  const formatted = phone.startsWith("+") ? phone : "+91" + phone;
+  const res = await api.post("/auth/otp/doer-send", { phone: formatted });
   return res.data;
 };
 
-// Fetch pending admin registrations
-export const fetchPendingAdmins = async () => {
-  const token = await AsyncStorage.getItem("superAdminToken");
-  if (!token) throw new Error("Super Admin token missing");
+// ✅ Verify OTP + Save JWT
+export const verifyDoerOtp = async (sessionId, otp) => {
+  const res = await api.post("/auth/otp/doer/verify", { sessionId, otp });
+  const data = res.data?.data;
 
-  const res = await api.get("/superadmin/admins/pending", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return res.data.data || [];
+  if (data?.token) {
+    await AsyncStorage.setItem("authToken", data.token);
+    if (data.roleCode) await AsyncStorage.setItem("userRole", data.roleCode);
+  }
+
+  return res.data;
 };
 
-// Approve Admin
-export const approveAdmin = async (adminId) => {
-  const token = await AsyncStorage.getItem("superAdminToken");
-  return api.post(
-    `/superadmin/admin/${adminId}/approve`,
-    {},
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
+// ============================================================
+// 👤 PROFILE
+// ============================================================
+
+export const fetchDoerProfile = async () => {
+  const res = await api.get("/doer/profile/get");
+  return res.data;
 };
 
-// Reject Admin
-export const rejectAdmin = async (adminId, reason) => {
-  const token = await AsyncStorage.getItem("superAdminToken");
-  return api.post(
-    `/superadmin/admin/${adminId}/reject`,
-    { reason }, // send rejection reason
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
+export const updateDoerProfile = async (payload) => {
+  const res = await api.put("/doer/profile/", payload);
+  return res.data;
 };
 
-// Fetch all Doers (for Super Admin)
-export const fetchAllDoers = async () => {
-  const token = await AsyncStorage.getItem("superAdminToken");
-  if (!token) throw new Error("Super Admin token missing");
+// ============================================================
+// 🪪 KYC UPLOAD (JWT Protected)
+// ============================================================
 
-  const res = await api.get("/superadmin/doers", {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return res.data.data || [];
+export const uploadDoerKyc = async (fileUri, docType) => {
+  try {
+    const token = await AsyncStorage.getItem("authToken");
+    if (!token) throw new Error("JWT token missing. Please login again.");
+
+    const formData = new FormData();
+    formData.append("file", {
+      uri: fileUri,
+      name: fileUri.split("/").pop(),
+      type: "image/jpeg", // or "application/pdf"
+    });
+
+    const res = await axios.post(
+      `${BASE_URL}/doer/profile/doc/upload?docType=${encodeURIComponent(docType)}`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return res.data;
+  } catch (err) {
+    console.error("KYC Upload Error:", err.response?.data || err.message);
+    throw err;
+  }
 };
 
-// ----------------- EXPORT -----------------
+// ============================================================
+// 🚪 LOGOUT
+// ============================================================
+
+export const logoutDoer = async () => {
+  await AsyncStorage.removeItem("authToken");
+  await AsyncStorage.removeItem("userRole");
+};
+
 export default api;
