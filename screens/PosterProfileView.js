@@ -7,13 +7,22 @@ import {
   ActivityIndicator,
   Alert,
   TouchableOpacity,
+  LayoutAnimation,
+  Platform,
+  UIManager,
 } from "react-native";
 import { fetchPosterProfile, deleteAddress } from "../api/poster";
 import { Ionicons } from "@expo/vector-icons";
 
+// Enable LayoutAnimation on Android
+if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
 export default function PosterProfileView({ navigation }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showProfileDetails, setShowProfileDetails] = useState(true);
 
   const loadProfile = async () => {
     try {
@@ -39,7 +48,7 @@ export default function PosterProfileView({ navigation }) {
         onPress: async () => {
           try {
             await deleteAddress(id);
-            loadProfile(); // Refresh list
+            loadProfile();
           } catch (err) {
             console.error(err);
             Alert.alert("Error", "Failed to delete address");
@@ -52,6 +61,21 @@ export default function PosterProfileView({ navigation }) {
   useEffect(() => {
     loadProfile();
   }, []);
+
+  const toggleProfileDetails = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setShowProfileDetails(!showProfileDetails);
+  };
+
+  const kycBadge = () => {
+    if (profile.KycStatus === true)
+      return <Text style={[styles.badge, { backgroundColor: "#4caf50" }]}>Verified</Text>;
+    if (profile.KycStatus === false)
+      return <Text style={[styles.badge, { backgroundColor: "#ff9800" }]}>Pending</Text>;
+    if (profile.KycStatus === "KYC_REJECTED")
+      return <Text style={[styles.badge, { backgroundColor: "#f44336" }]}>Rejected</Text>;
+    return <Text style={[styles.badge, { backgroundColor: "#9e9e9e" }]}>-</Text>;
+  };
 
   if (loading)
     return (
@@ -67,16 +91,6 @@ export default function PosterProfileView({ navigation }) {
       </View>
     );
 
-  const kycBadge = () => {
-    if (profile.KycStatus === true)
-      return <Text style={[styles.badge, { backgroundColor: "#4caf50" }]}>Verified</Text>;
-    if (profile.KycStatus === false)
-      return <Text style={[styles.badge, { backgroundColor: "#ff9800" }]}>Pending</Text>;
-    if (profile.KycStatus === "KYC_REJECTED")
-      return <Text style={[styles.badge, { backgroundColor: "#f44336" }]}>Rejected</Text>;
-    return <Text style={[styles.badge, { backgroundColor: "#9e9e9e" }]}>-</Text>;
-  };
-
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {/* Top Header */}
@@ -84,23 +98,34 @@ export default function PosterProfileView({ navigation }) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#1877f2" />
         </TouchableOpacity>
-        <Text style={styles.headerText}>Profile Details</Text>
+        <Text style={styles.headerText}>Profile</Text>
       </View>
 
-      {/* Basic Info */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Name</Text>
-        <Text style={styles.cardText}>{profile.name || "-"}</Text>
+      {/* Collapsible Profile Details Header */}
+      <TouchableOpacity style={styles.sectionHeader} onPress={toggleProfileDetails}>
+        <Text style={styles.sectionHeaderText}>Profile Details</Text>
+        <Ionicons
+          name={showProfileDetails ? "chevron-up" : "chevron-down"}
+          size={22}
+          color="#1877f2"
+        />
+      </TouchableOpacity>
 
-        <Text style={styles.cardTitle}>Email</Text>
-        <Text style={styles.cardText}>{profile.email || "-"}</Text>
+      {showProfileDetails && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Name</Text>
+          <Text style={styles.cardText}>{profile.name || "-"}</Text>
 
-        <Text style={styles.cardTitle}>Phone</Text>
-        <Text style={styles.cardText}>{profile.phone || "-"}</Text>
+          <Text style={styles.cardTitle}>Email</Text>
+          <Text style={styles.cardText}>{profile.email || "-"}</Text>
 
-        <Text style={styles.cardTitle}>KYC Status</Text>
-        <View style={{ marginTop: 4 }}>{kycBadge()}</View>
-      </View>
+          <Text style={styles.cardTitle}>Phone</Text>
+          <Text style={styles.cardText}>{profile.phone || "-"}</Text>
+
+          <Text style={styles.cardTitle}>KYC Status</Text>
+          <View style={{ marginTop: 4 }}>{kycBadge()}</View>
+        </View>
+      )}
 
       {/* About */}
       <View style={styles.card}>
@@ -161,6 +186,16 @@ const styles = StyleSheet.create({
   container: { padding: 16, paddingBottom: 40, backgroundColor: "#f0f2f5" },
   topHeader: { flexDirection: "row", alignItems: "center", marginBottom: 20 },
   headerText: { fontSize: 22, fontWeight: "700", color: "#1877f2", marginLeft: 12 },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#e8f0fe",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  sectionHeaderText: { fontSize: 16, fontWeight: "700", color: "#1877f2" },
   card: {
     backgroundColor: "#fff",
     borderRadius: 10,
@@ -174,7 +209,14 @@ const styles = StyleSheet.create({
   },
   cardTitle: { fontSize: 14, fontWeight: "700", color: "#1877f2", marginBottom: 4 },
   cardText: { fontSize: 14, color: "#333", marginBottom: 8 },
-  badge: { color: "#fff", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 14, fontWeight: "600", alignSelf: "flex-start" },
+  badge: {
+    color: "#fff",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 14,
+    fontWeight: "600",
+    alignSelf: "flex-start",
+  },
   addressCard: {
     padding: 12,
     marginBottom: 8,
@@ -187,6 +229,12 @@ const styles = StyleSheet.create({
   editText: { color: "#fff", fontWeight: "600" },
   deleteBtn: { backgroundColor: "#f44336", padding: 6, borderRadius: 6 },
   deleteText: { color: "#fff", fontWeight: "600" },
-  addAddressBtn: { backgroundColor: "#00b894", padding: 10, borderRadius: 8, marginTop: 8, alignItems: "center" },
+  addAddressBtn: {
+    backgroundColor: "#00b894",
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 8,
+    alignItems: "center",
+  },
   addAddressText: { color: "#fff", fontWeight: "700" },
 });

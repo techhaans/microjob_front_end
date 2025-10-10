@@ -1,98 +1,3 @@
-// import React, { useState } from "react";
-// import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, StyleSheet } from "react-native";
-// import { sendPosterOtp, verifyPosterOtp } from "../api/poster";
-
-// export default function PosterLogin({ navigation }) {
-//   const [phone, setPhone] = useState("");
-//   const [otp, setOtp] = useState("");
-//   const [sessionId, setSessionId] = useState(null);
-//   const [loading, setLoading] = useState(false);
-//   const [otpSent, setOtpSent] = useState(false);
-
-//   const handleSendOtp = async () => {
-//     if (!phone) return Alert.alert("Error", "Enter phone number");
-
-//     try {
-//       setLoading(true);
-//       const res = await sendPosterOtp(phone);
-//       if (res.status === "SUCCESS") {
-//         setSessionId(res.data.sessionId);
-//         setOtpSent(true);
-//         Alert.alert("OTP Sent", res.data.message || "OTP has been sent");
-//       } else {
-//         Alert.alert("Error", res.message || "Failed to send OTP");
-//       }
-//     } catch (err) {
-//       console.error(err);
-//       Alert.alert("Error", err.message || "Network Error");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const handleVerifyOtp = async () => {
-//     if (!otp) return Alert.alert("Error", "Enter OTP");
-
-//     try {
-//       setLoading(true);
-//       const res = await verifyPosterOtp(sessionId, otp);
-//       if (res.status === "SUCCESS") {
-//         Alert.alert("Login Success", res.message || "OTP Verified", [
-//           { text: "OK", onPress: () => navigation.replace("PosterDashboard") }
-//         ]);
-//       } else {
-//         Alert.alert("Error", res.message || "OTP Verification Failed");
-//       }
-//     } catch (err) {
-//       console.error(err);
-//       Alert.alert("Error", err.message || "Network Error");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   return (
-//     <View style={styles.container}>
-//       <Text style={styles.title}>Poster Login</Text>
-
-//       {!otpSent ? (
-//         <>
-//           <TextInput
-//             style={styles.input}
-//             placeholder="Phone (+91XXXXXXXXXX)"
-//             keyboardType="phone-pad"
-//             value={phone}
-//             onChangeText={setPhone}
-//           />
-//           <TouchableOpacity style={styles.btn} onPress={handleSendOtp} disabled={loading}>
-//             {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Send OTP</Text>}
-//           </TouchableOpacity>
-//         </>
-//       ) : (
-//         <>
-//           <TextInput
-//             style={styles.input}
-//             placeholder="Enter OTP"
-//             keyboardType="numeric"
-//             value={otp}
-//             onChangeText={setOtp}
-//           />
-//           <TouchableOpacity style={styles.btn} onPress={handleVerifyOtp} disabled={loading}>
-//             {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Verify OTP</Text>}
-//           </TouchableOpacity>
-//         </>
-//       )}
-//     </View>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: { flex: 1, padding: 20, justifyContent: "center" },
-//   title: { fontSize: 22, fontWeight: "700", marginBottom: 20, textAlign: "center" },
-//   input: { backgroundColor: "#fff", padding: 12, borderRadius: 8, borderWidth: 1, borderColor: "#ddd", marginBottom: 15 },
-//   btn: { backgroundColor: "#2196f3", padding: 15, borderRadius: 8, alignItems: "center" },
-//   btnText: { color: "#fff", fontWeight: "700" },
-// });
 import React, { useState } from "react";
 import {
   View,
@@ -102,6 +7,7 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons"; // ✅ Import for back arrow icon
 import { sendPosterOtp, verifyPosterOtp } from "../api/poster";
 
 export default function PosterLogin({ navigation }) {
@@ -110,14 +16,11 @@ export default function PosterLogin({ navigation }) {
   const [sessionId, setSessionId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
-  const [attemptsLeft, setAttemptsLeft] = useState(3); 
-  const [errorMessage, setErrorMessage] = useState(""); 
+  const [attemptsLeft, setAttemptsLeft] = useState(3);
+  const [errorMessage, setErrorMessage] = useState("");
 
   // ✅ Validate phone number
-  const isValidPhone = (num) => {
-    const regex = /^[6-9]\d{9}$/; // Indian 10-digit number starting with 6-9
-    return regex.test(num);
-  };
+  const isValidPhone = (num) => /^[6-9]\d{9}$/.test(num);
 
   const handleSendOtp = async () => {
     if (!phone) return setErrorMessage("Enter phone number");
@@ -125,7 +28,7 @@ export default function PosterLogin({ navigation }) {
 
     try {
       setLoading(true);
-      setErrorMessage(""); 
+      setErrorMessage("");
       const res = await sendPosterOtp(phone);
 
       if (res.status === "SUCCESS") {
@@ -171,6 +74,11 @@ export default function PosterLogin({ navigation }) {
 
   return (
     <View style={styles.container}>
+      {/* ✅ Top Left Back Arrow */}
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <Ionicons name="arrow-back" size={24} color="#000" />
+      </TouchableOpacity>
+
       <Text style={styles.title}>Poster Login</Text>
 
       {!otpSent ? (
@@ -238,7 +146,13 @@ export default function PosterLogin({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, justifyContent: "center" },
+  container: { flex: 1, padding: 20, justifyContent: "center", backgroundColor: "#f8f9fa" },
+  backButton: {
+    position: "absolute",
+    top: 50,
+    left: 20,
+    zIndex: 10,
+  },
   title: { fontSize: 22, fontWeight: "700", marginBottom: 20, textAlign: "center" },
   input: {
     backgroundColor: "#fff",
@@ -260,4 +174,3 @@ const styles = StyleSheet.create({
   btnText: { color: "#fff", fontWeight: "700" },
   errorText: { color: "red", marginBottom: 10, textAlign: "center" },
 });
-

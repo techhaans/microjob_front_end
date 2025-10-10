@@ -1,5 +1,4 @@
 
-
 import React, { useState } from "react";
 import {
   View,
@@ -11,6 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Ionicons } from "@expo/vector-icons"; // ✅ Import for back arrow icon
 import { sendDoerOtp, verifyDoerOtp, fetchDoerProfile } from "../api/doer";
 
 export default function LoginPage({ navigation }) {
@@ -51,18 +51,11 @@ export default function LoginPage({ navigation }) {
       const res = await verifyDoerOtp(sessionId, otp);
 
       if (res?.status === "SUCCESS" && res?.data?.token) {
-        // Save token
         await AsyncStorage.setItem("authToken", res.data.token);
-
-        // Fetch profile using token
         let profileData = await fetchDoerProfile(res.data.token);
-
-        // If no profile exists, mark as new
         if (!profileData) profileData = { phone, isNew: true };
-
         await AsyncStorage.setItem("doerProfile", JSON.stringify(profileData));
 
-        // Navigate to Dashboard
         navigation.reset({ index: 0, routes: [{ name: "Dashboard" }] });
       } else {
         Alert.alert("OTP Failed", res?.message || "Invalid OTP");
@@ -76,6 +69,11 @@ export default function LoginPage({ navigation }) {
 
   return (
     <View style={styles.container}>
+      {/* ✅ Top Back Arrow */}
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <Ionicons name="arrow-back" size={24} color="#000" />
+      </TouchableOpacity>
+
       <Text style={styles.title}>Doer Login</Text>
 
       <TextInput
@@ -113,7 +111,18 @@ export default function LoginPage({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: "center", padding: 20, backgroundColor: "#f8f9fa" },
-  title: { fontSize: 22, fontWeight: "700", marginBottom: 12, textAlign: "center" },
+  backButton: {
+    position: "absolute",
+    top: 50,
+    left: 20,
+    zIndex: 10,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: 12,
+    textAlign: "center",
+  },
   input: {
     backgroundColor: "#fff",
     padding: 12,
@@ -122,6 +131,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ddd",
   },
-  btn: { backgroundColor: "#1976D2", padding: 12, borderRadius: 8, alignItems: "center", marginBottom: 10 },
+  btn: {
+    backgroundColor: "#1976D2",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    marginBottom: 10,
+  },
   btnText: { color: "#fff", fontWeight: "600" },
 });
