@@ -6,8 +6,8 @@ import { Platform } from "react-native";
 // ✅ Base URL (your backend IP)
 const BASE_URL =
   Platform.OS === "android"
-    ? "http://192.168.60.218:8080/api"
-    : "http://192.168.60.218:8080/api";
+    ? "http://192.168.45.218:8080/api"
+    : "http://192.168.45.218:8080/api";
 
 // ✅ Axios instance
 const api = axios.create({

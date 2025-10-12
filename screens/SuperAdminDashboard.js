@@ -180,7 +180,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
-const BASE_URL = "http://192.168.60.218:8080/api";
+const BASE_URL = "http://192.168.45.218:8080/api";
 
 export default function SuperAdminDashboard({ navigation }) {
   const [kycType, setKycType] = useState("DOER"); // "DOER" or "POSTER"
@@ -293,7 +293,11 @@ export default function SuperAdminDashboard({ navigation }) {
       </Text>
 
       {loading ? (
-        <ActivityIndicator size="large" color="#2196f3" style={{ marginTop: 20 }} />
+        <ActivityIndicator
+          size="large"
+          color="#2196f3"
+          style={{ marginTop: 20 }}
+        />
       ) : dataList.length === 0 ? (
         <Text style={styles.empty}>No {kycType.toLowerCase()}s found</Text>
       ) : (
@@ -313,10 +317,13 @@ export default function SuperAdminDashboard({ navigation }) {
                 <Text>Email: {item.email}</Text>
                 <Text>Phone: {item.phone}</Text>
                 <Text>About: {item.about || "N/A"}</Text>
-                <Text>KYC Status: {item.KycStatus ? "✅ Verified" : "❌ Pending"}</Text>
+                <Text>
+                  KYC Status: {item.KycStatus ? "✅ Verified" : "❌ Pending"}
+                </Text>
                 {item.addresses && item.addresses.length > 0 && (
                   <Text>
-                    Address: {item.addresses[0].area} ({item.addresses[0].pinCode})
+                    Address: {item.addresses[0].area} (
+                    {item.addresses[0].pinCode})
                   </Text>
                 )}
               </>

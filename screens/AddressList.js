@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,13 +8,14 @@ import {
   Alert,
   TouchableOpacity,
 } from "react-native";
-import { getPosterAddresses, deleteAddress } from "../api/poster"; // ✅ Import APIs
+import { useFocusEffect } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getPosterAddresses, deleteAddress } from "../api/poster";
 
 export default function AddressList({ navigation }) {
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 🔹 Fetch all addresses
   const fetchAddresses = async () => {
     try {
       setLoading(true);
@@ -30,17 +30,19 @@ export default function AddressList({ navigation }) {
       }
     } catch (error) {
       console.error("❌ Error fetching addresses:", error);
-      Alert.alert("Error", "Failed to fetch address history.");
+      Alert.alert("Error", "Failed to fetch addresses.");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchAddresses();
-  }, []);
+  // Auto-refresh on screen focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchAddresses();
+    }, [])
+  );
 
-  // 🔹 Delete address
   const handleDelete = (id) => {
     Alert.alert(
       "Confirm Delete",
@@ -54,7 +56,7 @@ export default function AddressList({ navigation }) {
             try {
               await deleteAddress(id);
               Alert.alert("Deleted", "Address removed successfully.");
-              fetchAddresses(); // refresh list
+              fetchAddresses();
             } catch (error) {
               console.error("❌ Delete error:", error);
               Alert.alert("Error", "Failed to delete address.");
@@ -65,7 +67,25 @@ export default function AddressList({ navigation }) {
     );
   };
 
-  // 🔄 Loading indicator
+  const handleAdd = () => {
+    navigation.navigate("AddressForm", { mode: "add" });
+  };
+
+  const handleEdit = (address) => {
+    navigation.navigate("AddressForm", { mode: "edit", address });
+  };
+
+  const handleSelect = async (address) => {
+    try {
+      await AsyncStorage.setItem("selectedAddress", JSON.stringify(address));
+      Alert.alert("Success", "Address selected!");
+      navigation.goBack(); // return to dashboard
+    } catch (err) {
+      console.error("[Select Address Error]", err);
+      Alert.alert("Error", "Failed to select address.");
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.loader}>
@@ -77,7 +97,14 @@ export default function AddressList({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>📍 Address History</Text>
+      <TouchableOpacity
+        style={styles.backBtn}
+        onPress={() => navigation.goBack()}
+      >
+        <Text style={styles.backBtnText}>← Back</Text>
+      </TouchableOpacity>
+
+      <Text style={styles.title}>📍 Address List</Text>
 
       {addresses.length === 0 ? (
         <Text style={styles.noData}>No saved addresses found.</Text>
@@ -96,10 +123,17 @@ export default function AddressList({ navigation }) {
 
               <View style={styles.actions}>
                 <TouchableOpacity
-                  style={styles.editBtn}
-                  onPress={() => navigation.navigate("AddressForm", { address: item })}
+                  style={styles.selectBtn}
+                  onPress={() => handleSelect(item)}
                 >
-                  <Text style={styles.actionText}>Edit</Text>
+                  <Text style={styles.actionText}>Select</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.editBtn}
+                  onPress={() => handleEdit(item)}
+                >
+                  <Text style={styles.actionText}>Edit / Update</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -114,11 +148,8 @@ export default function AddressList({ navigation }) {
         />
       )}
 
-      <TouchableOpacity
-        style={styles.backBtn}
-        onPress={() => navigation.goBack()}
-      >
-        <Text style={styles.backBtnText}>← Back</Text>
+      <TouchableOpacity style={styles.addBtn} onPress={handleAdd}>
+        <Text style={styles.addBtnText}>➕ Add New Address</Text>
       </TouchableOpacity>
     </View>
   );
@@ -126,14 +157,17 @@ export default function AddressList({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#121212", padding: 20 },
-  loader: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#121212" },
-  title: {
-    fontSize: 22,
-    fontWeight: "700",
-    marginBottom: 20,
-    color: "#6EB5FF",
-    textAlign: "center",
+  loader: { flex: 1, justifyContent: "center", alignItems: "center" },
+  backBtn: {
+    marginBottom: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    backgroundColor: "#333",
+    borderRadius: 6,
+    alignSelf: "flex-start",
   },
+  backBtnText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+  title: { fontSize: 22, fontWeight: "700", marginBottom: 20, color: "#6EB5FF", textAlign: "center" },
   addressBox: {
     backgroundColor: "#1E1E1E",
     padding: 16,
@@ -147,26 +181,10 @@ const styles = StyleSheet.create({
   dateText: { color: "#888", marginTop: 6, fontSize: 12 },
   noData: { color: "#aaa", textAlign: "center", marginTop: 30, fontSize: 16 },
   actions: { flexDirection: "row", marginTop: 10, justifyContent: "flex-end" },
-  editBtn: {
-    backgroundColor: "#FFA500",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    marginRight: 10,
-  },
-  deleteBtn: {
-    backgroundColor: "#FF4C4C",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-  },
+  selectBtn: { backgroundColor: "#0b78ff", paddingVertical: 6, paddingHorizontal: 10, borderRadius: 6, marginRight: 6 },
+  editBtn: { backgroundColor: "#FFA500", paddingVertical: 6, paddingHorizontal: 12, borderRadius: 6, marginRight: 6 },
+  deleteBtn: { backgroundColor: "#FF4C4C", paddingVertical: 6, paddingHorizontal: 12, borderRadius: 6 },
   actionText: { color: "#fff", fontWeight: "700" },
-  backBtn: {
-    marginTop: 20,
-    backgroundColor: "#6EB5FF",
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: "center",
-  },
-  backBtnText: { color: "#000", fontWeight: "700", fontSize: 16 },
+  addBtn: { marginTop: 20, backgroundColor: "#6EB5FF", paddingVertical: 12, borderRadius: 10, alignItems: "center" },
+  addBtnText: { color: "#000", fontWeight: "700", fontSize: 16 },
 });

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect } from "react";
 import {
   View,
   Text,
@@ -9,26 +9,54 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  Platform,
+  UIManager,
+  LayoutAnimation,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { fetchDoerProfile, updateDoerProfile } from "../api/doer";
 
-export default function EditProfile({ navigation, route }) {
+// Enable LayoutAnimation for Android
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
+export default function EditProfile({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
-  // Profile fields
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [bio, setBio] = useState("");
   const [phone, setPhone] = useState("");
   const [skills, setSkills] = useState([]);
   const [kycUrl, setKycUrl] = useState(null);
-
-  // Temporary skill input
   const [skillInput, setSkillInput] = useState("");
 
-  // Load existing profile
+  // Back button and Logout in header
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity
+          onPress={() => navigation.replace("Dashboard")}
+          style={{ marginLeft: 15 }}
+        >
+          <Ionicons name="arrow-back" size={24} color="#000" />
+        </TouchableOpacity>
+      ),
+      headerRight: () => (
+        <TouchableOpacity onPress={logoutUser} style={{ marginRight: 15 }}>
+          <Ionicons name="log-out-outline" size={24} color="red" />
+        </TouchableOpacity>
+      ),
+      title: "Edit Profile",
+    });
+  }, [navigation, skills, name, email, bio, phone, kycUrl]);
+
+  // Fetch profile
   const loadProfile = async () => {
     try {
       const res = await fetchDoerProfile();
@@ -52,7 +80,18 @@ export default function EditProfile({ navigation, route }) {
     loadProfile();
   }, []);
 
-  // Save profile
+  // Logout function
+  const logoutUser = async () => {
+    await AsyncStorage.multiRemove([
+      "authToken",
+      "userRole",
+      "tempToken",
+      "doerProfile",
+    ]);
+    navigation.replace("LoginPage");
+  };
+
+  // Submit profile update
   const submitProfile = async () => {
     if (!name || !email || !phone) {
       return Alert.alert(
@@ -68,12 +107,8 @@ export default function EditProfile({ navigation, route }) {
 
       if (res.status === "SUCCESS") {
         Alert.alert("Success", "Profile updated successfully");
-
-        // Save to AsyncStorage
         await AsyncStorage.setItem("doerProfile", JSON.stringify(payload));
-
-        // Go back to Dashboard (Dashboard will auto-fetch)
-        navigation.goBack();
+        navigation.replace("Dashboard");
       } else {
         Alert.alert("Error", res.message || "Update failed");
       }
@@ -85,16 +120,16 @@ export default function EditProfile({ navigation, route }) {
     }
   };
 
-  // Add skill
   const addSkill = () => {
     if (skillInput.trim() && !skills.includes(skillInput.trim())) {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       setSkills([...skills, skillInput.trim()]);
       setSkillInput("");
     }
   };
 
-  // Remove skill
   const removeSkill = (skill) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setSkills(skills.filter((s) => s !== skill));
   };
 
@@ -108,8 +143,6 @@ export default function EditProfile({ navigation, route }) {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Edit Profile</Text>
-
       <TextInput
         style={styles.input}
         placeholder="Name"
@@ -138,7 +171,6 @@ export default function EditProfile({ navigation, route }) {
         onChangeText={setPhone}
       />
 
-      {/* Skills */}
       <Text style={{ fontWeight: "700", marginBottom: 5 }}>Skills:</Text>
       {skills.map((skill, index) => (
         <View key={index} style={styles.skillItem}>
@@ -163,7 +195,6 @@ export default function EditProfile({ navigation, route }) {
         </TouchableOpacity>
       </View>
 
-      {/* KYC */}
       <View style={{ marginVertical: 10 }}>
         <TouchableOpacity
           style={[styles.btn, { backgroundColor: "#FF9800" }]}
@@ -193,7 +224,6 @@ export default function EditProfile({ navigation, route }) {
 
 const styles = StyleSheet.create({
   container: { padding: 20, paddingBottom: 40 },
-  title: { fontSize: 22, fontWeight: "700", marginBottom: 15 },
   input: {
     backgroundColor: "#fff",
     padding: 12,
