@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -43,6 +42,7 @@ import AdminDashboard from "./screens/AdminDashboard";
 import AdminKycDetail from "./screens/AdminKycDetail";
 import SuperAdminDashboard from "./screens/SuperAdminDashboard";
 import AddressForm from "./screens/AddressForm";
+import AdminLogin from "./screens/AdminLogin";
 
 const Stack = createNativeStackNavigator();
 
@@ -136,6 +136,8 @@ export default function App() {
         <Stack.Screen name="AddressForm" component={AddressForm} />
 
         {/* Admin */}
+        <Stack.Screen name="AdminLogin" component={AdminLogin} />
+
         <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
         <Stack.Screen name="AdminKycDetail" component={AdminKycDetail} />
 
