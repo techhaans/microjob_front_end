@@ -114,29 +114,38 @@ export const deleteAddress = async (id) =>
 // -------------------------------------------------------------
 // 🔹 KYC APIs
 // -------------------------------------------------------------
-export const uploadPosterKyc = async (fileUri, docType) => {
+// Upload KYC Document
+export const uploadKycDocument = async (docType) => {
   try {
-    const token = await AsyncStorage.getItem("authToken");
-    if (!token) throw new Error("JWT token missing. Please login again.");
-
-    // Detect MIME type dynamically
-    let fileType = "application/octet-stream"; // default
-    if (fileUri.endsWith(".pdf")) fileType = "application/pdf";
-    else if (fileUri.endsWith(".jpg") || fileUri.endsWith(".jpeg"))
-      fileType = "image/jpeg";
-    else if (fileUri.endsWith(".png")) fileType = "image/png";
-
-    const formData = new FormData();
-    formData.append("file", {
-      uri: fileUri,
-      name: fileUri.split("/").pop(),
-      type: fileType,
+    // Pick file using Expo DocumentPicker
+    const result = await DocumentPicker.getDocumentAsync({
+      type: "*/*",
     });
 
-    const res = await axios.post(
-      `${BASE_URL}/poster/profile/doc/upload?docType=${encodeURIComponent(
-        docType
-      )}`,
+    if (result.type === "cancel") {
+      console.log("User cancelled file picker");
+      return;
+    }
+
+    const { uri, name, mimeType } = result;
+
+    // Check file URL safely
+    if (!uri || !name) {
+      throw new Error("Invalid file selected");
+    }
+
+    // Prepare FormData
+    const formData = new FormData();
+    formData.append("file", {
+      uri,
+      name,
+      type: mimeType || "application/octet-stream", // fallback type
+    });
+
+    const token = await AsyncStorage.getItem("authToken"); // Poster token
+
+    const response = await axios.post(
+      `${BASE_URL}/poster/profile/doc/upload?docType=${docType}`,
       formData,
       {
         headers: {
@@ -146,13 +155,13 @@ export const uploadPosterKyc = async (fileUri, docType) => {
       }
     );
 
-    return res.data; // { status, message, data, timestamp }
+    console.log("Upload success:", response.data);
+    return response.data;
   } catch (err) {
     console.error("KYC Upload Error:", err.response?.data || err.message);
     throw err;
   }
 };
-
 export const getPosterJobs = async () => {
   try {
     const res = await api.get("/poster/jobs/list");
