@@ -13,7 +13,7 @@ import axios from "axios";
 import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context"; // ✅ Added
 
-const BASE_URL = "http://192.168.60.218:8080/api";
+const BASE_URL = "http://192.168.156.218:8080/api";
 
 export default function AdminDashboard({ navigation }) {
   const [kycList, setKycList] = useState([]);
@@ -34,7 +34,9 @@ export default function AdminDashboard({ navigation }) {
 
       const allKyc = res.data?.data?.content || [];
       const filteredList = allKyc
-        .filter((item) => item.status === "PENDING" && item.roleType === selectedType)
+        .filter(
+          (item) => item.status === "PENDING" && item.roleType === selectedType
+        )
         .map((item) => ({
           ...item,
           role: item.roleType === "DOER" ? "Doer" : "Poster",
@@ -69,7 +71,10 @@ export default function AdminDashboard({ navigation }) {
       setActivityList(list);
       setViewMode("ACTIVITY");
     } catch (err) {
-      console.error("Admin activity fetch error:", err.response?.data || err.message);
+      console.error(
+        "Admin activity fetch error:",
+        err.response?.data || err.message
+      );
       Alert.alert("Error", "Failed to fetch admin activities.");
     } finally {
       setLoading(false);
@@ -116,9 +121,7 @@ export default function AdminDashboard({ navigation }) {
       {item.about && <Text>About: {item.about}</Text>}
       {item.skills && <Text>Skills: {item.skills.join(", ")}</Text>}
       {item.KycStatus !== undefined && (
-        <Text>
-          KYC Status: {item.KycStatus ? "✅ Verified" : "⏳ Pending"}
-        </Text>
+        <Text>KYC Status: {item.KycStatus ? "✅ Verified" : "⏳ Pending"}</Text>
       )}
     </View>
   );
@@ -153,21 +156,33 @@ export default function AdminDashboard({ navigation }) {
         {viewMode === "KYC" && (
           <View style={styles.toggleContainer}>
             <TouchableOpacity
-              style={[styles.toggleBtn, selectedType === "DOER" && styles.selectedBtn]}
+              style={[
+                styles.toggleBtn,
+                selectedType === "DOER" && styles.selectedBtn,
+              ]}
               onPress={() => setSelectedType("DOER")}
             >
               <Text
-                style={[styles.toggleText, selectedType === "DOER" && styles.selectedText]}
+                style={[
+                  styles.toggleText,
+                  selectedType === "DOER" && styles.selectedText,
+                ]}
               >
                 Doers
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.toggleBtn, selectedType === "POSTER" && styles.selectedBtn]}
+              style={[
+                styles.toggleBtn,
+                selectedType === "POSTER" && styles.selectedBtn,
+              ]}
               onPress={() => setSelectedType("POSTER")}
             >
               <Text
-                style={[styles.toggleText, selectedType === "POSTER" && styles.selectedText]}
+                style={[
+                  styles.toggleText,
+                  selectedType === "POSTER" && styles.selectedText,
+                ]}
               >
                 Posters
               </Text>

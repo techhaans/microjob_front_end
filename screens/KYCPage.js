@@ -1,43 +1,77 @@
-
+// PosterKycEdit.js
 import React, { useState } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
-  ActivityIndicator,
+  StyleSheet,
   Alert,
+  ScrollView,
+  ActivityIndicator,
   Image,
 } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
-import { uploadDoerKyc } from "../api/doer";
+import { uploadPosterKyc } from "../api/poster";
 
-export default function KycUploadScreen() {
-  const [fileUri, setFileUri] = useState(null);
+export default function PosterKycEdit({ navigation, route }) {
+  const { profile } = route.params || {};
+  const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const handlePickFile = async () => {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: ["image/*", "application/pdf"],
-    });
+  // ---------------- Pick File ----------------
+  const pickFile = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["image/*", "application/pdf"],
+        copyToCacheDirectory: true,
+      });
 
-    if (!result.canceled) {
-      const uri = result.assets[0].uri;
-      setFileUri(uri);
-      Alert.alert("File Selected", uri.split("/").pop());
+      // ✅ Handle both old and new DocumentPicker formats
+      if (result.assets && result.assets.length > 0) {
+        const pickedFile = result.assets[0];
+        setFile({
+          uri: pickedFile.uri,
+          name: pickedFile.name || "document",
+          type:
+            pickedFile.mimeType ||
+            (pickedFile.name?.endsWith(".pdf")
+              ? "application/pdf"
+              : "image/jpeg"),
+        });
+        Alert.alert("✅ File Selected", pickedFile.name || "Unnamed file");
+      } else if (result.uri) {
+        // For older SDKs
+        setFile({
+          uri: result.uri,
+          name: result.name || "document",
+          type: result.mimeType || "application/octet-stream",
+        });
+        Alert.alert("✅ File Selected", result.name || "Unnamed file");
+      } else {
+        console.log("User cancelled file picker");
+      }
+    } catch (err) {
+      console.error("Picker error:", err);
+      Alert.alert("Error", "Failed to pick file");
     }
   };
 
+  // ---------------- Upload File ----------------
   const handleUpload = async () => {
-    if (!fileUri) return Alert.alert("Please select a file first!");
-    setLoading(true);
+    if (!file || !file.uri) {
+      return Alert.alert("Please select a file first");
+    }
+
     try {
-      const res = await uploadDoerKyc(fileUri, "PanCard"); // or AadharCard, etc.
-      Alert.alert("✅ Success", res.message || "Uploaded successfully!");
-      setFileUri(null);
+      setLoading(true);
+      const res = await uploadPosterKyc(file.uri, "PanCard"); // change docType if needed
+      Alert.alert("✅ Success", res.message || "KYC uploaded successfully!");
+      setFile(null);
     } catch (err) {
+      console.error("Upload error:", err.response?.data || err.message);
       Alert.alert(
-        "❌ Upload Failed",
-        err.response?.data?.message || err.message
+        "❌ Upload Error",
+        err.response?.data?.message || err.message || "Upload failed"
       );
     } finally {
       setLoading(false);
@@ -45,55 +79,84 @@ export default function KycUploadScreen() {
   };
 
   return (
-    <View style={{ flex: 1, padding: 20, justifyContent: "center" }}>
-      <Text style={{ fontSize: 22, fontWeight: "bold", marginBottom: 10 }}>
-        Upload KYC Document
-      </Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>Upload Your KYC Document</Text>
 
-      {fileUri && (
-        <Image
-          source={{ uri: fileUri }}
-          style={{
-            width: "100%",
-            height: 200,
-            borderRadius: 10,
-            marginBottom: 15,
-            resizeMode: "contain",
-          }}
-        />
+      {file?.uri && (
+        <View style={{ marginBottom: 15, alignItems: "center" }}>
+          {file.name?.endsWith(".pdf") ? (
+            <Text style={{ fontSize: 16, fontWeight: "600" }}>
+              PDF Selected: {file.name}
+            </Text>
+          ) : (
+            <Image
+              source={{ uri: file.uri }}
+              style={{
+                width: "100%",
+                height: 200,
+                borderRadius: 10,
+                resizeMode: "contain",
+              }}
+            />
+          )}
+        </View>
       )}
 
-      <TouchableOpacity
-        onPress={handlePickFile}
-        style={{
-          backgroundColor: "#007bff",
-          padding: 12,
-          borderRadius: 8,
-          marginBottom: 10,
-        }}
-      >
-        <Text style={{ color: "white", textAlign: "center" }}>
-          📂 Choose File
-        </Text>
+      <TouchableOpacity style={styles.pickButton} onPress={pickFile}>
+        <Text style={styles.pickButtonText}>📂 Choose File</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
+        style={[
+          styles.uploadButton,
+          { backgroundColor: loading ? "gray" : "#28a745" },
+        ]}
         onPress={handleUpload}
         disabled={loading}
-        style={{
-          backgroundColor: loading ? "gray" : "#28a745",
-          padding: 12,
-          borderRadius: 8,
-        }}
       >
         {loading ? (
-          <ActivityIndicator color="white" />
+          <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={{ color: "white", textAlign: "center" }}>
-            ⬆️ Upload Now
-          </Text>
+          <Text style={styles.uploadButtonText}>⬆️ Upload Now</Text>
         )}
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flexGrow: 1,
+    padding: 20,
+    backgroundColor: "#f7f8fc",
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#007bff",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  pickButton: {
+    backgroundColor: "#007bff",
+    padding: 15,
+    borderRadius: 8,
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  pickButtonText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 16,
+  },
+  uploadButton: {
+    padding: 15,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  uploadButtonText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 16,
+  },
+});

@@ -1,403 +1,527 @@
 // import axios from "axios";
 // import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// const BASE_URL = "http://192.168.45.218:8080/api";
+// const BASE_URL = "http://192.168.156.218:8080/api/auth/otp";
 
-// // 1️⃣ Send OTP
+// /* -------------------- Send OTP -------------------- */
 // export const sendOtp = async (email) => {
-//   console.log("[API] Sending OTP to:", email);
 //   try {
-//     const res = await axios.post(`${BASE_URL}/auth/otp/doer-send`, { email });
-//     console.log("[API] OTP Sent Response:", res.data);
-//     await AsyncStorage.setItem("tempSessionId", res.data.data.sessionId);
+//     const res = await axios.post(`${BASE_URL}/send`, { email });
+//     const sessionId = res.data.data?.sessionId;
+//     if (sessionId) await AsyncStorage.setItem("tempSessionId", sessionId);
 //     return res.data;
 //   } catch (err) {
-//     console.log("[API] OTP Send Error:", err.response?.data || err.message);
 //     return { status: "ERROR", message: err.response?.data?.message || "Failed to send OTP" };
 //   }
 // };
 
-// // 2️⃣ Verify OTP
-// export const verifyOtp = async (sessionId, otp) => {
-//   console.log("[API] Verifying OTP:", otp, "for session:", sessionId);
+// /* -------------------- Verify OTP -------------------- */
+// export const verifyOtp = async (otp) => {
 //   try {
-//     const res = await axios.post(`${BASE_URL}/auth/otp/verify-otp`, { sessionId, otp });
-//     console.log("[API] OTP Verified Response:", res.data);
-//     const tempToken = res.data?.data?.token;
+//     const sessionId = await AsyncStorage.getItem("tempSessionId");
+//     if (!sessionId) throw new Error("Session ID missing. Please resend OTP.");
+
+//     const res = await axios.post(`${BASE_URL}/verify`, { sessionId, otp });
+//     const tempToken = res.data.data?.accessToken;
+
 //     if (tempToken) await AsyncStorage.setItem("tempToken", tempToken);
+//     return { status: res.data.status, message: res.data.message, tempToken };
+//   } catch (err) {
+//     return { status: "ERROR", message: err.response?.data?.message || err.message || "OTP verification failed" };
+//   }
+// };
+
+// /* -------------------- Select Role -------------------- */
+// export const selectRole = async (role) => {
+//   try {
+//     const tempToken = await AsyncStorage.getItem("tempToken");
+//     if (!tempToken) throw new Error("Temporary token missing. Please re-login.");
+
+//     const res = await axios.post(
+//       `${BASE_URL}/select-role`,
+//       { role },
+//       { headers: { Authorization: `Bearer ${tempToken}` } }
+//     );
+
+//     const { accessToken, refreshToken } = res.data.data;
+//     if (accessToken && refreshToken) {
+//       // Save permanent tokens
+//       await AsyncStorage.multiSet([
+//         ["authToken", accessToken],
+//         ["refreshToken", refreshToken],
+//         ["userRole", role],
+//       ]);
+//       // Remove temp token and sessionId
+//       await AsyncStorage.removeItem("tempToken");
+//       await AsyncStorage.removeItem("tempSessionId");
+//     }
+
 //     return res.data;
 //   } catch (err) {
-//     console.log("[API] OTP Verify Error:", err.response?.data || err.message);
-//     return { status: "ERROR", message: err.response?.data?.message || "OTP verification failed" };
+//     return { status: "ERROR", message: err.response?.data?.message || err.message || "Role selection failed" };
+//   }
+// };
+
+// /* -------------------- Logout -------------------- */
+// export const logout = async () => {
+//   await AsyncStorage.multiRemove(["authToken", "refreshToken", "userRole", "tempToken", "tempSessionId"]);
+// };
+// import axios from "axios";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
+
+// const BASE_URL = "http://192.168.156.218:8080/api/auth/otp"; // Replace with your backend URL
+
+// // -------------------- SEND OTP --------------------
+// export const sendOtp = async (email) => {
+//   try {
+//     const res = await axios.post(`${BASE_URL}/send`, { email });
+//     const { sessionId } = res.data?.data || {};
+
+//     if (sessionId) {
+//       await AsyncStorage.setItem("sessionId", sessionId);
+//     }
+
+//     return res.data;
+//   } catch (error) {
+//     console.error("Error sending OTP:", error);
+//     return {
+//       status: "ERROR",
+//       message: error.response?.data?.message || "Failed to send OTP",
+//     };
+//   }
+// };
+
+// // -------------------- VERIFY OTP --------------------
+// export const verifyOtp = async (otp) => {
+//   try {
+//     const sessionId = await AsyncStorage.getItem("sessionId");
+//     if (!sessionId) throw new Error("Session ID missing. Please resend OTP.");
+
+//     const res = await axios.post(`${BASE_URL}/verify`, { sessionId, otp });
+
+//     const tempToken = res.data?.data?.tempToken;
+//     if (tempToken) {
+//       await AsyncStorage.setItem("tempToken", tempToken);
+//     }
+
+//     return res.data;
+//   } catch (error) {
+//     console.error("Error verifying OTP:", error);
+//     return {
+//       status: "ERROR",
+//       message: error.response?.data?.message || "Failed to verify OTP",
+//     };
+//   }
+// };
+
+// // -------------------- SELECT ROLE --------------------
+// export const selectRole = async (role) => {
+//   try {
+//     const tempToken = await AsyncStorage.getItem("tempToken");
+//     if (!tempToken)
+//       throw new Error("Temporary token missing. Please re-login.");
+
+//     const res = await axios.post(
+//       `${BASE_URL}/select-role`,
+//       { role },
+//       { headers: { Authorization: `Bearer ${tempToken}` } }
+//     );
+
+//     const { accessToken, refreshToken } = res.data?.data || {};
+//     if (accessToken && refreshToken) {
+//       await AsyncStorage.multiSet([
+//         ["authToken", accessToken],
+//         ["refreshToken", refreshToken],
+//         ["userRole", role],
+//       ]);
+//       await AsyncStorage.removeItem("tempToken");
+//     }
+
+//     return res.data;
+//   } catch (error) {
+//     console.error("Error selecting role:", error);
+//     return {
+//       status: "ERROR",
+//       message: error.response?.data?.message || "Failed to select role",
+//     };
+//   }
+// };
+
+// // -------------------- REFRESH TOKEN --------------------
+// export const refreshAccessToken = async () => {
+//   try {
+//     const refreshToken = await AsyncStorage.getItem("refreshToken");
+//     if (!refreshToken) throw new Error("No refresh token found.");
+
+//     const res = await axios.post(`${BASE_URL}/refresh`, { refreshToken });
+//     const { accessToken } = res.data?.data || {};
+
+//     if (accessToken) {
+//       await AsyncStorage.setItem("authToken", accessToken);
+//     }
+
+//     return res.data;
+//   } catch (error) {
+//     console.error("Error refreshing token:", error);
+//     return {
+//       status: "ERROR",
+//       message: error.response?.data?.message || "Failed to refresh token",
+//     };
+//   }
+// };
+
+
+
+
+
+
+
+
+
+
+// import axios from "axios";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
+
+// const BASE_URL = "http://192.168.156.218:8080/api/auth/otp"; // ✅ Backend OTP APIs
+
+// // 1️⃣ Send OTP
+// export const sendOtp = async (email) => {
+//   try {
+//     const res = await axios.post(`${BASE_URL}/send`, { email });
+//     const sessionId = res.data?.data?.sessionId;
+
+//     if (sessionId) {
+//       await AsyncStorage.setItem("sessionId", sessionId);
+//     }
+
+//     return res.data;
+//   } catch (error) {
+//     console.error("[API] Send OTP Error:", error?.response?.data || error);
+//     return { status: "ERROR", message: "Failed to send OTP" };
+//   }
+// };
+
+// // 2️⃣ Verify OTP
+// export const verifyOtp = async (otp) => {
+//   try {
+//     const sessionId = await AsyncStorage.getItem("sessionId");
+//     if (!sessionId) throw new Error("Session ID missing. Please resend OTP.");
+
+//     const res = await axios.post(`${BASE_URL}/verify`, { otp, sessionId });
+//     const tempToken = res.data?.data?.tempToken;
+
+//     if (tempToken) {
+//       await AsyncStorage.setItem("tempToken", tempToken); // ✅ Save temp token for role selection
+//     }
+
+//     return res.data;
+//   } catch (error) {
+//     console.error("[API] Verify OTP Error:", error?.response?.data || error);
+//     return {
+//       status: "ERROR",
+//       message: error.response?.data?.message || error.message || "Failed to verify OTP",
+//     };
 //   }
 // };
 
 // // 3️⃣ Select Role
 // export const selectRole = async (role) => {
-//   const tempToken = await AsyncStorage.getItem("tempToken");
-//   console.log("[API] Selecting role:", role, "with tempToken:", tempToken);
-//   if (!tempToken) return { status: "ERROR", message: "Temporary token missing" };
-
 //   try {
+//     const tempToken = await AsyncStorage.getItem("tempToken");
+//     if (!tempToken) throw new Error("Temporary token missing. Please re-login.");
+
 //     const res = await axios.post(
-//       `${BASE_URL}/auth/otp/select-role`,
+//       `${BASE_URL}/select-role`,
 //       { role },
 //       { headers: { Authorization: `Bearer ${tempToken}` } }
 //     );
-//     console.log("[API] Role Selection Response:", res.data);
 
-//     if (res.data?.data?.token) {
-//       await AsyncStorage.setItem("authToken", res.data.data.token);
-//       await AsyncStorage.setItem("userRole", role);
-//       await AsyncStorage.removeItem("tempToken");
+//     const { accessToken, refreshToken } = res.data?.data || {};
+//     if (accessToken && refreshToken) {
+//       // ✅ Save permanent tokens
+//       await AsyncStorage.multiSet([
+//         ["accessToken", accessToken],
+//         ["refreshToken", refreshToken],
+//         ["userRole", role],
+//       ]);
+//       await AsyncStorage.removeItem("tempToken"); // ✅ Remove temp token
 //     }
 
 //     return res.data;
-//   } catch (err) {
-//     console.log("[API] Role Selection Error:", err.response?.data || err.message);
-//     return { status: "ERROR", message: err.response?.data?.message || "Role selection failed" };
+//   } catch (error) {
+//     console.error("[API] Select Role Error:", error?.response?.data || error);
+//     return {
+//       status: "ERROR",
+//       message: error.response?.data?.message || error.message || "Failed to select role",
+//     };
 //   }
 // };
 
-// // 4️⃣ Fetch Doer Profile
-// export const fetchDoerProfile = async () => {
-//   const token = await AsyncStorage.getItem("authToken");
-//   console.log("[API] Fetching Doer profile with token:", token);
+// // 4️⃣ Refresh Access Token
+// export const refreshAccessToken = async () => {
 //   try {
-//     const res = await axios.get(`${BASE_URL}/doer/profile/get`, {
-//       headers: { Authorization: `Bearer ${token}` },
-//     });
-//     console.log("[API] Doer Profile Response:", res.data);
-//     return res.data;
-//   } catch (err) {
-//     console.log("[API] Doer Profile Error:", err.response?.data || err.message);
-//     return { status: "ERROR", message: err.response?.data?.message || "Failed to fetch profile" };
-//   }
-// };
+//     const refreshToken = await AsyncStorage.getItem("refreshToken");
+//     if (!refreshToken) throw new Error("Refresh token missing. Please login again.");
 
-// // 5️⃣ Fetch Poster Profile
-// export const fetchPosterProfile = async () => {
-//   const token = await AsyncStorage.getItem("authToken");
-//   console.log("[API] Fetching Poster profile with token:", token);
-//   try {
-//     const res = await axios.get(`${BASE_URL}/poster/profile/get`, {
-//       headers: { Authorization: `Bearer ${token}` },
-//     });
-//     console.log("[API] Poster Profile Response:", res.data);
-//     return res.data;
-//   } catch (err) {
-//     console.log("[API] Poster Profile Error:", err.response?.data || err.message);
-//     return { status: "ERROR", message: err.response?.data?.message || "Failed to fetch profile" };
-//   }
-// };
+//     const res = await axios.post(`${BASE_URL}/refresh`, { refreshToken });
+//     const newAccessToken = res.data?.data?.accessToken;
 
-// // 6️⃣ Logout
-// export const logout = async () => {
-//   console.log("[API] Logging out...");
-//   await AsyncStorage.removeItem("authToken");
-//   await AsyncStorage.removeItem("userRole");
-//   await AsyncStorage.removeItem("tempToken");
-//   await AsyncStorage.removeItem("tempSessionId");
+//     if (newAccessToken) {
+//       await AsyncStorage.setItem("accessToken", newAccessToken);
+//       console.log("[TOKEN] Access token refreshed");
+//     }
+
+//     return res.data;
+//   } catch (error) {
+//     console.error("[API] Refresh Token Error:", error?.response?.data || error);
+//     return { status: "ERROR", message: error.message || "Failed to refresh access token" };
+//   }
 // };
 // import axios from "axios";
 // import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// const BASE_URL = "http://192.168.156.218:8080/api";
+// const BASE_URL = "http://192.168.156.218:8080/api/auth/otp";
 
-// /* -------------------------------------------------------------------------- */
-// /* 1️⃣ Send OTP */
-// /* -------------------------------------------------------------------------- */
+// // 1️⃣ Send OTP
 // export const sendOtp = async (email) => {
-//   console.log("[API] Sending OTP to:", email);
 //   try {
-//     const res = await axios.post(`${BASE_URL}/auth/otp/send`, { email }); // updated endpoint name
-//     console.log("[API] OTP Sent Response:", res.data);
-//     await AsyncStorage.setItem("tempSessionId", res.data.data.sessionId);
-//     return res.data;
-//   } catch (err) {
-//     console.log("[API] OTP Send Error:", err.response?.data || err.message);
-//     return {
-//       status: "ERROR",
-//       message: err.response?.data?.message || "Failed to send OTP",
-//     };
-//   }
-// };
+//     const res = await axios.post(`${BASE_URL}/send`, { email });
+//     const sessionId = res.data?.data?.sessionId;
 
-// /* -------------------------------------------------------------------------- */
-// /* 2️⃣ Verify OTP */
-// /* -------------------------------------------------------------------------- */
-// export const verifyOtp = async (sessionId, otp) => {
-//   console.log("[API] Verifying OTP:", otp, "for session:", sessionId);
-//   try {
-//     const res = await axios.post(`${BASE_URL}/auth/otp/verify`, { sessionId, otp });
-//     console.log("[API] OTP Verified Response:", res.data);
-
-//     const tempAccessToken = res.data?.data?.accessToken;
-//     if (tempAccessToken) {
-//       await AsyncStorage.setItem("tempToken", tempAccessToken);
+//     if (sessionId) {
+//       await AsyncStorage.setItem("sessionId", sessionId);
 //     }
 
 //     return res.data;
-//   } catch (err) {
-//     console.log("[API] OTP Verify Error:", err.response?.data || err.message);
+//   } catch (error) {
+//     console.error("Send OTP Error:", error);
+//     return { status: "ERROR", message: "Failed to send OTP" };
+//   }
+// };
+
+// // 2️⃣ Verify OTP
+// export const verifyOtp = async (otp) => {
+//   try {
+//     const sessionId = await AsyncStorage.getItem("sessionId");
+//     if (!sessionId) throw new Error("Session ID missing. Please resend OTP.");
+
+//     const res = await axios.post(`${BASE_URL}/verify`, { sessionId, otp });
+//     const tempToken = res.data?.data?.accessToken; // save as tempToken
+
+//     if (tempToken) {
+//       await AsyncStorage.setItem("tempToken", tempToken);
+//     }
+
+//     return res.data;
+//   } catch (error) {
+//     console.error("Verify OTP Error:", error);
 //     return {
 //       status: "ERROR",
-//       message: err.response?.data?.message || "OTP verification failed",
+//       message: error.response?.data?.message || "Failed to verify OTP",
 //     };
 //   }
 // };
 
-// /* -------------------------------------------------------------------------- */
-// /* 3️⃣ Select Role (returns Access + Refresh Tokens) */
-// /* -------------------------------------------------------------------------- */
+// // 3️⃣ Select Role
 // export const selectRole = async (role) => {
-//   const tempToken = await AsyncStorage.getItem("tempToken");
-//   console.log("[API] Selecting role:", role, "with tempToken:", tempToken);
-//   if (!tempToken) return { status: "ERROR", message: "Temporary token missing" };
-
 //   try {
+//     const tempToken = await AsyncStorage.getItem("tempToken");
+//     if (!tempToken) throw new Error("Temporary token missing. Please re-login.");
+
 //     const res = await axios.post(
-//       `${BASE_URL}/auth/otp/select-role`,
+//       `${BASE_URL}/select-role`,
 //       { role },
 //       { headers: { Authorization: `Bearer ${tempToken}` } }
 //     );
-//     console.log("[API] Role Selection Response:", res.data);
 
-//     const { accessToken, refreshToken } = res.data.data;
-
+//     const { accessToken, refreshToken } = res.data?.data || {};
 //     if (accessToken && refreshToken) {
-//       await AsyncStorage.setItem("authToken", accessToken);
-//       await AsyncStorage.setItem("refreshToken", refreshToken);
-//       await AsyncStorage.setItem("userRole", role);
-//       await AsyncStorage.removeItem("tempToken");
+//       await AsyncStorage.multiSet([
+//         ["accessToken", accessToken],
+//         ["refreshToken", refreshToken],
+//         ["userRole", role],
+//       ]);
+
+//       await AsyncStorage.removeItem("tempToken"); // remove tempToken after role selected
 //     }
 
 //     return res.data;
-//   } catch (err) {
-//     console.log("[API] Role Selection Error:", err.response?.data || err.message);
+//   } catch (error) {
+//     console.error("Select Role Error:", error);
 //     return {
 //       status: "ERROR",
-//       message: err.response?.data?.message || "Role selection failed",
+//       message: error.response?.data?.message || "Failed to select role",
 //     };
 //   }
 // };
 
-// /* -------------------------------------------------------------------------- */
-// /* 4️⃣ Refresh Access Token */
-// /* -------------------------------------------------------------------------- */
-// export const refreshAccessToken = async () => {
-//   const refreshToken = await AsyncStorage.getItem("refreshToken");
-//   if (!refreshToken) {
-//     console.log("[API] ❌ No refresh token found.");
-//     return null;
-//   }
 
-//   try {
-//     console.log("[API] Refreshing access token...");
-//     const res = await axios.post(`${BASE_URL}/auth/otp/refresh`, { refreshToken });
-//     const newAccessToken = res.data?.data?.accessToken;
 
-//     if (newAccessToken) {
-//       await AsyncStorage.setItem("authToken", newAccessToken);
-//       console.log("[API] ✅ Access token refreshed.");
-//       return newAccessToken;
-//     } else {
-//       console.log("[API] ⚠️ No access token received from refresh.");
-//       return null;
-//     }
-//   } catch (err) {
-//     console.log("[API] Refresh Token Error:", err.response?.data || err.message);
-//     await logout(); // clear all tokens if refresh fails
-//     return null;
-//   }
-// };
-
-// /* -------------------------------------------------------------------------- */
-// /* 5️⃣ Fetch Doer Profile (with auto-refresh if expired) */
-// /* -------------------------------------------------------------------------- */
-// export const fetchDoerProfile = async () => {
-//   let token = await AsyncStorage.getItem("authToken");
-//   console.log("[API] Fetching Doer profile with token:", token);
-
-//   try {
-//     const res = await axios.get(`${BASE_URL}/doer/profile/get`, {
-//       headers: { Authorization: `Bearer ${token}` },
-//     });
-//     console.log("[API] Doer Profile Response:", res.data);
-//     return res.data;
-//   } catch (err) {
-//     if (err.response?.status === 401) {
-//       console.log("[API] Access token expired, refreshing...");
-//       const newToken = await refreshAccessToken();
-//       if (newToken) {
-//         return fetchDoerProfile(); // retry
-//       }
-//     }
-//     console.log("[API] Doer Profile Error:", err.response?.data || err.message);
-//     return {
-//       status: "ERROR",
-//       message: err.response?.data?.message || "Failed to fetch profile",
-//     };
-//   }
-// };
-
-// /* -------------------------------------------------------------------------- */
-// /* 6️⃣ Fetch Poster Profile (with auto-refresh if expired) */
-// /* -------------------------------------------------------------------------- */
-// export const fetchPosterProfile = async () => {
-//   let token = await AsyncStorage.getItem("authToken");
-//   console.log("[API] Fetching Poster profile with token:", token);
-
-//   try {
-//     const res = await axios.get(`${BASE_URL}/poster/profile/get`, {
-//       headers: { Authorization: `Bearer ${token}` },
-//     });
-//     console.log("[API] Poster Profile Response:", res.data);
-//     return res.data;
-//   } catch (err) {
-//     if (err.response?.status === 401) {
-//       console.log("[API] Access token expired, refreshing...");
-//       const newToken = await refreshAccessToken();
-//       if (newToken) {
-//         return fetchPosterProfile(); // retry
-//       }
-//     }
-//     console.log("[API] Poster Profile Error:", err.response?.data || err.message);
-//     return {
-//       status: "ERROR",
-//       message: err.response?.data?.message || "Failed to fetch profile",
-//     };
-//   }
-// };
-
-// /* -------------------------------------------------------------------------- */
-// /* 7️⃣ Logout */
-// /* -------------------------------------------------------------------------- */
-// export const logout = async () => {
-//   console.log("[API] Logging out...");
-//   await AsyncStorage.multiRemove([
-//     "authToken",
-//     "refreshToken",
-//     "userRole",
-//     "tempToken",
-//     "tempSessionId",
-//   ]);
-// };
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
 
-const BASE_URL = "http://192.168.156.218:8080/api";
+// ============================================================
+// 🌐 Base URL
+// ============================================================
+const BASE_URL =
+  Platform.OS === "android"
+    ? "http://192.168.156.218:8080/api"
+    : "http://192.168.156.218:8080/api";
 
-/* -------------------------------------------------------------------------- */
-/* 1️⃣ Send OTP */
-/* -------------------------------------------------------------------------- */
+// ============================================================
+// 🧩 Axios instance
+// ============================================================
+const api = axios.create({
+  baseURL: BASE_URL,
+  headers: { "Content-Type": "application/json" },
+  timeout: 15000,
+});
+
+// Automatically attach stored token
+api.interceptors.request.use(async (config) => {
+  const token = await AsyncStorage.getItem("accessToken");
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+// ============================================================
+// 🔐 OTP FLOW (Send / Verify / Role Select)
+// ============================================================
+
 export const sendOtp = async (email) => {
-  console.log("[API] Sending OTP to:", email);
   try {
     const res = await axios.post(`${BASE_URL}/auth/otp/send`, { email });
-    const sessionId = res.data.data?.sessionId;
-    if (sessionId) await AsyncStorage.setItem("tempSessionId", sessionId);
+    const sessionId = res.data?.data?.sessionId;
+    if (sessionId) await AsyncStorage.setItem("sessionId", sessionId);
     return res.data;
-  } catch (err) {
-    console.log("[API] OTP Send Error:", err.response?.data || err.message);
-    return {
-      status: "ERROR",
-      message: err.response?.data?.message || "Failed to send OTP",
-    };
+  } catch (error) {
+    console.error("Send OTP Error:", error);
+    return { status: "ERROR", message: "Failed to send OTP" };
   }
 };
 
-/* -------------------------------------------------------------------------- */
-/* 2️⃣ Verify OTP */
-/* -------------------------------------------------------------------------- */
-export const verifyOtp = async (sessionId, otp) => {
-  console.log("[API] Verifying OTP:", otp, "for session:", sessionId);
+export const verifyOtp = async (otp) => {
   try {
-    const res = await axios.post(`${BASE_URL}/auth/otp/verify`, { sessionId, otp });
+    const sessionId = await AsyncStorage.getItem("sessionId");
+    if (!sessionId) throw new Error("Session ID missing. Please resend OTP.");
+
+    const res = await axios.post(`${BASE_URL}/auth/otp/verify`, {
+      sessionId,
+      otp,
+    });
+
     const tempToken = res.data?.data?.accessToken;
     if (tempToken) await AsyncStorage.setItem("tempToken", tempToken);
+
     return res.data;
-  } catch (err) {
-    console.log("[API] OTP Verify Error:", err.response?.data || err.message);
+  } catch (error) {
+    console.error("Verify OTP Error:", error);
     return {
       status: "ERROR",
-      message: err.response?.data?.message || "OTP verification failed",
+      message: error.response?.data?.message || "Failed to verify OTP",
     };
   }
 };
 
-/* -------------------------------------------------------------------------- */
-/* 3️⃣ Select Role */
-/* -------------------------------------------------------------------------- */
 export const selectRole = async (role) => {
-  const tempToken = await AsyncStorage.getItem("tempToken");
-  if (!tempToken)
-    return { status: "ERROR", message: "Temporary token missing. Please re-login." };
-
   try {
+    const tempToken = await AsyncStorage.getItem("tempToken");
+    if (!tempToken) throw new Error("Temporary token missing. Please re-login.");
+
     const res = await axios.post(
       `${BASE_URL}/auth/otp/select-role`,
       { role },
       { headers: { Authorization: `Bearer ${tempToken}` } }
     );
 
-    const { accessToken, refreshToken } = res.data.data;
+    const { accessToken, refreshToken } = res.data?.data || {};
     if (accessToken && refreshToken) {
       await AsyncStorage.multiSet([
-        ["authToken", accessToken],
+        ["accessToken", accessToken],
         ["refreshToken", refreshToken],
-        ["userRole", role],
+        ["userRole", role.toUpperCase()],
       ]);
       await AsyncStorage.removeItem("tempToken");
     }
 
     return res.data;
-  } catch (err) {
-    console.log("[API] Role Selection Error:", err.response?.data || err.message);
+  } catch (error) {
+    console.error("Select Role Error:", error.response?.data || error.message);
     return {
       status: "ERROR",
-      message: err.response?.data?.message || "Role selection failed",
+      message: error.response?.data?.message || "Failed to select role",
     };
   }
 };
 
-/* -------------------------------------------------------------------------- */
-/* 4️⃣ Refresh Token */
-/* -------------------------------------------------------------------------- */
-export const refreshAccessToken = async () => {
-  try {
-    const refreshToken = await AsyncStorage.getItem("refreshToken");
-    if (!refreshToken) throw new Error("No refresh token available");
+// ============================================================
+// 👷 DOER APIs
+// ============================================================
+export const fetchDoerProfile = async () => (await api.get("/doer/profile/get")).data;
 
-    const res = await axios.post(`${BASE_URL}/auth/refresh-token`, {
-      refreshToken,
-    });
+export const updateDoerProfile = async (payload) =>
+  (await api.put("/doer/profile/", payload)).data;
 
-    const newAccessToken = res.data?.data?.accessToken;
-    if (newAccessToken) {
-      await AsyncStorage.setItem("authToken", newAccessToken);
-      console.log("[API] Access token refreshed successfully");
-      return newAccessToken;
-    } else {
-      throw new Error("Invalid refresh response");
+export const uploadDoerKyc = async (fileUri, docType) => {
+  const token = await AsyncStorage.getItem("accessToken");
+  if (!token) throw new Error("JWT token missing. Please login again.");
+
+  const formData = new FormData();
+  formData.append("file", {
+    uri: fileUri,
+    name: fileUri.split("/").pop(),
+    type: "image/jpeg",
+  });
+
+  const res = await axios.post(
+    `${BASE_URL}/doer/profile/doc/upload?docType=${encodeURIComponent(docType)}`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${token}`,
+      },
     }
-  } catch (err) {
-    console.log("[API] Refresh Token Error:", err.response?.data || err.message);
-    await AsyncStorage.multiRemove(["authToken", "refreshToken"]);
-    return null;
-  }
+  );
+  return res.data;
 };
 
-/* -------------------------------------------------------------------------- */
-/* 5️⃣ Logout */
-/* -------------------------------------------------------------------------- */
+// ============================================================
+// 📦 POSTER APIs
+// ============================================================
+export const fetchPosterProfile = async () =>
+  (await api.get("/poster/profile/get")).data;
+
+export const updatePosterProfile = async (payload) =>
+  (await api.put("/poster/profile/", payload)).data;
+
+export const createPosterJob = async (jobData) => {
+  const payload = {
+    title: jobData.title,
+    description: jobData.description,
+    categoryCode: Number(jobData.categoryCode),
+    amountPaise: Number(jobData.amountPaise),
+    deadline: jobData.deadline || new Date().toISOString(),
+    addressId: Number(jobData.addressId),
+  };
+  const res = await api.post("/poster/jobs/create", payload);
+  return res.data;
+};
+
+export const getPosterJobs = async () => (await api.get("/poster/jobs/list")).data;
+
+// ============================================================
+// 🚪 LOGOUT
+// ============================================================
 export const logout = async () => {
-  console.log("[API] Logging out...");
   await AsyncStorage.multiRemove([
-    "authToken",
+    "accessToken",
     "refreshToken",
     "userRole",
-    "tempToken",
-    "tempSessionId",
+    "sessionId",
   ]);
+  return { status: "SUCCESS", message: "Logged out successfully" };
 };
+
+export default api;
