@@ -1,39 +1,63 @@
-import React, { useEffect, useState } from "react";
+
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
   ScrollView,
   StyleSheet,
   ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native"; // ✅ for auto-refresh
 
-export default function DoerProfile({ route }) {
+export default function DoerProfile({ navigation }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Load profile once when screen mounts
   useEffect(() => {
     loadProfile();
   }, []);
 
+  // ✅ Automatically refresh profile when returning to this screen
+  useFocusEffect(
+    useCallback(() => {
+      console.log("Refreshing DoerProfile screen...");
+      loadProfile();
+    }, [])
+  );
+
   const loadProfile = async () => {
     try {
+      setLoading(true);
       const storedProfile = await AsyncStorage.getItem("doerProfile");
+
       if (storedProfile) {
         const parsed = JSON.parse(storedProfile);
-        // Safely handle nested backend response
+        console.log("Stored profile:", parsed);
+
+        // Handle various nested structures
         const profileData = parsed?.data?.data || parsed?.data || parsed;
+        const userData = profileData?.user || profileData;
 
         setProfile({
-          name: profileData.name,
-          phone: profileData.phone,
-          email: profileData.email || "N/A",
-          bio: profileData.bio,
+          name: profileData.name || userData.name || "N/A",
+          phone: profileData.phone || userData.phone || "N/A",
+          email: profileData.email || userData.email || "N/A",
+          bio: profileData.bio || "No bio available",
           skills: profileData.skills || [],
-          isVerified: profileData.isVerified,
-          verificationStatus: profileData.verificationStatus,
-          kycLevel: profileData.kycLevel,
+          isPhoneVerified:
+            userData.isPhoneVerified !== undefined
+              ? userData.isPhoneVerified
+              : true,
+          isVerified: !!profileData.isVerified,
+          verificationStatus: profileData.verificationStatus || "Pending",
+          kycLevel: profileData.kycLevel ?? 0,
         });
+      } else {
+        setProfile(null);
       }
     } catch (err) {
       console.log("Failed to load profile", err);
@@ -59,56 +83,60 @@ export default function DoerProfile({ route }) {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      {/* Back button */}
+      <TouchableOpacity
+        style={{ marginBottom: 20 }}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back" size={26} color="#000" />
+      </TouchableOpacity>
+
       <Text style={styles.headerText}>Doer Profile</Text>
 
-      {/* Basic Info Card */}
+      {/* Basic Info */}
       <View style={styles.card}>
         <Text style={styles.label}>Name</Text>
         <Text style={styles.value}>{profile.name}</Text>
 
         <Text style={styles.label}>Phone</Text>
-        <Text style={styles.value}>{profile.phone || "N/A"}</Text>
+        <Text style={styles.value}>{profile.phone}</Text>
 
         <Text style={styles.label}>Email</Text>
         <Text style={styles.value}>{profile.email}</Text>
 
         <Text style={styles.label}>Bio</Text>
-        <Text style={styles.value}>{profile.bio || "No bio available"}</Text>
+        <Text style={styles.value}>{profile.bio}</Text>
 
         <Text style={styles.label}>Skills</Text>
         <Text style={styles.value}>
-          {profile.skills.length ? profile.skills.join(", ") : "No skills added"}
+          {profile.skills.length
+            ? profile.skills.join(", ")
+            : "No skills added"}
         </Text>
       </View>
 
-      {/* Verification Card */}
+      {/* Verification Info */}
       <View style={styles.card}>
+        <Text style={styles.label}>Phone Verified</Text>
+        <Text style={styles.value}>
+          {profile.isPhoneVerified ? "Yes" : "No"}
+        </Text>
+
         <Text style={styles.label}>KYC Level</Text>
-        <Text style={styles.value}>{profile.kycLevel || "N/A"}</Text>
+        <Text style={styles.value}>{profile.kycLevel}</Text>
 
         <Text style={styles.label}>Verification Status</Text>
-        <Text style={styles.value}>{profile.verificationStatus || "Pending"}</Text>
+        <Text style={styles.value}>{profile.verificationStatus}</Text>
 
-        <Text style={styles.label}>Verified</Text>
-        <Text
-          style={[
-            styles.value,
-            profile.isVerified ? styles.verified : styles.notVerified,
-          ]}
-        >
-          {profile.isVerified ? "Yes" : "No"}
-        </Text>
+        <Text style={styles.label}>Profile Verified</Text>
+        <Text style={styles.value}>{profile.isVerified ? "Yes" : "No"}</Text>
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    backgroundColor: "#f2f6fc",
-    paddingBottom: 30,
-  },
+  container: { padding: 20, backgroundColor: "#f2f6fc", paddingBottom: 30 },
   headerText: {
     fontSize: 28,
     fontWeight: "700",
@@ -127,28 +155,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
   },
-  label: {
-    fontWeight: "700",
-    color: "#555",
-    marginTop: 10,
-    fontSize: 14,
-  },
-  value: {
-    fontSize: 16,
-    marginTop: 3,
-    color: "#333",
-  },
-  verified: {
-    color: "#4caf50",
-    fontWeight: "700",
-  },
-  notVerified: {
-    color: "#f44336",
-    fontWeight: "700",
-  },
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  label: { fontWeight: "700", color: "#555", marginTop: 10, fontSize: 14 },
+  value: { fontSize: 16, marginTop: 3, color: "#333" },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
 });
