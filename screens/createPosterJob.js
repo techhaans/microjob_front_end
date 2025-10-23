@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,25 +11,72 @@ import {
   ActivityIndicator,
   Keyboard,
   Platform,
-  Button,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { createPosterJob } from "../api/poster";
+import { createPosterJob, fetchCategories, fetchPosterAddresses } from "../api/poster";
 
 export default function CreateJobScreen({ navigation }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [categoryCode, setCategoryCode] = useState("");
+  const [categories, setCategories] = useState([]);
   const [amountPaise, setAmountPaise] = useState("");
   const [deadline, setDeadline] = useState(new Date());
   const [addressId, setAddressId] = useState("");
+  const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [loadingAddresses, setLoadingAddresses] = useState(true);
 
-  // ✅ Date Picker handler
+  // ✅ Fetch categories
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const res = await fetchCategories();
+        if (res?.status === "SUCCESS" && res.data) {
+          setCategories(res.data); // array of { code, name }
+        } else {
+          Alert.alert("Error", res.message || "Failed to fetch categories");
+        }
+      } catch (err) {
+        console.error("Categories Fetch Error:", err);
+        Alert.alert("Error", "Failed to load categories");
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+    loadCategories();
+  }, []);
+
+  // ✅ Fetch addresses
+  useEffect(() => {
+    const loadAddresses = async () => {
+      try {
+        const res = await fetchPosterAddresses();
+        if (res?.status === "SUCCESS" && res.data) {
+          setAddresses(res.data);
+          // Auto-select if only one address
+          if (res.data.length === 1) {
+            setAddressId(String(res.data[0].id));
+          }
+        } else {
+          Alert.alert("Error", res.message || "Failed to load addresses");
+        }
+      } catch (err) {
+        console.error("Addresses Fetch Error:", err);
+        Alert.alert("Error", "Could not load addresses");
+      } finally {
+        setLoadingAddresses(false);
+      }
+    };
+    loadAddresses();
+  }, []);
+
+  // ✅ Date picker handlers
   const onChangeDate = (event, selectedDate) => {
-    if (Platform.OS === "android") setShowPicker(false); // hide picker on Android
-    if (selectedDate) setDeadline(selectedDate); // set picked date
+    if (Platform.OS === "android") setShowPicker(false);
+    if (selectedDate) setDeadline(selectedDate);
   };
 
   const handleOpenPicker = () => {
@@ -36,6 +84,7 @@ export default function CreateJobScreen({ navigation }) {
     setShowPicker(true);
   };
 
+  // ✅ Create job
   const handleCreateJob = async () => {
     if (
       !title ||
@@ -56,7 +105,7 @@ export default function CreateJobScreen({ navigation }) {
         description,
         categoryCode: Number(categoryCode),
         amountPaise: Number(amountPaise),
-        deadline: deadline.toISOString(), // ✅ backend expects ISO format
+        deadline: deadline.toISOString(),
         addressId: Number(addressId),
       };
 
@@ -85,16 +134,28 @@ export default function CreateJobScreen({ navigation }) {
     }
   };
 
+  // ✅ Loading state
+  if (loadingCategories || loadingAddresses)
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#007bff" />
+        <Text>Loading data...</Text>
+      </View>
+    );
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Create New Job</Text>
 
+      {/* ✅ Job Title */}
       <TextInput
         style={styles.input}
         placeholder="Job Title"
         value={title}
         onChangeText={setTitle}
       />
+
+      {/* ✅ Description */}
       <TextInput
         style={[styles.input, { height: 80 }]}
         placeholder="Description"
@@ -102,13 +163,35 @@ export default function CreateJobScreen({ navigation }) {
         value={description}
         onChangeText={setDescription}
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Category Code (number)"
-        keyboardType="numeric"
-        value={categoryCode}
-        onChangeText={setCategoryCode}
-      />
+
+      {/* ✅ Category Selection */}
+      <View style={{ marginBottom: 15 }}>
+        <Text style={{ fontWeight: "700", marginBottom: 5 }}>
+          Select Category:
+        </Text>
+        {categories.map((cat) => (
+          <TouchableOpacity
+            key={cat.code}
+            style={[
+              styles.categoryItem,
+              categoryCode === String(cat.code) && {
+                backgroundColor: "#007bff",
+              },
+            ]}
+            onPress={() => setCategoryCode(String(cat.code))}
+          >
+            <Text
+              style={{
+                color: categoryCode === String(cat.code) ? "#fff" : "#000",
+              }}
+            >
+              {cat.name}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* ✅ Amount */}
       <TextInput
         style={styles.input}
         placeholder="Amount (Paise)"
@@ -117,7 +200,7 @@ export default function CreateJobScreen({ navigation }) {
         onChangeText={setAmountPaise}
       />
 
-      {/* ✅ Date Picker */}
+      {/* ✅ Deadline */}
       <TouchableOpacity onPress={handleOpenPicker}>
         <View pointerEvents="none">
           <TextInput
@@ -138,14 +221,47 @@ export default function CreateJobScreen({ navigation }) {
         />
       )}
 
-      <TextInput
-        style={styles.input}
-        placeholder="Address ID"
-        keyboardType="numeric"
-        value={addressId}
-        onChangeText={setAddressId}
-      />
+      {/* ✅ Address Selection */}
+      <View style={{ marginBottom: 15 }}>
+        <Text style={{ fontWeight: "700", marginBottom: 5 }}>
+          Select Address:
+        </Text>
 
+        {addresses.length === 0 && (
+          <Text style={{ color: "gray" }}>
+            No saved addresses found. Please add one in your profile.
+          </Text>
+        )}
+
+        {addresses.map((addr) => (
+          <TouchableOpacity
+            key={addr.id}
+            style={[
+              styles.addressItem,
+              addressId === String(addr.id) && { backgroundColor: "#007bff" },
+            ]}
+            onPress={() => setAddressId(String(addr.id))}
+          >
+            <View
+              style={{ flexDirection: "row", justifyContent: "space-between" }}
+            >
+              <Text
+                style={{
+                  color: addressId === String(addr.id) ? "#fff" : "#000",
+                  flexShrink: 1,
+                }}
+              >
+                {addr.label} — {addr.area} ({addr.pinCode})
+              </Text>
+              {addressId === String(addr.id) && (
+                <Text style={{ color: "#fff", fontWeight: "bold" }}>✔</Text>
+              )}
+            </View>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* ✅ Submit Button */}
       <TouchableOpacity
         style={[styles.btn, loading && { backgroundColor: "gray" }]}
         onPress={handleCreateJob}
@@ -184,4 +300,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   btnText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  categoryItem: {
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    marginBottom: 5,
+  },
+  addressItem: {
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    marginBottom: 5,
+  },
 });

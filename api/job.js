@@ -1,51 +1,62 @@
+// api/job.js
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const BASE_URL = "http://192.168.156.218:8080/api"; // 👈 your backend URL
+const BASE_URL = "http://192.168.156.218:8080/api"; // replace with your backend IP
 
+// ✅ Axios instance with token automatically added
 const api = axios.create({
   baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" },
 });
 
-// ✅ Create a job
-export const createPosterJob = async (jobData) => {
-  try {
-    const token = await AsyncStorage.getItem("posterToken");
-    const res = await api.post("/poster/jobs/create", jobData, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return res.data;
-  } catch (err) {
-    console.error("❌ Create Job Error:", err.response?.data || err.message);
-    throw err;
-  }
-};
+// Add token to every request
+api.interceptors.request.use(async (config) => {
+  const token = await AsyncStorage.getItem("posterToken");
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
 
-// ✅ (Optional) Get all posted jobs
-export const fetchPosterJobs = async () => {
+// ---------------- JOB APIS ----------------
+
+// Get all jobs for poster
+export const getJobs = async (page = 0, size = 10, status = "") => {
   try {
-    const token = await AsyncStorage.getItem("posterToken");
     const res = await api.get("/poster/jobs/list", {
-      headers: { Authorization: `Bearer ${token}` },
+      params: { page, size, status },
     });
     return res.data;
   } catch (err) {
-    console.error("❌ Fetch Jobs Error:", err.response?.data || err.message);
     throw err;
   }
 };
 
-// ✅ (Optional) Delete job by ID
-export const deletePosterJob = async (jobId) => {
+
+// Update a job
+export const updateJob = async (jobId, jobData) => {
   try {
-    const token = await AsyncStorage.getItem("posterToken");
-    const res = await api.delete(`/poster/jobs/${jobId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await api.patch(`/poster/jobs/update/${jobId}`, jobData);
     return res.data;
   } catch (err) {
-    console.error("❌ Delete Job Error:", err.response?.data || err.message);
+    throw err;
+  }
+};
+
+// Delete a job
+export const deleteJob = async (jobId) => {
+  try {
+    const res = await api.delete(`/poster/jobs/delete/${jobId}`);
+    return res.data;
+  } catch (err) {
+    throw err;
+  }
+};
+
+// Get all job categories (if needed)
+export const getAllCategories = async () => {
+  try {
+    const res = await api.get("/poster/jobs/all");
+    return res.data;
+  } catch (err) {
     throw err;
   }
 };

@@ -1,5 +1,26 @@
 {
-  "plugins": [
-    "expo-web-browser"
-  ]
+  "expo": {
+    "name": "microjob",
+    "slug": "microjob",
+    "version": "1.0.0",
+    "plugins": [
+      "expo-web-browser",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow microjob to access and save your media files."
+        }
+      ]
+    ],
+    "android": {
+      "permissions": [
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "READ_MEDIA_IMAGES",
+        "READ_MEDIA_VIDEO",
+        "READ_MEDIA_AUDIO"
+      ],
+      "package": "com.microjob.app"
+    }
+  }
 }

@@ -277,7 +277,9 @@ import {
   Platform,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as FileSystem from "expo-file-system";
+// import * as FileSystem from "expo-file-system"; // ✅ new API import
+import * as FileSystem from "expo-file-system/legacy";
+
 import * as MediaLibrary from "expo-media-library";
 import * as Sharing from "expo-sharing";
 import { Ionicons } from "@expo/vector-icons";
@@ -302,43 +304,51 @@ export default function AdminKycDetail({ route, navigation }) {
       const content = res.data?.data?.content || [];
       const selectedKyc = content.find((item) => item.id === kycId);
       if (!selectedKyc) {
-        Alert.alert("KYC Not Found", "This KYC request is no longer available.");
+        Alert.alert(
+          "KYC Not Found",
+          "This KYC request is no longer available."
+        );
         navigation.goBack();
         return;
       }
       setKyc(selectedKyc);
     } catch (err) {
-      console.error("Fetch KYC Detail Error:", err.response?.data || err.message);
+      console.error(
+        "Fetch KYC Detail Error:",
+        err.response?.data || err.message
+      );
       Alert.alert("Error", "Failed to fetch KYC details.");
     } finally {
       setLoading(false);
     }
   };
 
-  const downloadPdf = async () => {
+  // ✅ Modern working download method
+  const downloadKycFile = async () => {
     if (!kyc?.id) return Alert.alert("Error", "Invalid KYC document");
 
     try {
       setDownloading(true);
-      console.log("🚀 Starting PDF download...");
+      console.log("🚀 Starting KYC file download...");
 
       const token = await AsyncStorage.getItem("adminToken");
       if (!token) return Alert.alert("Error", "Admin not logged in");
-      console.log("🔑 Admin token retrieved");
 
-      const url = `http://192.168.156.218:8080/api/admin/kyc/file/${kyc.id}`;
-      const fileName = `KYC_${kyc.id}.pdf`;
+      const BASE_URL = "http://192.168.156.218:8080";
+      const url = `${BASE_URL}/api/admin/kyc/file/${kyc.id}`;
+      const extension = kyc.docType?.toLowerCase() || "pdf";
+      const fileName = `KYC_${kyc.id}.${extension}`;
       const fileUri = FileSystem.cacheDirectory + fileName;
 
-      console.log("🌐 Download URL:", url);
-      console.log("📂 Local file path:", fileUri);
+      console.log("🌐 URL:", url);
+      console.log("📂 File path:", fileUri);
 
-      // Use downloadAsync to save file directly
+      // ✅ Correct modern download method
       const { uri } = await FileSystem.downloadAsync(url, fileUri, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log("🟢 PDF downloaded to:", uri);
+      console.log("🟢 File downloaded:", uri);
 
       if (Platform.OS === "android") {
         const { status } = await MediaLibrary.requestPermissionsAsync();
@@ -346,19 +356,19 @@ export default function AdminKycDetail({ route, navigation }) {
 
         const asset = await MediaLibrary.createAssetAsync(uri);
         await MediaLibrary.createAlbumAsync("Download", asset, false);
-        Alert.alert("Download Complete", "PDF saved to Downloads folder!");
+        Alert.alert("Download Complete", "File saved to Downloads folder!");
       } else if (Platform.OS === "ios") {
         if (await Sharing.isAvailableAsync()) {
           await Sharing.shareAsync(uri);
         } else {
-          Alert.alert("Download Complete", "PDF saved in app cache. Cannot share.");
+          Alert.alert("Download Complete", "File saved in app cache.");
         }
       }
 
-      console.log("✅ Download process finished");
+      console.log("✅ File saved successfully!");
     } catch (err) {
-      console.error("❌ PDF Download/Open Error:", err);
-      Alert.alert("Error", "Failed to download or open PDF");
+      console.error("❌ File Download Error:", err);
+      Alert.alert("Error", "Failed to download or open KYC file.");
     } finally {
       setDownloading(false);
     }
@@ -406,13 +416,18 @@ export default function AdminKycDetail({ route, navigation }) {
 
   return (
     <View style={styles.wrapper}>
+      {/* ✅ Header */}
       <View style={styles.navBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.navTitle}>KYC Detail</Text>
       </View>
 
+      {/* ✅ KYC Details */}
       <ScrollView style={styles.container}>
         <Text style={styles.label}>Name: {kyc.userName}</Text>
         <Text style={styles.label}>Phone: {kyc.userPhone}</Text>
@@ -420,14 +435,23 @@ export default function AdminKycDetail({ route, navigation }) {
         <Text style={styles.label}>Document Type: {kyc.docType}</Text>
         <Text style={styles.label}>Status: {kyc.status}</Text>
 
+        {/* ✅ Download Button */}
         <TouchableOpacity
-          style={[styles.downloadBtn, downloading && { backgroundColor: "#ccc" }]}
-          onPress={downloadPdf}
+          style={[
+            styles.downloadBtn,
+            downloading && { backgroundColor: "#ccc" },
+          ]}
+          onPress={downloadKycFile}
           disabled={downloading}
         >
-          {downloading ? <ActivityIndicator color="#fff" /> : <Text style={styles.downloadText}>Download / Open Document</Text>}
+          {downloading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.downloadText}>Download / Open Document</Text>
+          )}
         </TouchableOpacity>
 
+        {/* ✅ Rejection Input */}
         <TextInput
           style={styles.input}
           placeholder="Reason for rejection"
@@ -435,11 +459,18 @@ export default function AdminKycDetail({ route, navigation }) {
           onChangeText={setReason}
         />
 
+        {/* ✅ Action Buttons */}
         <View style={styles.buttonRow}>
-          <TouchableOpacity style={[styles.btn, styles.approveBtn]} onPress={handleApprove}>
+          <TouchableOpacity
+            style={[styles.btn, styles.approveBtn]}
+            onPress={handleApprove}
+          >
             <Text style={styles.btnText}>Approve</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.btn, styles.rejectBtn]} onPress={handleReject}>
+          <TouchableOpacity
+            style={[styles.btn, styles.rejectBtn]}
+            onPress={handleReject}
+          >
             <Text style={styles.btnText}>Reject</Text>
           </TouchableOpacity>
         </View>
@@ -448,20 +479,47 @@ export default function AdminKycDetail({ route, navigation }) {
   );
 }
 
+// ✅ Styling
 const styles = StyleSheet.create({
   wrapper: { flex: 1, backgroundColor: "#f0f4f7" },
-  navBar: { flexDirection: "row", alignItems: "center", backgroundColor: "#2196f3", paddingVertical: 12, paddingHorizontal: 15, elevation: 3 },
+  navBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#2196f3",
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    elevation: 3,
+  },
   backButton: { marginRight: 10, padding: 4 },
   navTitle: { color: "#fff", fontSize: 20, fontWeight: "bold" },
   container: { flex: 1, padding: 20 },
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
   label: { fontSize: 18, marginBottom: 10 },
   empty: { fontSize: 16, color: "gray", marginVertical: 10 },
-  downloadBtn: { backgroundColor: "#2196f3", padding: 12, borderRadius: 8, alignItems: "center", marginVertical: 15 },
+  downloadBtn: {
+    backgroundColor: "#2196f3",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    marginVertical: 15,
+  },
   downloadText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
-  input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 10, marginBottom: 15, backgroundColor: "#fff" },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 15,
+    backgroundColor: "#fff",
+  },
   buttonRow: { flexDirection: "row", justifyContent: "space-between" },
-  btn: { flex: 1, padding: 15, borderRadius: 8, alignItems: "center", marginHorizontal: 5 },
+  btn: {
+    flex: 1,
+    padding: 15,
+    borderRadius: 8,
+    alignItems: "center",
+    marginHorizontal: 5,
+  },
   approveBtn: { backgroundColor: "#4CAF50" },
   rejectBtn: { backgroundColor: "#FF3B30" },
   btnText: { color: "#fff", fontWeight: "bold", fontSize: 16 },

@@ -15,7 +15,10 @@ import { fetchPosterProfile, deleteAddress } from "../api/poster";
 import { Ionicons } from "@expo/vector-icons";
 
 // Enable LayoutAnimation on Android
-if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
@@ -40,22 +43,26 @@ export default function PosterProfileView({ navigation }) {
   };
 
   const handleDelete = async (id) => {
-    Alert.alert("Confirm Delete", "Are you sure you want to delete this address?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await deleteAddress(id);
-            loadProfile();
-          } catch (err) {
-            console.error(err);
-            Alert.alert("Error", "Failed to delete address");
-          }
+    Alert.alert(
+      "Confirm Delete",
+      "Are you sure you want to delete this address?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteAddress(id);
+              loadProfile();
+            } catch (err) {
+              console.error(err);
+              Alert.alert("Error", "Failed to delete address");
+            }
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
 
   useEffect(() => {
@@ -69,12 +76,26 @@ export default function PosterProfileView({ navigation }) {
 
   const kycBadge = () => {
     if (profile.KycStatus === true)
-      return <Text style={[styles.badge, { backgroundColor: "#4caf50" }]}>Verified</Text>;
+      return (
+        <Text style={[styles.badge, { backgroundColor: "#4caf50" }]}>
+          Verified
+        </Text>
+      );
     if (profile.KycStatus === false)
-      return <Text style={[styles.badge, { backgroundColor: "#ff9800" }]}>Pending</Text>;
+      return (
+        <Text style={[styles.badge, { backgroundColor: "#ff9800" }]}>
+          Pending
+        </Text>
+      );
     if (profile.KycStatus === "KYC_REJECTED")
-      return <Text style={[styles.badge, { backgroundColor: "#f44336" }]}>Rejected</Text>;
-    return <Text style={[styles.badge, { backgroundColor: "#9e9e9e" }]}>-</Text>;
+      return (
+        <Text style={[styles.badge, { backgroundColor: "#f44336" }]}>
+          Rejected
+        </Text>
+      );
+    return (
+      <Text style={[styles.badge, { backgroundColor: "#9e9e9e" }]}>-</Text>
+    );
   };
 
   if (loading)
@@ -102,7 +123,10 @@ export default function PosterProfileView({ navigation }) {
       </View>
 
       {/* Collapsible Profile Details Header */}
-      <TouchableOpacity style={styles.sectionHeader} onPress={toggleProfileDetails}>
+      <TouchableOpacity
+        style={styles.sectionHeader}
+        onPress={toggleProfileDetails}
+      >
         <Text style={styles.sectionHeaderText}>Profile Details</Text>
         <Ionicons
           name={showProfileDetails ? "chevron-up" : "chevron-down"}
@@ -151,7 +175,10 @@ export default function PosterProfileView({ navigation }) {
                 <TouchableOpacity
                   style={styles.editBtn}
                   onPress={() =>
-                    navigation.navigate("PosterProfileEdit", { address: addr, isEdit: true })
+                    navigation.navigate("PosterProfileEdit", {
+                      address: addr,
+                      isEdit: true,
+                    })
                   }
                 >
                   <Text style={styles.editText}>Edit</Text>
@@ -167,12 +194,14 @@ export default function PosterProfileView({ navigation }) {
             </View>
           ))
         ) : (
-          <Text style={{ color: "#555", marginTop: 8 }}>No addresses added.</Text>
+          <Text style={{ color: "#555", marginTop: 8 }}>
+            No addresses added.
+          </Text>
         )}
 
         <TouchableOpacity
           style={styles.addAddressBtn}
-          onPress={() => navigation.navigate("PosterProfileEdit")}
+          onPress={() => navigation.navigate("EditAddress")}
         >
           <Text style={styles.addAddressText}>+ Add New Address</Text>
         </TouchableOpacity>
@@ -182,10 +211,20 @@ export default function PosterProfileView({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  loader: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#f0f2f5" },
+  loader: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f0f2f5",
+  },
   container: { padding: 16, paddingBottom: 40, backgroundColor: "#f0f2f5" },
   topHeader: { flexDirection: "row", alignItems: "center", marginBottom: 20 },
-  headerText: { fontSize: 22, fontWeight: "700", color: "#1877f2", marginLeft: 12 },
+  headerText: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#1877f2",
+    marginLeft: 12,
+  },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -207,7 +246,12 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  cardTitle: { fontSize: 14, fontWeight: "700", color: "#1877f2", marginBottom: 4 },
+  cardTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#1877f2",
+    marginBottom: 4,
+  },
   cardText: { fontSize: 14, color: "#333", marginBottom: 8 },
   badge: {
     color: "#fff",
@@ -225,7 +269,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#d3d6db",
   },
-  editBtn: { backgroundColor: "#0b78ff", padding: 6, borderRadius: 6, marginRight: 8 },
+  editBtn: {
+    backgroundColor: "#0b78ff",
+    padding: 6,
+    borderRadius: 6,
+    marginRight: 8,
+  },
   editText: { color: "#fff", fontWeight: "600" },
   deleteBtn: { backgroundColor: "#f44336", padding: 6, borderRadius: 6 },
   deleteText: { color: "#fff", fontWeight: "600" },
