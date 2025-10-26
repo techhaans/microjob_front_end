@@ -147,11 +147,7 @@ export default function App() {
 
         {/* Doer Screens */}
         <Stack.Group>
-          <Stack.Screen
-            name="Dashboard"
-            component={Dashboard}
-            initialParams={initialParams}
-          />
+          <Stack.Screen name="Dashboard"component={Dashboard} initialParams={initialParams}/>
           <Stack.Screen name="EditProfile" component={EditProfile} />
           <Stack.Screen name="DoerProfile" component={DoerProfile} />
           <Stack.Screen name="KYCPage" component={KYCPage} />
@@ -160,23 +156,13 @@ export default function App() {
         {/* Poster Screens */}
         <Stack.Group>
           <Stack.Screen name="PosterDashboard" component={PosterDashboard} />
-          <Stack.Screen
-            name="PosterProfileView"
-            component={PosterProfileView}
-          />
-          <Stack.Screen
-            name="PosterProfileEdit"
-            component={PosterProfileEdit}
-          />
+          <Stack.Screen name="PosterProfileView"component={PosterProfileView}/>
+          <Stack.Screen name="PosterProfileEdit"component={PosterProfileEdit}/>
           <Stack.Screen name="EditAddress" component={EditAddress} />
           <Stack.Screen name="PosterKycUpload" component={PosterKycUpload} />
           <Stack.Screen name="AddressList" component={AddressList} />
           <Stack.Screen name="AddressForm" component={AddressForm} />
-          <Stack.Screen
-            name="CreateJobScreen"
-            component={CreateJobScreen}
-            options={{ headerShown: true, title: "Create Job" }}
-          />
+          <Stack.Screen name="CreateJobScreen"component={CreateJobScreen} options={{ headerShown: true, title: "Create Job" }}/>
         </Stack.Group>
 
         {/* Admin Screens */}

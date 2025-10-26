@@ -3011,6 +3011,515 @@
 //   },
 //   btnText: { color: "#fff", fontWeight: "600" },
 // });
+
+///
+// corret
+// import React, { useEffect, useState } from "react";
+// import {
+//   View,
+//   Text,
+//   TextInput,
+//   TouchableOpacity,
+//   FlatList,
+//   Alert,
+//   ActivityIndicator,
+//   StyleSheet,
+// } from "react-native";
+// import { SafeAreaView } from "react-native-safe-area-context";
+// import {
+//   fetchAllCategories,
+//   createCategory,
+//   updateCategory,
+//   deleteCategory,
+// } from "../api/admin";
+
+// export default function AdminCategory({ navigation }) {
+//   const [categories, setCategories] = useState([]);
+//   const [loading, setLoading] = useState(true);
+//   const [saving, setSaving] = useState(false);
+//   const [newCode, setNewCode] = useState("");
+//   const [newName, setNewName] = useState("");
+//   const [editing, setEditing] = useState(null);
+
+//   const loadCategories = async () => {
+//     try {
+//       setLoading(true);
+//       const res = await fetchAllCategories();
+//       const list = res?.data?.data || [];
+//       const data = list.map((item, index) => ({
+//         id: item.id, // DB primary key
+//         code: item.code,
+//         name: item.name,
+//       }));
+//       setCategories(data);
+//     } catch (err) {
+//       console.error("Fetch categories failed:", err);
+//       Alert.alert("Error", "Failed to load categories.");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   useEffect(() => {
+//     loadCategories();
+//   }, []);
+
+//   const handleSave = async () => {
+//     if (!newCode.trim() || !newName.trim()) {
+//       Alert.alert("Validation", "Please enter both code and name");
+//       return;
+//     }
+
+//     try {
+//       setSaving(true);
+//       if (editing?.id) {
+//         await updateCategory(editing.id, { code: newCode, name: newName });
+//         Alert.alert("Success", "Category updated successfully!");
+//       } else {
+//         await createCategory({ code: newCode, name: newName });
+//         Alert.alert("Success", "Category created successfully!");
+//       }
+//       setEditing(null);
+//       setNewCode("");
+//       setNewName("");
+//       await loadCategories();
+//     } catch (err) {
+//       console.error("Save error:", err.response?.data || err.message);
+//       Alert.alert("Error", "Failed to save category");
+//     } finally {
+//       setSaving(false);
+//     }
+//   };
+
+//   const handleDelete = (id) => {
+//     Alert.alert(
+//       "Confirm Delete",
+//       "Are you sure you want to delete this category?",
+//       [
+//         { text: "Cancel", style: "cancel" },
+//         {
+//           text: "Delete",
+//           style: "destructive",
+//           onPress: async () => {
+//             try {
+//               setSaving(true);
+//               await deleteCategory(id);
+//               Alert.alert("Deleted", "Category removed successfully.");
+//               await loadCategories();
+//             } catch (err) {
+//               console.error(
+//                 "Delete failed:",
+//                 err.response?.data || err.message
+//               );
+//               Alert.alert("Error", "Failed to delete category");
+//             } finally {
+//               setSaving(false);
+//             }
+//           },
+//         },
+//       ]
+//     );
+//   };
+
+//   const handleEdit = (cat) => {
+//     if (!cat?.id) return;
+//     setEditing(cat);
+//     setNewCode(cat.code);
+//     setNewName(cat.name);
+//   };
+
+//   return (
+//     <SafeAreaView style={{ flex: 1, backgroundColor: "#f7f9fc" }}>
+//       <View style={styles.header}>
+//         <Text style={styles.headerTitle}>Manage Categories</Text>
+//         <TouchableOpacity onPress={() => navigation.goBack()}>
+//           <Text style={styles.backText}>← Back</Text>
+//         </TouchableOpacity>
+//       </View>
+
+//       <View style={styles.form}>
+//         <TextInput
+//           style={styles.input}
+//           placeholder="Category Code"
+//           value={newCode}
+//           onChangeText={setNewCode}
+//         />
+//         <TextInput
+//           style={styles.input}
+//           placeholder="Category Name"
+//           value={newName}
+//           onChangeText={setNewName}
+//         />
+//         <TouchableOpacity
+//           style={styles.saveBtn}
+//           onPress={handleSave}
+//           disabled={saving}
+//         >
+//           <Text style={styles.saveText}>
+//             {editing ? "Update Category" : "Add Category"}
+//           </Text>
+//         </TouchableOpacity>
+//         {editing && (
+//           <TouchableOpacity
+//             style={[styles.saveBtn, { backgroundColor: "#777" }]}
+//             onPress={() => {
+//               setEditing(null);
+//               setNewCode("");
+//               setNewName("");
+//             }}
+//           >
+//             <Text style={styles.saveText}>Cancel Edit</Text>
+//           </TouchableOpacity>
+//         )}
+//       </View>
+
+//       {loading ? (
+//         <ActivityIndicator
+//           size="large"
+//           color="#2196f3"
+//           style={{ marginTop: 20 }}
+//         />
+//       ) : (
+//         <FlatList
+//           data={categories}
+//           keyExtractor={(item, index) =>
+//             item.id?.toString() || index.toString()
+//           }
+//           contentContainerStyle={{ padding: 15 }}
+//           renderItem={({ item }) => (
+//             <View style={styles.card}>
+//               <Text style={styles.cardText}>ID: {item.id}</Text>
+//               <Text style={styles.cardText}>Code: {item.code}</Text>
+//               <Text style={styles.cardText}>Name: {item.name}</Text>
+//               <View style={styles.actions}>
+//                 <TouchableOpacity
+//                   style={[styles.btn, { backgroundColor: "#2196f3" }]}
+//                   onPress={() => handleEdit(item)}
+//                 >
+//                   <Text style={styles.btnText}>Edit</Text>
+//                 </TouchableOpacity>
+//                 <TouchableOpacity
+//                   style={[styles.btn, { backgroundColor: "#ff3b30" }]}
+//                   onPress={() => handleDelete(item.id)}
+//                 >
+//                   <Text style={styles.btnText}>Delete</Text>
+//                 </TouchableOpacity>
+//               </View>
+//             </View>
+//           )}
+//         />
+//       )}
+//     </SafeAreaView>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   header: {
+//     backgroundColor: "#2196f3",
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     alignItems: "center",
+//     padding: 15,
+//   },
+//   headerTitle: { color: "#fff", fontSize: 18, fontWeight: "700" },
+//   backText: { color: "#fff", fontSize: 16 },
+//   form: {
+//     padding: 15,
+//     backgroundColor: "#fff",
+//     margin: 10,
+//     borderRadius: 10,
+//     elevation: 2,
+//   },
+//   input: {
+//     borderWidth: 1,
+//     borderColor: "#ccc",
+//     borderRadius: 8,
+//     padding: 10,
+//     marginVertical: 5,
+//   },
+//   saveBtn: {
+//     backgroundColor: "#2196f3",
+//     padding: 12,
+//     borderRadius: 8,
+//     alignItems: "center",
+//     marginVertical: 5,
+//   },
+//   saveText: { color: "#fff", fontWeight: "700" },
+//   card: {
+//     backgroundColor: "#fff",
+//     borderRadius: 10,
+//     padding: 15,
+//     marginVertical: 8,
+//     elevation: 2,
+//   },
+//   cardText: { fontSize: 16 },
+//   actions: { flexDirection: "row", justifyContent: "flex-end", marginTop: 10 },
+//   btn: {
+//     paddingVertical: 6,
+//     paddingHorizontal: 12,
+//     borderRadius: 6,
+//     marginLeft: 10,
+//   },
+//   btnText: { color: "#fff", fontWeight: "600" },
+// });
+
+// import React, { useEffect, useState } from "react";
+// import {
+//   View,
+//   Text,
+//   TextInput,
+//   TouchableOpacity,
+//   FlatList,
+//   Alert,
+//   ActivityIndicator,
+//   StyleSheet,
+// } from "react-native";
+// import { SafeAreaView } from "react-native-safe-area-context";
+// import {
+//   fetchAllCategories,
+//   createCategory,
+//   updateCategory,
+//   deleteCategory,
+// } from "../api/admin";
+
+// export default function AdminCategory({ navigation }) {
+//   const [categories, setCategories] = useState([]);
+//   const [loading, setLoading] = useState(true);
+//   const [saving, setSaving] = useState(false);
+//   const [newCode, setNewCode] = useState("");
+//   const [newName, setNewName] = useState("");
+//   const [editing, setEditing] = useState(null);
+
+//   // Load categories from backend
+//   const loadCategories = async () => {
+//     try {
+//       setLoading(true);
+//       const res = await fetchAllCategories();
+//       const list = res?.data?.data || [];
+
+//       // Ensure 'id' is present for DELETE/UPDATE
+//       const data = list.map((item) => ({
+//         id: item.id,
+//         code: item.code,
+//         name: item.name,
+//       }));
+
+//       setCategories(data);
+//     } catch (err) {
+//       console.error("Fetch categories failed:", err);
+//       Alert.alert("Error", "Failed to load categories.");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   useEffect(() => {
+//     loadCategories();
+//   }, []);
+
+//   // Handle save (create or update)
+//   const handleSave = async () => {
+//     if (!newCode.trim() || !newName.trim()) {
+//       Alert.alert("Validation", "Please enter both code and name");
+//       return;
+//     }
+
+//     try {
+//       setSaving(true);
+//       if (editing?.id) {
+//         await updateCategory(editing.id, { code: newCode, name: newName });
+//         Alert.alert("Success", "Category updated successfully!");
+//       } else {
+//         await createCategory({ code: newCode, name: newName });
+//         Alert.alert("Success", "Category created successfully!");
+//       }
+
+//       // Reset form
+//       setEditing(null);
+//       setNewCode("");
+//       setNewName("");
+//       await loadCategories();
+//     } catch (err) {
+//       console.error("Save error:", err.response?.data || err.message);
+//       Alert.alert("Error", "Failed to save category");
+//     } finally {
+//       setSaving(false);
+//     }
+//   };
+
+//   // Handle delete
+//   const handleDelete = (id) => {
+//     if (!id) {
+//       Alert.alert("Error", "Invalid category ID");
+//       return;
+//     }
+
+//     Alert.alert(
+//       "Confirm Delete",
+//       "Are you sure you want to delete this category?",
+//       [
+//         { text: "Cancel", style: "cancel" },
+//         {
+//           text: "Delete",
+//           style: "destructive",
+//           onPress: async () => {
+//             try {
+//               setSaving(true);
+//               await deleteCategory(id);
+//               Alert.alert("Deleted", "Category removed successfully.");
+//               await loadCategories();
+//             } catch (err) {
+//               console.error("Delete failed:", err.response?.data || err.message);
+//               Alert.alert("Error", "Failed to delete category");
+//             } finally {
+//               setSaving(false);
+//             }
+//           },
+//         },
+//       ]
+//     );
+//   };
+
+//   // Handle edit
+//   const handleEdit = (cat) => {
+//     if (!cat?.id) return;
+//     setEditing(cat);
+//     setNewCode(cat.code);
+//     setNewName(cat.name);
+//   };
+
+//   return (
+//     <SafeAreaView style={{ flex: 1, backgroundColor: "#f7f9fc" }}>
+//       <View style={styles.header}>
+//         <Text style={styles.headerTitle}>Manage Categories</Text>
+//         <TouchableOpacity onPress={() => navigation.goBack()}>
+//           <Text style={styles.backText}>← Back</Text>
+//         </TouchableOpacity>
+//       </View>
+
+//       <View style={styles.form}>
+//         <TextInput
+//           style={styles.input}
+//           placeholder="Category Code"
+//           value={newCode}
+//           onChangeText={setNewCode}
+//         />
+//         <TextInput
+//           style={styles.input}
+//           placeholder="Category Name"
+//           value={newName}
+//           onChangeText={setNewName}
+//         />
+//         <TouchableOpacity
+//           style={styles.saveBtn}
+//           onPress={handleSave}
+//           disabled={saving}
+//         >
+//           <Text style={styles.saveText}>
+//             {editing ? "Update Category" : "Add Category"}
+//           </Text>
+//         </TouchableOpacity>
+//         {editing && (
+//           <TouchableOpacity
+//             style={[styles.saveBtn, { backgroundColor: "#777" }]}
+//             onPress={() => {
+//               setEditing(null);
+//               setNewCode("");
+//               setNewName("");
+//             }}
+//           >
+//             <Text style={styles.saveText}>Cancel Edit</Text>
+//           </TouchableOpacity>
+//         )}
+//       </View>
+
+//       {loading ? (
+//         <ActivityIndicator
+//           size="large"
+//           color="#2196f3"
+//           style={{ marginTop: 20 }}
+//         />
+//       ) : (
+//         <FlatList
+//           data={categories}
+//           keyExtractor={(item, index) => item.id?.toString() || index.toString()}
+//           contentContainerStyle={{ padding: 15 }}
+//           renderItem={({ item }) => (
+//             <View style={styles.card}>
+//               <Text style={styles.cardText}>ID: {item.id}</Text>
+//               <Text style={styles.cardText}>Code: {item.code}</Text>
+//               <Text style={styles.cardText}>Name: {item.name}</Text>
+//               <View style={styles.actions}>
+//                 <TouchableOpacity
+//                   style={[styles.btn, { backgroundColor: "#2196f3" }]}
+//                   onPress={() => handleEdit(item)}
+//                 >
+//                   <Text style={styles.btnText}>Edit</Text>
+//                 </TouchableOpacity>
+//                 <TouchableOpacity
+//                   style={[styles.btn, { backgroundColor: "#ff3b30" }]}
+//                   onPress={() => handleDelete(item.id)}
+//                 >
+//                   <Text style={styles.btnText}>Delete</Text>
+//                 </TouchableOpacity>
+//               </View>
+//             </View>
+//           )}
+//         />
+//       )}
+//     </SafeAreaView>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   header: {
+//     backgroundColor: "#2196f3",
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     alignItems: "center",
+//     padding: 15,
+//   },
+//   headerTitle: { color: "#fff", fontSize: 18, fontWeight: "700" },
+//   backText: { color: "#fff", fontSize: 16 },
+//   form: {
+//     padding: 15,
+//     backgroundColor: "#fff",
+//     margin: 10,
+//     borderRadius: 10,
+//     elevation: 2,
+//   },
+//   input: {
+//     borderWidth: 1,
+//     borderColor: "#ccc",
+//     borderRadius: 8,
+//     padding: 10,
+//     marginVertical: 5,
+//   },
+//   saveBtn: {
+//     backgroundColor: "#2196f3",
+//     padding: 12,
+//     borderRadius: 8,
+//     alignItems: "center",
+//     marginVertical: 5,
+//   },
+//   saveText: { color: "#fff", fontWeight: "700" },
+//   card: {
+//     backgroundColor: "#fff",
+//     borderRadius: 10,
+//     padding: 15,
+//     marginVertical: 8,
+//     elevation: 2,
+//   },
+//   cardText: { fontSize: 16 },
+//   actions: { flexDirection: "row", justifyContent: "flex-end", marginTop: 10 },
+//   btn: {
+//     paddingVertical: 6,
+//     paddingHorizontal: 12,
+//     borderRadius: 6,
+//     marginLeft: 10,
+//   },
+//   btnText: { color: "#fff", fontWeight: "600" },
+// });
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -3038,16 +3547,19 @@ export default function AdminCategory({ navigation }) {
   const [newName, setNewName] = useState("");
   const [editing, setEditing] = useState(null);
 
+  // Load categories
   const loadCategories = async () => {
     try {
       setLoading(true);
       const res = await fetchAllCategories();
       const list = res?.data?.data || [];
-      const data = list.map((item, index) => ({
-        id: item.id, // DB primary key
+
+      const data = list.map((item) => ({
+        id: item.id,
         code: item.code,
         name: item.name,
       }));
+
       setCategories(data);
     } catch (err) {
       console.error("Fetch categories failed:", err);
@@ -3061,21 +3573,28 @@ export default function AdminCategory({ navigation }) {
     loadCategories();
   }, []);
 
+  // Save or Update
   const handleSave = async () => {
-    if (!newCode.trim() || !newName.trim()) {
-      Alert.alert("Validation", "Please enter both code and name");
+    if (!newName.trim()) {
+      Alert.alert("Validation", "Please enter a category name.");
       return;
     }
 
     try {
       setSaving(true);
       if (editing?.id) {
-        await updateCategory(editing.id, { code: newCode, name: newName });
-        Alert.alert("Success", "Category updated successfully!");
+        // Update name only
+        await updateCategory(editing.id, { name: newName });
+        Alert.alert("Success", "Category name updated successfully!");
       } else {
+        if (!newCode.trim()) {
+          Alert.alert("Validation", "Please enter a category code.");
+          return;
+        }
         await createCategory({ code: newCode, name: newName });
         Alert.alert("Success", "Category created successfully!");
       }
+
       setEditing(null);
       setNewCode("");
       setNewName("");
@@ -3088,7 +3607,10 @@ export default function AdminCategory({ navigation }) {
     }
   };
 
+  // Delete category
   const handleDelete = (id) => {
+    if (!id) return;
+
     Alert.alert(
       "Confirm Delete",
       "Are you sure you want to delete this category?",
@@ -3118,8 +3640,8 @@ export default function AdminCategory({ navigation }) {
     );
   };
 
+  // Edit handler
   const handleEdit = (cat) => {
-    if (!cat?.id) return;
     setEditing(cat);
     setNewCode(cat.code);
     setNewName(cat.name);
@@ -3136,10 +3658,14 @@ export default function AdminCategory({ navigation }) {
 
       <View style={styles.form}>
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            editing ? { backgroundColor: "#eee", color: "#666" } : {},
+          ]}
           placeholder="Category Code"
           value={newCode}
           onChangeText={setNewCode}
+          editable={!editing} // disable when editing
         />
         <TextInput
           style={styles.input}
@@ -3153,9 +3679,10 @@ export default function AdminCategory({ navigation }) {
           disabled={saving}
         >
           <Text style={styles.saveText}>
-            {editing ? "Update Category" : "Add Category"}
+            {editing ? "Update Name" : "Add Category"}
           </Text>
         </TouchableOpacity>
+
         {editing && (
           <TouchableOpacity
             style={[styles.saveBtn, { backgroundColor: "#777" }]}
@@ -3193,7 +3720,7 @@ export default function AdminCategory({ navigation }) {
                   style={[styles.btn, { backgroundColor: "#2196f3" }]}
                   onPress={() => handleEdit(item)}
                 >
-                  <Text style={styles.btnText}>Edit</Text>
+                  <Text style={styles.btnText}>Edit Name</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.btn, { backgroundColor: "#ff3b30" }]}

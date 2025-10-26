@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -25,7 +23,7 @@ const uploadPosterKyc = async (fileUri, docType, token) => {
   formData.append("docType", docType);
 
   const res = await fetch(
-    "http://192.168.156.218:8080/api/poster/profile/doc/upload",
+    "http://192.168.30.218:8080/api/poster/profile/doc/upload",
     {
       method: "POST",
       body: formData,

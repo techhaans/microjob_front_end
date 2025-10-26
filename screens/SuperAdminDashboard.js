@@ -1,5 +1,3 @@
-
-
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -13,7 +11,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
-const BASE_URL = "http://192.168.156.218:8080/api";
+const BASE_URL = "http://192.168.30.218:8080/api";
 
 export default function SuperAdminDashboard({ navigation }) {
   const [kycType, setKycType] = useState("DOER"); // "DOER" or "POSTER"

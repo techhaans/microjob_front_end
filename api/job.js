@@ -2,7 +2,7 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const BASE_URL = "http://192.168.156.218:8080/api"; // replace with your backend IP
+const BASE_URL = "http://192.168.30.218:8080/api"; // replace with your backend IP
 
 // ✅ Axios instance with token automatically added
 const api = axios.create({
@@ -29,7 +29,6 @@ export const getJobs = async (page = 0, size = 10, status = "") => {
     throw err;
   }
 };
-
 
 // Update a job
 export const updateJob = async (jobId, jobData) => {

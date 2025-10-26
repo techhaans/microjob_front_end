@@ -5,8 +5,8 @@
 // // ✅ Base URL (your backend IP)
 // const BASE_URL =
 //   Platform.OS === "android"
-//     ? "http://192.168.156.218:8080/api"
-//     : "http://192.168.156.218:8080/api";
+//     ? "http://192.168.30.218:8080/api"
+//     : "http://192.168.30.218:8080/api";
 
 // // ✅ Axios instance
 // const api = axios.create({
@@ -170,8 +170,8 @@
 // // ✅ Base URL (your backend IP)
 // const BASE_URL =
 //   Platform.OS === "android"
-//     ? "http://192.168.156.218:8080/api"
-//     : "http://192.168.156.218:8080/api";
+//     ? "http://192.168.30.218:8080/api"
+//     : "http://192.168.30.218:8080/api";
 
 // // ✅ Axios instance
 // const api = axios.create({
@@ -355,8 +355,8 @@ import { Platform } from "react-native";
 // ✅ Base URL (your backend IP)
 const BASE_URL =
   Platform.OS === "android"
-    ? "http://192.168.156.218:8080/api"
-    : "http://192.168.156.218:8080/api";
+    ? "http://192.168.30.218:8080/api"
+    : "http://192.168.30.218:8080/api";
 
 // ✅ Axios instance
 const api = axios.create({
@@ -383,7 +383,19 @@ export const sendDoerOtp = async (phone) => {
   return res.data;
 };
 
-// ✅ Verify OTP + Save JWT
+// // ✅ Verify OTP + Save JWT
+// export const verifyDoerOtp = async (sessionId, otp) => {
+//   const res = await api.post("/auth/otp/doer/verify", { sessionId, otp });
+//   const data = res.data?.data;
+
+//   if (data?.token) {
+//     await AsyncStorage.setItem("authToken", data.token);
+//     if (data.roleCode) await AsyncStorage.setItem("userRole", data.roleCode);
+//   }
+
+//   return res.data;
+// };
+
 export const verifyDoerOtp = async (sessionId, otp) => {
   const res = await api.post("/auth/otp/doer/verify", { sessionId, otp });
   const data = res.data?.data;
@@ -391,6 +403,12 @@ export const verifyDoerOtp = async (sessionId, otp) => {
   if (data?.token) {
     await AsyncStorage.setItem("authToken", data.token);
     if (data.roleCode) await AsyncStorage.setItem("userRole", data.roleCode);
+  }
+
+  // ✅ Fetch profile to check verification
+  const profile = await api.get("/doer/profile");
+  if (profile.data?.is_phone_verified) {
+    await AsyncStorage.setItem("is_phone_verified", "true");
   }
 
   return res.data;
@@ -492,7 +510,7 @@ export const verifyPhoneOtp = async (sessionId, otp) => {
 
     return res.data;
   } catch (err) {
-    console.error("Verify Phone OTP Error:", err.response?.data || err.message);
+    //console.error("Verify Phone OTP Error:", err.response?.data || err.message);
     return (
       err.response?.data || {
         status: "ERROR",

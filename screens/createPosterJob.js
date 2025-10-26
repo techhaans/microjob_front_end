@@ -64,8 +64,8 @@ export default function CreateJobScreen({ navigation }) {
           Alert.alert("Error", res.message || "Failed to load addresses");
         }
       } catch (err) {
-        console.error("Addresses Fetch Error:", err);
-        Alert.alert("Error", "Could not load addresses");
+        //console.error("Addresses Fetch Error:", err);
+        Alert.alert("Error", "save address first");
       } finally {
         setLoadingAddresses(false);
       }

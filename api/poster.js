@@ -5,8 +5,8 @@
 
 // const BASE_URL =
 //   Platform.OS === "android"
-//     ? "http://192.168.156.218:8080/api"
-//     : "http://192.168.156.218:8080/api";
+//     ? "http://192.168.30.218:8080/api"
+//     : "http://192.168.30.218:8080/api";
 
 // const api = axios.create({
 //   baseURL: BASE_URL,
@@ -250,8 +250,8 @@
 
 // const BASE_URL =
 //   Platform.OS === "android"
-//     ? "http://192.168.156.218:8080/api"
-//     : "http://192.168.156.218:8080/api";
+//     ? "http://192.168.30.218:8080/api"
+//     : "http://192.168.30.218:8080/api";
 
 // const api = axios.create({
 //   baseURL: BASE_URL,
@@ -513,8 +513,8 @@
 
 // const BASE_URL =
 //   Platform.OS === "android"
-//     ? "http://192.168.156.218:8080/api"
-//     : "http://192.168.156.218:8080/api";
+//     ? "http://192.168.30.218:8080/api"
+//     : "http://192.168.30.218:8080/api";
 
 // // Axios instance
 // const api = axios.create({
@@ -821,8 +821,8 @@ import { Platform } from "react-native";
 
 const BASE_URL =
   Platform.OS === "android"
-    ? "http://192.168.156.218:8080/api"
-    : "http://192.168.156.218:8080/api";
+    ? "http://192.168.30.218:8080/api"
+    : "http://192.168.30.218:8080/api";
 
 // ----------------- Axios Instance -----------------
 const api = axios.create({
@@ -920,8 +920,8 @@ export const fetchPosterAddresses = async () => {
     if (res.data?.status === "SUCCESS") return res.data;
     else return { status: "SUCCESS", data: [] };
   } catch (err) {
-    console.error("❌ fetchPosterAddresses Error:", err);
-    return { status: "ERROR", data: [], message: err.message };
+    //console.error("❌ fetchPosterAddresses Error:", err);
+    //return { status: "ERROR", data: [], message: err.message };
   }
 };
 
