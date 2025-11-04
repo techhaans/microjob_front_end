@@ -382,7 +382,7 @@
 //       });
 
 //       const res = await axios.post(
-//         `http://192.168.30.218:8080/api/poster/profile/doc/upload?docType=PanCard`,
+//         `http://192.168.217.218:8080/api/poster/profile/doc/upload?docType=PanCard`,
 //         formData,
 //         {
 //           headers: {
@@ -495,13 +495,6 @@ export default function PosterKYCUpload({ navigation }) {
       setStatusLoading(true);
       const token = await AsyncStorage.getItem("authToken");
 
-      const res = await axios.get(
-        `http://192.168.30.218:8080/api/poster/profile/doc/status?docType=PanCard`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
       setKycStatus(res.data.status); // Example: "Pending Review"
     } catch (err) {
       console.error("Status fetch error:", err);
@@ -596,7 +589,7 @@ export default function PosterKYCUpload({ navigation }) {
       });
 
       const res = await axios.post(
-        `http://192.168.30.218:8080/api/poster/profile/doc/upload?docType=PanCard`,
+        `http://192.168.217.218:8080/api/poster/profile/doc/upload?docType=PanCard`,
         formData,
         {
           headers: {

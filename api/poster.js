@@ -5,8 +5,8 @@
 
 // const BASE_URL =
 //   Platform.OS === "android"
-//     ? "http://192.168.30.218:8080/api"
-//     : "http://192.168.30.218:8080/api";
+//     ? "http://192.168.217.218:8080/api"
+//     : "http://192.168.217.218:8080/api";
 
 // const api = axios.create({
 //   baseURL: BASE_URL,
@@ -250,8 +250,8 @@
 
 // const BASE_URL =
 //   Platform.OS === "android"
-//     ? "http://192.168.30.218:8080/api"
-//     : "http://192.168.30.218:8080/api";
+//     ? "http://192.168.217.218:8080/api"
+//     : "http://192.168.217.218:8080/api";
 
 // const api = axios.create({
 //   baseURL: BASE_URL,
@@ -513,8 +513,8 @@
 
 // const BASE_URL =
 //   Platform.OS === "android"
-//     ? "http://192.168.30.218:8080/api"
-//     : "http://192.168.30.218:8080/api";
+//     ? "http://192.168.217.218:8080/api"
+//     : "http://192.168.217.218:8080/api";
 
 // // Axios instance
 // const api = axios.create({
@@ -821,8 +821,8 @@ import { Platform } from "react-native";
 
 const BASE_URL =
   Platform.OS === "android"
-    ? "http://192.168.30.218:8080/api"
-    : "http://192.168.30.218:8080/api";
+    ? "http://192.168.217.218:8080/api"
+    : "http://192.168.217.218:8080/api";
 
 // ----------------- Axios Instance -----------------
 const api = axios.create({
@@ -1060,14 +1060,25 @@ export const verifyPosterPhoneOtp = async (sessionId, otp) => {
 // ----------------- Poster Jobs -----------------
 export const createPosterJob = async (jobData) => {
   try {
+    // Validate and convert fields
+    const amountInRs = parseInt(jobData.amountInRs, 10);
+    if (isNaN(amountInRs) || amountInRs <= 0) {
+      return { status: "ERROR", message: "Invalid amountInRs" };
+    }
+
     const payload = {
-      title: jobData.title,
-      description: jobData.description,
-      categoryCode: Number(jobData.categoryCode),
-      amountPaise: Number(jobData.amountPaise),
+      title: jobData.title?.trim(),
+      description: jobData.description?.trim(),
+      categoryCode: jobData.categoryCode, // send string if backend expects string
+      amountInRs,
       deadline: jobData.deadline || new Date().toISOString(),
-      addressId: Number(jobData.addressId),
+      addressId:
+        jobData.jobType === "PHYSICAL" ? Number(jobData.addressId) : null,
+      jobType: jobData.jobType || "PHYSICAL",
     };
+
+    console.log("Payload to backend:", payload);
+
     const res = await api.post("/poster/jobs/create", payload);
     return res.data;
   } catch (err) {
@@ -1089,33 +1100,35 @@ export const getPosterJobs = async (
   sortDirections = ["asc"]
 ) => {
   try {
-    const token = await AsyncStorage.getItem("authToken");
-
-    if (!token) throw new Error("Poster not logged in");
-
-    const res = await axios.get(`${BASE_URL}/poster/jobs/list`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
-      params: {
-        page,
-        size,
-        status,
-        sortFields,
-        sortDirections,
-      },
+    const res = await api.get("/poster/jobs/list", {
+      params: { page, size, status, sortFields, sortDirections },
+      headers: { Accept: "application/json" },
     });
 
-    return res.data; // returns { content: [...], page, size, ... }
+    if (!res.data) {
+      return { status: "ERROR", data: [], message: "No data returned from server" };
+    }
+
+    return {
+      status: "SUCCESS",
+      data: res.data.content || [],
+      page: res.data.page,
+      size: res.data.size,
+      totalPages: res.data.totalPages,
+      last: res.data.last,
+      message: res.data.message,
+      messageCode: res.data.messageCode,
+    };
   } catch (err) {
     console.error("❌ getPosterJobs Error:", err.response?.data || err.message);
     return {
       status: "ERROR",
-      message: err.response?.data?.message || "Failed to fetch poster jobs",
+      data: [],
+      message: err.response?.data?.message || err.message || "Failed to fetch poster jobs",
     };
   }
 };
+
 
 export const updatePosterJob = async (jobId, updateData) => {
   try {
@@ -1152,7 +1165,7 @@ export const deletePosterJob = async (jobId) => {
 // ----------------- Categories -----------------
 export const fetchCategories = async () => {
   try {
-    const res = await api.get("/poster/jobs/all");
+    const res = await api.get("/poster/jobs/categories");
     return res.data;
   } catch (err) {
     console.error(

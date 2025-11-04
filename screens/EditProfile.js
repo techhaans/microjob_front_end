@@ -752,6 +752,1445 @@
 //   },
 //   center: { flex: 1, justifyContent: "center", alignItems: "center" },
 // });
+// import React, { useEffect, useState, useLayoutEffect } from "react";
+// import {
+//   View,
+//   Text,
+//   TextInput,
+//   TouchableOpacity,
+//   ScrollView,
+//   StyleSheet,
+//   Alert,
+//   ActivityIndicator,
+//   Platform,
+//   UIManager,
+//   LayoutAnimation,
+// } from "react-native";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
+// import { Ionicons } from "@expo/vector-icons";
+// import {
+//   fetchDoerProfile,
+//   updateDoerProfile,
+//   sendPhoneOtp,
+//   verifyPhoneOtp,
+// } from "../api/doer";
+
+// // Enable smooth animations for Android
+// if (
+//   Platform.OS === "android" &&
+//   UIManager.setLayoutAnimationEnabledExperimental
+// ) {
+//   UIManager.setLayoutAnimationEnabledExperimental(true);
+// }
+
+// export default function EditProfile({ navigation }) {
+//   const [loading, setLoading] = useState(true);
+//   const [saving, setSaving] = useState(false);
+
+//   const [name, setName] = useState("");
+//   const [email, setEmail] = useState("");
+//   const [bio, setBio] = useState("");
+//   const [phone, setPhone] = useState("");
+//   const [skills, setSkills] = useState([]);
+//   const [skillInput, setSkillInput] = useState("");
+
+//   const [profileSaved, setProfileSaved] = useState(false);
+//   const [editing, setEditing] = useState(true);
+//   const [otpSent, setOtpSent] = useState(false);
+//   const [otp, setOtp] = useState("");
+//   const [phoneVerified, setPhoneVerified] = useState(false);
+//   const [sessionId, setSessionId] = useState("");
+//   const [kycUploaded, setKycUploaded] = useState(false);
+//   const [kycPending, setKycPending] = useState(false);
+
+//   const kycVisible = phoneVerified; // Only visible if phone verified
+
+//   // Header setup
+//   useLayoutEffect(() => {
+//     navigation.setOptions({
+//       headerShown: true,
+//       title: "Edit Profile",
+//       headerLeft: () => (
+//         <TouchableOpacity
+//           onPress={() => navigation.navigate("Dashboard")}
+//           style={{ marginLeft: 15 }}
+//         >
+//           <Ionicons name="arrow-back" size={26} color="#000" />
+//         </TouchableOpacity>
+//       ),
+//     });
+//   }, [navigation]);
+
+//   // Load profile
+//   const loadProfile = async () => {
+//     setLoading(true);
+//     try {
+//       const res = await fetchDoerProfile();
+//       if (res?.status === "SUCCESS" && res.data) {
+//         const p = res.data;
+//         setName(p.name || "");
+//         setEmail(p.email || "");
+//         setBio(p.bio || "");
+//         setPhone(p.phone || "");
+//         setSkills(p.skills || []);
+//         setPhoneVerified(p.is_phone_verified === true);
+//         setKycUploaded(p.kycLevel > 0);
+//         setKycPending(p.kycStatus === "PENDING");
+//         setProfileSaved(true);
+
+//         // Allow editing only if phone not verified
+//         setEditing(!p.is_phone_verified);
+
+//         setOtpSent(false);
+//         setOtp("");
+
+//         // Save locally
+//         await AsyncStorage.setItem("doerProfile", JSON.stringify(p));
+//       }
+//     } catch (err) {
+//       Alert.alert("Error", "Please Register");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   // Refresh profile on screen focus
+//   useEffect(() => {
+//     const unsubscribe = navigation.addListener("focus", loadProfile);
+//     return unsubscribe;
+//   }, [navigation]);
+
+//   const submitProfile = async () => {
+//     if (!name.trim() || !phone.trim()) {
+//       return Alert.alert("Validation", "Name and Phone are required");
+//     }
+//     setSaving(true);
+//     try {
+//       const payload = { name, email, bio, phone, skills };
+//       const res = await updateDoerProfile(payload);
+//       if (res.status === "SUCCESS") {
+//         await loadProfile();
+//         Alert.alert("Success", "Profile saved");
+//         setEditing(false);
+//       } else {
+//         Alert.alert("Error", res.message || "Failed to save profile");
+//       }
+//     } catch (err) {
+//       console.error("Update error:", err);
+//       Alert.alert("Error", "Something went wrong");
+//     } finally {
+//       setSaving(false);
+//     }
+//   };
+
+//   // Send OTP
+//   const handleSendOtp = async () => {
+//     if (phoneVerified) return; // Already verified
+//     if (!phone.trim())
+//       return Alert.alert("Enter Phone", "Please enter a valid phone number");
+
+//     try {
+//       const res = await sendPhoneOtp(phone);
+//       if (res?.status === "SUCCESS") {
+//         setSessionId(res?.data?.sessionId || "");
+//         setOtpSent(true);
+//         Alert.alert("OTP Sent", "Check your phone for OTP.");
+//       }
+//     } catch (err) {
+//       console.error(err);
+//       Alert.alert("Error", "Failed to send OTP");
+//     }
+//   };
+
+//   // Verify OTP
+//   const handleVerifyOtp = async () => {
+//     if (!otp.trim()) return Alert.alert("Enter OTP");
+//     if (!sessionId) return Alert.alert("Session expired. Resend OTP");
+
+//     try {
+//       const res = await verifyPhoneOtp(sessionId, otp);
+//       if (res?.status === "SUCCESS") {
+//         Alert.alert("Phone Verified", "Your phone is verified successfully!");
+//         setPhoneVerified(true);
+//         setOtpSent(false);
+//         setEditing(false);
+
+//         // Refresh profile and save
+//         await loadProfile();
+//         const updatedProfile = JSON.parse(
+//           await AsyncStorage.getItem("doerProfile")
+//         );
+//         updatedProfile.is_phone_verified = true;
+//         await AsyncStorage.setItem(
+//           "doerProfile",
+//           JSON.stringify(updatedProfile)
+//         );
+//       } else {
+//         Alert.alert("Error", res?.message || "Invalid OTP");
+//       }
+//     } catch (err) {
+//       console.error(err);
+//       Alert.alert("Error", "Verification failed");
+//     }
+//   };
+
+//   // Add skill
+//   const addSkill = () => {
+//     if (skillInput.trim() && !skills.includes(skillInput.trim())) {
+//       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+//       setSkills([...skills, skillInput.trim()]);
+//       setSkillInput("");
+//     }
+//   };
+
+//   // Remove skill
+//   const removeSkill = (skill) => {
+//     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+//     setSkills(skills.filter((s) => s !== skill));
+//   };
+
+//   if (loading)
+//     return (
+//       <View style={styles.center}>
+//         <ActivityIndicator size="large" color="#2196f3" />
+//         <Text>Loading profile...</Text>
+//       </View>
+//     );
+
+//   return (
+//     <ScrollView contentContainerStyle={styles.container}>
+//       {/* Name & Bio */}
+//       <TextInput
+//         style={[styles.input, !editing && styles.readOnly]}
+//         placeholder="Full Name"
+//         value={name}
+//         onChangeText={setName}
+//         editable={editing}
+//       />
+//       <TextInput
+//         style={[styles.input, { height: 80 }, !editing && styles.readOnly]}
+//         placeholder="Bio"
+//         multiline
+//         value={bio}
+//         onChangeText={setBio}
+//         editable={editing}
+//       />
+
+//       {/* Phone */}
+//       <View>
+//         <TextInput
+//           style={[styles.input, !editing && styles.readOnly]}
+//           placeholder="Phone Number"
+//           keyboardType="phone-pad"
+//           value={phone}
+//           onChangeText={setPhone}
+//           editable={editing && !phoneVerified}
+//         />
+//         {phoneVerified && (
+//           <Text style={styles.verified}>✅ Phone Verified</Text>
+//         )}
+//       </View>
+
+//       {/* Skills */}
+//       <Text style={{ fontWeight: "700", marginTop: 10 }}>Skills:</Text>
+//       {skills.map((skill, i) => (
+//         <View key={i} style={styles.skillItem}>
+//           <Text>{skill}</Text>
+//           {editing && (
+//             <TouchableOpacity onPress={() => removeSkill(skill)}>
+//               <Text style={{ color: "red" }}>X</Text>
+//             </TouchableOpacity>
+//           )}
+//         </View>
+//       ))}
+//       {editing && (
+//         <View style={{ flexDirection: "row", marginBottom: 15 }}>
+//           <TextInput
+//             style={[styles.input, { flex: 1 }]}
+//             placeholder="Add Skill"
+//             value={skillInput}
+//             onChangeText={setSkillInput}
+//           />
+//           <TouchableOpacity
+//             style={[styles.btn, { paddingHorizontal: 12 }]}
+//             onPress={addSkill}
+//           >
+//             <Text style={styles.btnText}>Add</Text>
+//           </TouchableOpacity>
+//         </View>
+//       )}
+
+//       {/* Save / Update */}
+//       <TouchableOpacity style={styles.btn} onPress={submitProfile}>
+//         <Text style={styles.btnText}>
+//           {saving ? "Saving..." : "Save Profile"}
+//         </Text>
+//       </TouchableOpacity>
+
+//       {/* OTP Section */}
+//       {!phoneVerified && profileSaved && !otpSent && (
+//         <TouchableOpacity
+//           style={[styles.btnSmall, { backgroundColor: "#2196f3" }]}
+//           onPress={handleSendOtp}
+//         >
+//           <Text style={styles.btnSmallText}>Send OTP to Verify Phone</Text>
+//         </TouchableOpacity>
+//       )}
+//       {!phoneVerified && otpSent && (
+//         <View>
+//           <TextInput
+//             style={styles.input}
+//             placeholder="Enter OTP"
+//             keyboardType="numeric"
+//             value={otp}
+//             onChangeText={setOtp}
+//           />
+//           <TouchableOpacity style={styles.btnSmall} onPress={handleVerifyOtp}>
+//             <Text style={styles.btnSmallText}>Verify OTP</Text>
+//           </TouchableOpacity>
+//         </View>
+//       )}
+
+//       {/* KYC Section */}
+//       {kycVisible && (
+//         <TouchableOpacity
+//           style={[
+//             styles.btn,
+//             {
+//               backgroundColor: kycPending ? "#FF9800" : "#4CAF50",
+//               marginTop: 15,
+//             },
+//           ]}
+//           onPress={() => {
+//             if (kycPending)
+//               Alert.alert("Pending Review", "Your KYC is under review");
+//             else navigation.navigate("KYCPage");
+//           }}
+//         >
+//           <Text style={styles.btnText}>
+//             {kycUploaded
+//               ? kycPending
+//                 ? "KYC Pending Review"
+//                 : "KYC Uploaded"
+//               : "Upload KYC"}
+//           </Text>
+//         </TouchableOpacity>
+//       )}
+//     </ScrollView>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   container: { padding: 20, paddingBottom: 50 },
+//   input: {
+//     backgroundColor: "#fff",
+//     padding: 12,
+//     borderRadius: 8,
+//     marginBottom: 12,
+//     borderWidth: 1,
+//     borderColor: "#ddd",
+//   },
+//   readOnly: { backgroundColor: "#f2f2f2", color: "#666" },
+//   btn: {
+//     backgroundColor: "#1976D2",
+//     padding: 12,
+//     borderRadius: 8,
+//     alignItems: "center",
+//     justifyContent: "center",
+//   },
+//   btnText: { color: "#fff", fontWeight: "700" },
+//   btnSmall: {
+//     padding: 10,
+//     borderRadius: 8,
+//     alignItems: "center",
+//     marginTop: 12,
+//     backgroundColor: "#1976D2",
+//   },
+//   btnSmallText: { color: "#fff", fontWeight: "700" },
+//   skillItem: {
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     padding: 8,
+//     backgroundColor: "#f1f5f9",
+//     borderRadius: 8,
+//     marginBottom: 5,
+//   },
+//   verified: {
+//     color: "green",
+//     fontWeight: "bold",
+//     marginLeft: 5,
+//     marginBottom: 10,
+//   },
+//   center: { flex: 1, justifyContent: "center", alignItems: "center" },
+// });
+// import React, { useEffect, useState, useLayoutEffect } from "react";
+// import {
+//   View,
+//   Text,
+//   TextInput,
+//   TouchableOpacity,
+//   ScrollView,
+//   StyleSheet,
+//   Alert,
+//   ActivityIndicator,
+//   Platform,
+//   UIManager,
+//   LayoutAnimation,
+// } from "react-native";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
+// import { Ionicons } from "@expo/vector-icons";
+// import {
+//   fetchDoerProfile,
+//   updateDoerProfile,
+//   sendPhoneOtp,
+//   verifyPhoneOtp,
+// } from "../api/doer";
+// import { fetchAllCategories } from "../api/admin"; // <-- new import
+
+// // Enable smooth animations for Android
+// if (
+//   Platform.OS === "android" &&
+//   UIManager.setLayoutAnimationEnabledExperimental
+// ) {
+//   UIManager.setLayoutAnimationEnabledExperimental(true);
+// }
+
+// export default function EditProfile({ navigation }) {
+//   const [loading, setLoading] = useState(true);
+//   const [saving, setSaving] = useState(false);
+
+//   const [name, setName] = useState("");
+//   const [email, setEmail] = useState("");
+//   const [bio, setBio] = useState("");
+//   const [phone, setPhone] = useState("");
+//   const [skills, setSkills] = useState([]); // holds selected category codes
+//   const [categories, setCategories] = useState([]);
+//   const [showCategories, setShowCategories] = useState(false);
+
+//   const [profileSaved, setProfileSaved] = useState(false);
+//   const [editing, setEditing] = useState(true);
+//   const [otpSent, setOtpSent] = useState(false);
+//   const [otp, setOtp] = useState("");
+//   const [phoneVerified, setPhoneVerified] = useState(false);
+//   const [sessionId, setSessionId] = useState("");
+//   const [kycUploaded, setKycUploaded] = useState(false);
+//   const [kycPending, setKycPending] = useState(false);
+
+//   const kycVisible = phoneVerified; // Only visible if phone verified
+
+//   // Header setup
+//   useLayoutEffect(() => {
+//     navigation.setOptions({
+//       headerShown: true,
+//       title: "Edit Profile",
+//       headerLeft: () => (
+//         <TouchableOpacity
+//           onPress={() => navigation.navigate("Dashboard")}
+//           style={{ marginLeft: 15 }}
+//         >
+//           <Ionicons name="arrow-back" size={26} color="#000" />
+//         </TouchableOpacity>
+//       ),
+//     });
+//   }, [navigation]);
+
+//   // Load profile
+//   const loadProfile = async () => {
+//     setLoading(true);
+//     try {
+//       const res = await fetchDoerProfile();
+//       if (res?.status === "SUCCESS" && res.data) {
+//         const p = res.data;
+//         setName(p.name || "");
+//         setEmail(p.email || "");
+//         setBio(p.bio || "");
+//         setPhone(p.phone || "");
+//         setSkills(p.skills || []); // expected ["101", "104"]
+//         setPhoneVerified(p.is_phone_verified === true);
+//         setKycUploaded(p.kycLevel > 0);
+//         setKycPending(p.kycStatus === "PENDING");
+//         setProfileSaved(true);
+
+//         setEditing(!p.is_phone_verified);
+//         setOtpSent(false);
+//         setOtp("");
+
+//         await AsyncStorage.setItem("doerProfile", JSON.stringify(p));
+//       }
+//     } catch (err) {
+//       Alert.alert("Error", "Please Register");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   // Refresh profile on screen focus
+//   useEffect(() => {
+//     const unsubscribe = navigation.addListener("focus", loadProfile);
+//     return unsubscribe;
+//   }, [navigation]);
+
+//   // Fetch all categories
+//   useEffect(() => {
+//     const fetchCategoriesData = async () => {
+//       try {
+//         const res = await fetchAllCategories();
+//         if (res?.status === "SUCCESS" && Array.isArray(res.data)) {
+//           setCategories(res.data);
+//         }
+//       } catch (err) {
+//         console.error("Category fetch failed:", err);
+//       }
+//     };
+//     fetchCategoriesData();
+//   }, []);
+
+//   // Save Profile
+//   const submitProfile = async () => {
+//     if (!name.trim() || !phone.trim()) {
+//       return Alert.alert("Validation", "Name and Phone are required");
+//     }
+//     setSaving(true);
+//     try {
+//       const payload = { name, email, bio, phone, skills };
+//       const res = await updateDoerProfile(payload);
+//       if (res.status === "SUCCESS") {
+//         await loadProfile();
+//         Alert.alert("Success", "Profile saved");
+//         setEditing(false);
+//       } else {
+//         Alert.alert("Error", res.message || "Failed to save profile");
+//       }
+//     } catch (err) {
+//       console.error("Update error:", err);
+//       Alert.alert("Error", "Something went wrong");
+//     } finally {
+//       setSaving(false);
+//     }
+//   };
+
+//   // Send OTP
+//   const handleSendOtp = async () => {
+//     if (phoneVerified) return;
+//     if (!phone.trim())
+//       return Alert.alert("Enter Phone", "Please enter a valid phone number");
+
+//     try {
+//       const res = await sendPhoneOtp(phone);
+//       if (res?.status === "SUCCESS") {
+//         setSessionId(res?.data?.sessionId || "");
+//         setOtpSent(true);
+//         Alert.alert("OTP Sent", "Check your phone for OTP.");
+//       }
+//     } catch (err) {
+//       console.error(err);
+//       Alert.alert("Error", "Failed to send OTP");
+//     }
+//   };
+
+//   // Verify OTP
+//   const handleVerifyOtp = async () => {
+//     if (!otp.trim()) return Alert.alert("Enter OTP");
+//     if (!sessionId) return Alert.alert("Session expired. Resend OTP");
+
+//     try {
+//       const res = await verifyPhoneOtp(sessionId, otp);
+//       if (res?.status === "SUCCESS") {
+//         Alert.alert("Phone Verified", "Your phone is verified successfully!");
+//         setPhoneVerified(true);
+//         setOtpSent(false);
+//         setEditing(false);
+//         await loadProfile();
+
+//         const updatedProfile = JSON.parse(
+//           await AsyncStorage.getItem("doerProfile")
+//         );
+//         updatedProfile.is_phone_verified = true;
+//         await AsyncStorage.setItem(
+//           "doerProfile",
+//           JSON.stringify(updatedProfile)
+//         );
+//       } else {
+//         Alert.alert("Error", res?.message || "Invalid OTP");
+//       }
+//     } catch (err) {
+//       console.error(err);
+//       Alert.alert("Error", "Verification failed");
+//     }
+//   };
+
+//   // Remove skill
+//   const removeSkill = (code) => {
+//     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+//     setSkills(skills.filter((s) => s !== code));
+//   };
+
+//   if (loading)
+//     return (
+//       <View style={styles.center}>
+//         <ActivityIndicator size="large" color="#2196f3" />
+//         <Text>Loading profile...</Text>
+//       </View>
+//     );
+
+//   return (
+//     <ScrollView contentContainerStyle={styles.container}>
+//       {/* Name & Bio */}
+//       <TextInput
+//         style={[styles.input, !editing && styles.readOnly]}
+//         placeholder="Full Name"
+//         value={name}
+//         onChangeText={setName}
+//         editable={editing}
+//       />
+//       <TextInput
+//         style={[styles.input, { height: 80 }, !editing && styles.readOnly]}
+//         placeholder="Bio"
+//         multiline
+//         value={bio}
+//         onChangeText={setBio}
+//         editable={editing}
+//       />
+
+//       {/* Phone */}
+//       <View>
+//         <TextInput
+//           style={[styles.input, !editing && styles.readOnly]}
+//           placeholder="Phone Number"
+//           keyboardType="phone-pad"
+//           value={phone}
+//           onChangeText={setPhone}
+//           editable={editing && !phoneVerified}
+//         />
+//         {phoneVerified && (
+//           <Text style={styles.verified}>✅ Phone Verified</Text>
+//         )}
+//       </View>
+
+//       {/* Skills */}
+//       <Text style={{ fontWeight: "700", marginTop: 10 }}>
+//         Skills (Select Categories):
+//       </Text>
+
+//       {skills.length > 0 ? (
+//         skills.map((code, i) => {
+//           const category = categories.find((c) => c.code === code);
+//           return (
+//             <View key={i} style={styles.skillItem}>
+//               <Text>
+//                 {category ? `${category.name} (${category.code})` : code}
+//               </Text>
+//               {editing && (
+//                 <TouchableOpacity onPress={() => removeSkill(code)}>
+//                   <Text style={{ color: "red" }}>X</Text>
+//                 </TouchableOpacity>
+//               )}
+//             </View>
+//           );
+//         })
+//       ) : (
+//         <Text style={{ color: "#666", marginVertical: 8 }}>
+//           No skills selected
+//         </Text>
+//       )}
+
+//       {editing && (
+//         <>
+//           <TouchableOpacity
+//             style={[styles.btnSmall, { backgroundColor: "#009688" }]}
+//             onPress={() => setShowCategories(!showCategories)}
+//           >
+//             <Text style={styles.btnSmallText}>
+//               {showCategories ? "Hide Categories" : "Choose Categories"}
+//             </Text>
+//           </TouchableOpacity>
+
+//           {showCategories && (
+//             <View style={styles.categoryList}>
+//               {categories.map((cat) => (
+//                 <TouchableOpacity
+//                   key={cat.code}
+//                   style={[
+//                     styles.skillItem,
+//                     {
+//                       backgroundColor: skills.includes(cat.code)
+//                         ? "#C8E6C9"
+//                         : "#f1f5f9",
+//                     },
+//                   ]}
+//                   onPress={() => {
+//                     if (skills.includes(cat.code)) {
+//                       removeSkill(cat.code);
+//                     } else {
+//                       setSkills([...skills, cat.code]);
+//                     }
+//                   }}
+//                 >
+//                   <Text>{cat.name}</Text>
+//                   <Text style={{ color: "#888" }}>{cat.code}</Text>
+//                 </TouchableOpacity>
+//               ))}
+//             </View>
+//           )}
+//         </>
+//       )}
+
+//       {/* Save Profile */}
+//       <TouchableOpacity style={styles.btn} onPress={submitProfile}>
+//         <Text style={styles.btnText}>
+//           {saving ? "Saving..." : "Save Profile"}
+//         </Text>
+//       </TouchableOpacity>
+
+//       {/* OTP Section */}
+//       {!phoneVerified && profileSaved && !otpSent && (
+//         <TouchableOpacity
+//           style={[styles.btnSmall, { backgroundColor: "#2196f3" }]}
+//           onPress={handleSendOtp}
+//         >
+//           <Text style={styles.btnSmallText}>Send OTP to Verify Phone</Text>
+//         </TouchableOpacity>
+//       )}
+//       {!phoneVerified && otpSent && (
+//         <View>
+//           <TextInput
+//             style={styles.input}
+//             placeholder="Enter OTP"
+//             keyboardType="numeric"
+//             value={otp}
+//             onChangeText={setOtp}
+//           />
+//           <TouchableOpacity style={styles.btnSmall} onPress={handleVerifyOtp}>
+//             <Text style={styles.btnSmallText}>Verify OTP</Text>
+//           </TouchableOpacity>
+//         </View>
+//       )}
+
+//       {/* KYC Section */}
+//       {kycVisible && (
+//         <TouchableOpacity
+//           style={[
+//             styles.btn,
+//             {
+//               backgroundColor: kycPending ? "#FF9800" : "#4CAF50",
+//               marginTop: 15,
+//             },
+//           ]}
+//           onPress={() => {
+//             if (kycPending)
+//               Alert.alert("Pending Review", "Your KYC is under review");
+//             else navigation.navigate("KYCPage");
+//           }}
+//         >
+//           <Text style={styles.btnText}>
+//             {kycUploaded
+//               ? kycPending
+//                 ? "KYC Pending Review"
+//                 : "KYC Uploaded"
+//               : "Upload KYC"}
+//           </Text>
+//         </TouchableOpacity>
+//       )}
+//     </ScrollView>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   container: { padding: 20, paddingBottom: 50 },
+//   input: {
+//     backgroundColor: "#fff",
+//     padding: 12,
+//     borderRadius: 8,
+//     marginBottom: 12,
+//     borderWidth: 1,
+//     borderColor: "#ddd",
+//   },
+//   readOnly: { backgroundColor: "#f2f2f2", color: "#666" },
+//   btn: {
+//     backgroundColor: "#1976D2",
+//     padding: 12,
+//     borderRadius: 8,
+//     alignItems: "center",
+//     justifyContent: "center",
+//     marginTop: 10,
+//   },
+//   btnText: { color: "#fff", fontWeight: "700" },
+//   btnSmall: {
+//     padding: 10,
+//     borderRadius: 8,
+//     alignItems: "center",
+//     marginTop: 12,
+//     backgroundColor: "#1976D2",
+//   },
+//   btnSmallText: { color: "#fff", fontWeight: "700" },
+//   skillItem: {
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     padding: 8,
+//     backgroundColor: "#f1f5f9",
+//     borderRadius: 8,
+//     marginBottom: 5,
+//   },
+//   verified: {
+//     color: "green",
+//     fontWeight: "bold",
+//     marginLeft: 5,
+//     marginBottom: 10,
+//   },
+//   center: { flex: 1, justifyContent: "center", alignItems: "center" },
+//   categoryList: {
+//     borderWidth: 1,
+//     borderColor: "#ddd",
+//     borderRadius: 8,
+//     marginTop: 10,
+//     padding: 8,
+//   },
+// });
+// import React, { useEffect, useState, useLayoutEffect } from "react";
+// import {
+//   View,
+//   Text,
+//   TextInput,
+//   TouchableOpacity,
+//   ScrollView,
+//   StyleSheet,
+//   Alert,
+//   ActivityIndicator,
+//   Platform,
+//   UIManager,
+//   LayoutAnimation,
+// } from "react-native";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
+// import { Ionicons } from "@expo/vector-icons";
+// import {
+//   fetchDoerProfile,
+//   updateDoerProfile,
+//   sendPhoneOtp,
+//   verifyPhoneOtp,
+// } from "../api/doer";
+// import { fetchAllCategories } from "../api/admin";
+
+// // Enable smooth animations for Android
+// if (
+//   Platform.OS === "android" &&
+//   UIManager.setLayoutAnimationEnabledExperimental
+// ) {
+//   UIManager.setLayoutAnimationEnabledExperimental(true);
+// }
+
+// export default function EditProfile({ navigation }) {
+//   const [loading, setLoading] = useState(true);
+//   const [saving, setSaving] = useState(false);
+
+//   const [name, setName] = useState("");
+//   const [email, setEmail] = useState("");
+//   const [bio, setBio] = useState("");
+//   const [phone, setPhone] = useState("");
+//   const [skills, setSkills] = useState([]); // selected skill codes
+//   const [categories, setCategories] = useState([]);
+//   const [showCategories, setShowCategories] = useState(false);
+
+//   const [profileSaved, setProfileSaved] = useState(false);
+//   const [editing, setEditing] = useState(true);
+//   const [otpSent, setOtpSent] = useState(false);
+//   const [otp, setOtp] = useState("");
+//   const [phoneVerified, setPhoneVerified] = useState(false);
+//   const [sessionId, setSessionId] = useState("");
+//   const [kycUploaded, setKycUploaded] = useState(false);
+//   const [kycPending, setKycPending] = useState(false);
+
+//   const kycVisible = phoneVerified;
+
+//   // Header setup
+//   useLayoutEffect(() => {
+//     navigation.setOptions({
+//       headerShown: true,
+//       title: "Edit Profile",
+//       headerLeft: () => (
+//         <TouchableOpacity
+//           onPress={() => navigation.navigate("Dashboard")}
+//           style={{ marginLeft: 15 }}
+//         >
+//           <Ionicons name="arrow-back" size={26} color="#000" />
+//         </TouchableOpacity>
+//       ),
+//     });
+//   }, [navigation]);
+
+//   // Load profile
+//   const loadProfile = async () => {
+//     setLoading(true);
+//     try {
+//       const res = await fetchDoerProfile();
+//       if (res?.status === "SUCCESS" && res.data) {
+//         const p = res.data;
+//         setName(p.name || "");
+//         setEmail(p.email || "");
+//         setBio(p.bio || "");
+//         setPhone(p.phone || "");
+//         setSkills(Array.isArray(p.skills) ? p.skills : []);
+//         setPhoneVerified(p.is_phone_verified === true);
+//         setKycUploaded(p.kycLevel > 0);
+//         setKycPending(p.kycStatus === "PENDING");
+//         setProfileSaved(true);
+
+//         setEditing(!p.is_phone_verified);
+//         setOtpSent(false);
+//         setOtp("");
+
+//         await AsyncStorage.setItem("doerProfile", JSON.stringify(p));
+//       }
+//     } catch (err) {
+//       Alert.alert("Error", "Please Register");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   // Refresh on focus
+//   useEffect(() => {
+//     const unsubscribe = navigation.addListener("focus", loadProfile);
+//     return unsubscribe;
+//   }, [navigation]);
+
+//   // Fetch all categories (skills)
+//   useEffect(() => {
+//     const fetchCategoriesData = async () => {
+//       try {
+//         const res = await fetchAllCategories();
+//         if (res?.status === "SUCCESS" && Array.isArray(res.data)) {
+//           setCategories(res.data);
+//         }
+//       } catch (err) {
+//         console.error("Category fetch failed:", err);
+//       }
+//     };
+//     fetchCategoriesData();
+//   }, []);
+
+//   // Save Profile
+//   const submitProfile = async () => {
+//     if (!name.trim() || !phone.trim())
+//       return Alert.alert("Validation", "Name and Phone are required");
+//     setSaving(true);
+//     try {
+//       const payload = { name, email, bio, phone, skills }; // skills = codes
+//       const res = await updateDoerProfile(payload);
+//       if (res.status === "SUCCESS") {
+//         await loadProfile();
+//         Alert.alert("Success", "Profile saved");
+//         setEditing(false);
+//       } else {
+//         Alert.alert("Error", res.message || "Failed to save profile");
+//       }
+//     } catch (err) {
+//       console.error("Update error:", err);
+//       Alert.alert("Error", "Something went wrong");
+//     } finally {
+//       setSaving(false);
+//     }
+//   };
+
+//   // Remove skill
+//   const removeSkill = (code) => {
+//     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+//     setSkills(skills.filter((s) => s !== code));
+//   };
+
+//   if (loading)
+//     return (
+//       <View style={styles.center}>
+//         <ActivityIndicator size="large" color="#2196f3" />
+//         <Text>Loading profile...</Text>
+//       </View>
+//     );
+
+//   return (
+//     <ScrollView contentContainerStyle={styles.container}>
+//       {/* Name & Bio */}
+//       <TextInput
+//         style={[styles.input, !editing && styles.readOnly]}
+//         placeholder="Full Name"
+//         value={name}
+//         onChangeText={setName}
+//         editable={editing}
+//       />
+//       <TextInput
+//         style={[styles.input, { height: 80 }, !editing && styles.readOnly]}
+//         placeholder="Bio"
+//         multiline
+//         value={bio}
+//         onChangeText={setBio}
+//         editable={editing}
+//       />
+
+//       {/* Phone */}
+//       <TextInput
+//         style={[styles.input, !editing && styles.readOnly]}
+//         placeholder="Phone Number"
+//         keyboardType="phone-pad"
+//         value={phone}
+//         onChangeText={setPhone}
+//         editable={editing && !phoneVerified}
+//       />
+//       {phoneVerified && <Text style={styles.verified}>✅ Phone Verified</Text>}
+
+//       {/* Selected Skills */}
+//       <Text style={{ fontWeight: "700", marginTop: 10 }}>Selected Skills:</Text>
+//       {skills.length > 0 ? (
+//         skills.map((code, i) => {
+//           const cat = categories.find((c) => c.code === code);
+//           return (
+//             <View key={i} style={styles.skillItem}>
+//               <Text style={{ fontWeight: "600" }}>
+//                 {cat ? cat.skillName || cat.name : code}
+//               </Text>
+//               {editing && (
+//                 <TouchableOpacity onPress={() => removeSkill(code)}>
+//                   <Text style={{ color: "red", fontWeight: "700" }}>X</Text>
+//                 </TouchableOpacity>
+//               )}
+//             </View>
+//           );
+//         })
+//       ) : (
+//         <Text style={{ color: "#666", marginVertical: 8 }}>
+//           No skills selected
+//         </Text>
+//       )}
+
+//       {/* Skill Picker */}
+//       {editing && (
+//         <>
+//           <TouchableOpacity
+//             style={[styles.btnSmall, { backgroundColor: "#009688" }]}
+//             onPress={() => setShowCategories(!showCategories)}
+//           >
+//             <Text style={styles.btnSmallText}>
+//               {showCategories ? "Hide Skill List" : "Choose Skills"}
+//             </Text>
+//           </TouchableOpacity>
+
+//           {showCategories && (
+//             <View style={styles.categoryList}>
+//               {categories.map((cat) => {
+//                 const selected = skills.includes(cat.code);
+//                 return (
+//                   <TouchableOpacity
+//                     key={cat.code}
+//                     style={[
+//                       styles.skillItem,
+//                       { backgroundColor: selected ? "#C8E6C9" : "#f1f5f9" },
+//                     ]}
+//                     onPress={() => {
+//                       if (selected) removeSkill(cat.code);
+//                       else setSkills([...skills, cat.code]);
+//                     }}
+//                   >
+//                     <View
+//                       style={{ flexDirection: "row", alignItems: "center" }}
+//                     >
+//                       <Ionicons
+//                         name={selected ? "checkmark-circle" : "ellipse-outline"}
+//                         size={20}
+//                         color={selected ? "#2e7d32" : "#888"}
+//                         style={{ marginRight: 8 }}
+//                       />
+//                       <View>
+//                         <Text style={{ fontWeight: "600" }}>
+//                           {cat.skillName || cat.name}
+//                         </Text>
+//                         <Text style={{ color: "#777", fontSize: 12 }}>
+//                           Code: {cat.code}
+//                         </Text>
+//                       </View>
+//                     </View>
+//                   </TouchableOpacity>
+//                 );
+//               })}
+//             </View>
+//           )}
+//         </>
+//       )}
+
+//       {/* Save Profile */}
+//       <TouchableOpacity style={styles.btn} onPress={submitProfile}>
+//         <Text style={styles.btnText}>
+//           {saving ? "Saving..." : "Save Profile"}
+//         </Text>
+//       </TouchableOpacity>
+//     </ScrollView>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   container: { padding: 20, paddingBottom: 50 },
+//   input: {
+//     backgroundColor: "#fff",
+//     padding: 12,
+//     borderRadius: 8,
+//     marginBottom: 12,
+//     borderWidth: 1,
+//     borderColor: "#ddd",
+//   },
+//   readOnly: { backgroundColor: "#f2f2f2", color: "#666" },
+//   btn: {
+//     backgroundColor: "#1976D2",
+//     padding: 12,
+//     borderRadius: 8,
+//     alignItems: "center",
+//     marginTop: 10,
+//   },
+//   btnText: { color: "#fff", fontWeight: "700" },
+//   btnSmall: {
+//     padding: 10,
+//     borderRadius: 8,
+//     alignItems: "center",
+//     marginTop: 12,
+//     backgroundColor: "#1976D2",
+//   },
+//   btnSmallText: { color: "#fff", fontWeight: "700" },
+//   skillItem: {
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     padding: 10,
+//     backgroundColor: "#f1f5f9",
+//     borderRadius: 8,
+//     marginBottom: 6,
+//     alignItems: "center",
+//   },
+//   verified: { color: "green", fontWeight: "bold", marginBottom: 10 },
+//   center: { flex: 1, justifyContent: "center", alignItems: "center" },
+//   categoryList: {
+//     borderWidth: 1,
+//     borderColor: "#ddd",
+//     borderRadius: 8,
+//     marginTop: 10,
+//     padding: 8,
+//   },
+// });
+// import React, { useEffect, useState, useLayoutEffect } from "react";
+// import {
+//   View,
+//   Text,
+//   TextInput,
+//   TouchableOpacity,
+//   ScrollView,
+//   StyleSheet,
+//   Alert,
+//   ActivityIndicator,
+//   Platform,
+//   UIManager,
+//   LayoutAnimation,
+// } from "react-native";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
+// import { Ionicons } from "@expo/vector-icons";
+// import {
+//   fetchDoerProfile,
+//   updateDoerProfile,
+//   sendPhoneOtp,
+//   verifyPhoneOtp,
+//   fetchDoerCategories, // ✅ new import
+// } from "../api/doer"; // ✅ only from doer.js
+
+// // Enable smooth animations for Android
+// if (
+//   Platform.OS === "android" &&
+//   UIManager.setLayoutAnimationEnabledExperimental
+// ) {
+//   UIManager.setLayoutAnimationEnabledExperimental(true);
+// }
+
+// export default function EditProfile({ navigation }) {
+//   const [loading, setLoading] = useState(true);
+//   const [saving, setSaving] = useState(false);
+
+//   const [name, setName] = useState("");
+//   const [email, setEmail] = useState("");
+//   const [bio, setBio] = useState("");
+//   const [phone, setPhone] = useState("");
+//   const [skills, setSkills] = useState([]);
+//   const [categories, setCategories] = useState([]);
+//   const [showCategories, setShowCategories] = useState(false);
+
+//   const [editing, setEditing] = useState(true);
+//   const [otpSent, setOtpSent] = useState(false);
+//   const [otp, setOtp] = useState("");
+//   const [phoneVerified, setPhoneVerified] = useState(false);
+//   const [sessionId, setSessionId] = useState("");
+//   const [kycUploaded, setKycUploaded] = useState(false);
+//   const [kycPending, setKycPending] = useState(false);
+
+//   const kycVisible = phoneVerified;
+
+//   // Header setup
+//   useLayoutEffect(() => {
+//     navigation.setOptions({
+//       headerShown: true,
+//       title: "Edit Profile",
+//       headerLeft: () => (
+//         <TouchableOpacity
+//           onPress={() => navigation.navigate("Dashboard")}
+//           style={{ marginLeft: 15 }}
+//         >
+//           <Ionicons name="arrow-back" size={26} color="#000" />
+//         </TouchableOpacity>
+//       ),
+//     });
+//   }, [navigation]);
+
+//   // Load profile
+//   const loadProfile = async () => {
+//     setLoading(true);
+//     try {
+//       const res = await fetchDoerProfile();
+//       if (res?.status === "SUCCESS" && res.data) {
+//         const p = res.data;
+//         setName(p.name || "");
+//         setEmail(p.email || "");
+//         setBio(p.bio || "");
+//         setPhone(p.phone || "");
+//         setSkills(Array.isArray(p.skills) ? p.skills : []);
+//         setPhoneVerified(p.is_phone_verified === true);
+//         setKycUploaded(p.kycLevel > 0);
+//         setKycPending(p.kycStatus === "PENDING");
+//         setEditing(!p.is_phone_verified);
+//         setOtpSent(false);
+//         setOtp("");
+
+//         await AsyncStorage.setItem("doerProfile", JSON.stringify(p));
+//       }
+//     } catch (err) {
+//       Alert.alert("Error", "Please Register");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   // Refresh on focus
+//   useEffect(() => {
+//     const unsubscribe = navigation.addListener("focus", loadProfile);
+//     return unsubscribe;
+//   }, [navigation]);
+
+//   // ✅ Fetch categories for Doer
+//   useEffect(() => {
+//     const fetchCategoriesData = async () => {
+//       try {
+//         const res = await fetchDoerCategories();
+//         if (res?.status === "SUCCESS" && Array.isArray(res.data)) {
+//           setCategories(res.data);
+//         } else {
+//           console.warn("No categories returned:", res);
+//         }
+//       } catch (err) {
+//         console.error("Category fetch failed:", err);
+//       }
+//     };
+//     fetchCategoriesData();
+//   }, []);
+
+//   // Save Profile
+//   const submitProfile = async () => {
+//     if (!name.trim() || !phone.trim())
+//       return Alert.alert("Validation", "Name and Phone are required");
+//     setSaving(true);
+//     try {
+//       const payload = { name, email, bio, phone, skills };
+//       const res = await updateDoerProfile(payload);
+//       if (res.status === "SUCCESS") {
+//         await loadProfile();
+//         Alert.alert("Success", "Profile saved");
+//         setEditing(false);
+//       } else {
+//         Alert.alert("Error", res.message || "Failed to save profile");
+//       }
+//     } catch (err) {
+//       console.error("Update error:", err);
+//       Alert.alert("Error", "Something went wrong");
+//     } finally {
+//       setSaving(false);
+//     }
+//   };
+
+//   // Remove skill
+//   const removeSkill = (code) => {
+//     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+//     setSkills(skills.filter((s) => s !== code));
+//   };
+
+//   if (loading)
+//     return (
+//       <View style={styles.center}>
+//         <ActivityIndicator size="large" color="#2196f3" />
+//         <Text>Loading profile...</Text>
+//       </View>
+//     );
+
+//   return (
+//     <ScrollView contentContainerStyle={styles.container}>
+//       {/* Name & Bio */}
+//       <TextInput
+//         style={[styles.input, !editing && styles.readOnly]}
+//         placeholder="Full Name"
+//         value={name}
+//         onChangeText={setName}
+//         editable={editing}
+//       />
+//       <TextInput
+//         style={[styles.input, { height: 80 }, !editing && styles.readOnly]}
+//         placeholder="Bio"
+//         multiline
+//         value={bio}
+//         onChangeText={setBio}
+//         editable={editing}
+//       />
+
+//       {/* Phone */}
+//       <TextInput
+//         style={[styles.input, !editing && styles.readOnly]}
+//         placeholder="Phone Number"
+//         keyboardType="phone-pad"
+//         value={phone}
+//         onChangeText={setPhone}
+//         editable={editing && !phoneVerified}
+//       />
+//       {phoneVerified && <Text style={styles.verified}>✅ Phone Verified</Text>}
+
+//       {/* Selected Skills */}
+//       <Text style={{ fontWeight: "700", marginTop: 10 }}>Selected Skills:</Text>
+//       {skills.length > 0 ? (
+//         skills.map((code, i) => {
+//           const cat = categories.find((c) => c.code === code);
+//           return (
+//             <View key={i} style={styles.skillItem}>
+//               <Text style={{ fontWeight: "600" }}>
+//                 {cat ? cat.skillName || cat.name : code}
+//               </Text>
+//               {editing && (
+//                 <TouchableOpacity onPress={() => removeSkill(code)}>
+//                   <Text style={{ color: "red", fontWeight: "700" }}>X</Text>
+//                 </TouchableOpacity>
+//               )}
+//             </View>
+//           );
+//         })
+//       ) : (
+//         <Text style={{ color: "#666", marginVertical: 8 }}>
+//           No skills selected
+//         </Text>
+//       )}
+
+//       {/* Skill Picker */}
+//       {editing && (
+//         <>
+//           <TouchableOpacity
+//             style={[styles.btnSmall, { backgroundColor: "#009688" }]}
+//             onPress={() => setShowCategories(!showCategories)}
+//           >
+//             <Text style={styles.btnSmallText}>
+//               {showCategories ? "Hide Skill List" : "Choose Skills"}
+//             </Text>
+//           </TouchableOpacity>
+
+//           {showCategories && (
+//             <View style={styles.categoryList}>
+//               {categories.map((cat) => {
+//                 const selected = skills.includes(cat.code);
+//                 return (
+//                   <TouchableOpacity
+//                     key={cat.code}
+//                     style={[
+//                       styles.skillItem,
+//                       { backgroundColor: selected ? "#C8E6C9" : "#f1f5f9" },
+//                     ]}
+//                     onPress={() => {
+//                       if (selected) removeSkill(cat.code);
+//                       else setSkills([...skills, cat.code]);
+//                     }}
+//                   >
+//                     <View
+//                       style={{ flexDirection: "row", alignItems: "center" }}
+//                     >
+//                       <Ionicons
+//                         name={selected ? "checkmark-circle" : "ellipse-outline"}
+//                         size={20}
+//                         color={selected ? "#2e7d32" : "#888"}
+//                         style={{ marginRight: 8 }}
+//                       />
+//                       <View>
+//                         <Text style={{ fontWeight: "600" }}>
+//                           {cat.skillName || cat.name}
+//                         </Text>
+//                         <Text style={{ color: "#777", fontSize: 12 }}>
+//                           Code: {cat.code}
+//                         </Text>
+//                       </View>
+//                     </View>
+//                   </TouchableOpacity>
+//                 );
+//               })}
+//             </View>
+//           )}
+//         </>
+//       )}
+
+//       {/* Save Profile */}
+//       <TouchableOpacity style={styles.btn} onPress={submitProfile}>
+//         <Text style={styles.btnText}>
+//           {saving ? "Saving..." : "Save Profile"}
+//         </Text>
+//       </TouchableOpacity>
+//     </ScrollView>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   container: { padding: 20, paddingBottom: 50 },
+//   input: {
+//     backgroundColor: "#fff",
+//     padding: 12,
+//     borderRadius: 8,
+//     marginBottom: 12,
+//     borderWidth: 1,
+//     borderColor: "#ddd",
+//   },
+//   readOnly: { backgroundColor: "#f2f2f2", color: "#666" },
+//   btn: {
+//     backgroundColor: "#1976D2",
+//     padding: 12,
+//     borderRadius: 8,
+//     alignItems: "center",
+//     marginTop: 10,
+//   },
+//   btnText: { color: "#fff", fontWeight: "700" },
+//   btnSmall: {
+//     padding: 10,
+//     borderRadius: 8,
+//     alignItems: "center",
+//     marginTop: 12,
+//     backgroundColor: "#1976D2",
+//   },
+//   btnSmallText: { color: "#fff", fontWeight: "700" },
+//   skillItem: {
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     padding: 10,
+//     backgroundColor: "#f1f5f9",
+//     borderRadius: 8,
+//     marginBottom: 6,
+//     alignItems: "center",
+//   },
+//   verified: { color: "green", fontWeight: "bold", marginBottom: 10 },
+//   center: { flex: 1, justifyContent: "center", alignItems: "center" },
+//   categoryList: {
+//     borderWidth: 1,
+//     borderColor: "#ddd",
+//     borderRadius: 8,
+//     marginTop: 10,
+//     padding: 8,
+//   },
+// });
 import React, { useEffect, useState, useLayoutEffect } from "react";
 import {
   View,
@@ -773,7 +2212,8 @@ import {
   updateDoerProfile,
   sendPhoneOtp,
   verifyPhoneOtp,
-} from "../api/doer";
+  fetchDoerCategories, // ✅ new import
+} from "../api/doer"; // ✅ only from doer.js
 
 // Enable smooth animations for Android
 if (
@@ -792,9 +2232,9 @@ export default function EditProfile({ navigation }) {
   const [bio, setBio] = useState("");
   const [phone, setPhone] = useState("");
   const [skills, setSkills] = useState([]);
-  const [skillInput, setSkillInput] = useState("");
+  const [categories, setCategories] = useState([]);
+  const [showCategories, setShowCategories] = useState(false);
 
-  const [profileSaved, setProfileSaved] = useState(false);
   const [editing, setEditing] = useState(true);
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
@@ -803,7 +2243,7 @@ export default function EditProfile({ navigation }) {
   const [kycUploaded, setKycUploaded] = useState(false);
   const [kycPending, setKycPending] = useState(false);
 
-  const kycVisible = phoneVerified; // Only visible if phone verified
+  const kycVisible = phoneVerified;
 
   // Header setup
   useLayoutEffect(() => {
@@ -832,19 +2272,14 @@ export default function EditProfile({ navigation }) {
         setEmail(p.email || "");
         setBio(p.bio || "");
         setPhone(p.phone || "");
-        setSkills(p.skills || []);
+        setSkills(Array.isArray(p.skills) ? p.skills : []);
         setPhoneVerified(p.is_phone_verified === true);
         setKycUploaded(p.kycLevel > 0);
         setKycPending(p.kycStatus === "PENDING");
-        setProfileSaved(true);
-
-        // Allow editing only if phone not verified
         setEditing(!p.is_phone_verified);
-
         setOtpSent(false);
         setOtp("");
 
-        // Save locally
         await AsyncStorage.setItem("doerProfile", JSON.stringify(p));
       }
     } catch (err) {
@@ -854,16 +2289,33 @@ export default function EditProfile({ navigation }) {
     }
   };
 
-  // Refresh profile on screen focus
+  // Refresh on focus
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", loadProfile);
     return unsubscribe;
   }, [navigation]);
 
+  // ✅ Fetch categories for Doer
+  useEffect(() => {
+    const fetchCategoriesData = async () => {
+      try {
+        const res = await fetchDoerCategories();
+        if (res?.status === "SUCCESS" && Array.isArray(res.data)) {
+          setCategories(res.data);
+        } else {
+          console.warn("No categories returned:", res);
+        }
+      } catch (err) {
+        console.error("Category fetch failed:", err);
+      }
+    };
+    fetchCategoriesData();
+  }, []);
+
+  // Save Profile
   const submitProfile = async () => {
-    if (!name.trim() || !phone.trim()) {
+    if (!name.trim() || !phone.trim())
       return Alert.alert("Validation", "Name and Phone are required");
-    }
     setSaving(true);
     try {
       const payload = { name, email, bio, phone, skills };
@@ -883,70 +2335,10 @@ export default function EditProfile({ navigation }) {
     }
   };
 
-  // Send OTP
-  const handleSendOtp = async () => {
-    if (phoneVerified) return; // Already verified
-    if (!phone.trim())
-      return Alert.alert("Enter Phone", "Please enter a valid phone number");
-
-    try {
-      const res = await sendPhoneOtp(phone);
-      if (res?.status === "SUCCESS") {
-        setSessionId(res?.data?.sessionId || "");
-        setOtpSent(true);
-        Alert.alert("OTP Sent", "Check your phone for OTP.");
-      }
-    } catch (err) {
-      console.error(err);
-      Alert.alert("Error", "Failed to send OTP");
-    }
-  };
-
-  // Verify OTP
-  const handleVerifyOtp = async () => {
-    if (!otp.trim()) return Alert.alert("Enter OTP");
-    if (!sessionId) return Alert.alert("Session expired. Resend OTP");
-
-    try {
-      const res = await verifyPhoneOtp(sessionId, otp);
-      if (res?.status === "SUCCESS") {
-        Alert.alert("Phone Verified", "Your phone is verified successfully!");
-        setPhoneVerified(true);
-        setOtpSent(false);
-        setEditing(false);
-
-        // Refresh profile and save
-        await loadProfile();
-        const updatedProfile = JSON.parse(
-          await AsyncStorage.getItem("doerProfile")
-        );
-        updatedProfile.is_phone_verified = true;
-        await AsyncStorage.setItem(
-          "doerProfile",
-          JSON.stringify(updatedProfile)
-        );
-      } else {
-        Alert.alert("Error", res?.message || "Invalid OTP");
-      }
-    } catch (err) {
-      console.error(err);
-      Alert.alert("Error", "Verification failed");
-    }
-  };
-
-  // Add skill
-  const addSkill = () => {
-    if (skillInput.trim() && !skills.includes(skillInput.trim())) {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setSkills([...skills, skillInput.trim()]);
-      setSkillInput("");
-    }
-  };
-
   // Remove skill
-  const removeSkill = (skill) => {
+  const removeSkill = (code) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setSkills(skills.filter((s) => s !== skill));
+    setSkills(skills.filter((s) => s !== code));
   };
 
   if (loading)
@@ -977,105 +2369,170 @@ export default function EditProfile({ navigation }) {
       />
 
       {/* Phone */}
-      <View>
-        <TextInput
-          style={[styles.input, !editing && styles.readOnly]}
-          placeholder="Phone Number"
-          keyboardType="phone-pad"
-          value={phone}
-          onChangeText={setPhone}
-          editable={editing && !phoneVerified}
-        />
-        {phoneVerified && (
-          <Text style={styles.verified}>✅ Phone Verified</Text>
-        )}
-      </View>
+      <TextInput
+        style={[styles.input, !editing && styles.readOnly]}
+        placeholder="Phone Number"
+        keyboardType="phone-pad"
+        value={phone}
+        onChangeText={setPhone}
+        editable={editing && !phoneVerified}
+      />
 
-      {/* Skills */}
-      <Text style={{ fontWeight: "700", marginTop: 10 }}>Skills:</Text>
-      {skills.map((skill, i) => (
-        <View key={i} style={styles.skillItem}>
-          <Text>{skill}</Text>
-          {editing && (
-            <TouchableOpacity onPress={() => removeSkill(skill)}>
-              <Text style={{ color: "red" }}>X</Text>
+      {phoneVerified && <Text style={styles.verified}>✅ Phone Verified</Text>}
+
+      {/* 🔐 OTP Verification Section */}
+      {!phoneVerified && (
+        <View style={{ marginTop: 10 }}>
+          {!otpSent ? (
+            <TouchableOpacity
+              style={[styles.btnSmall, { backgroundColor: "#4CAF50" }]}
+              onPress={async () => {
+                try {
+                  const res = await sendPhoneOtp();
+                  if (res?.status === "SUCCESS") {
+                    setSessionId(res.data?.sessionId);
+                    setOtpSent(true);
+                    Alert.alert(
+                      "OTP Sent",
+                      "Check your phone for the verification code."
+                    );
+                  } else {
+                    Alert.alert("Error", res?.message || "Failed to send OTP");
+                  }
+                } catch (err) {
+                  Alert.alert("Error", "Failed to send OTP. Please try again.");
+                  console.error("Send OTP Error:", err);
+                }
+              }}
+            >
+              <Text style={styles.btnSmallText}>Send OTP</Text>
             </TouchableOpacity>
+          ) : (
+            <>
+              <TextInput
+                style={[styles.input, { marginTop: 10 }]}
+                placeholder="Enter OTP"
+                keyboardType="numeric"
+                value={otp}
+                onChangeText={setOtp}
+              />
+              <TouchableOpacity
+                style={[styles.btnSmall, { backgroundColor: "#009688" }]}
+                onPress={async () => {
+                  if (!otp.trim()) {
+                    return Alert.alert("Error", "Please enter the OTP");
+                  }
+                  try {
+                    const res = await verifyPhoneOtp(sessionId, otp);
+                    if (res?.status === "SUCCESS") {
+                      Alert.alert(
+                        "Success",
+                        "Phone number verified successfully!"
+                      );
+                      setPhoneVerified(true);
+                      setOtpSent(false);
+                      setOtp("");
+                      await loadProfile();
+                    } else {
+                      Alert.alert("Error", res?.message || "Invalid OTP");
+                    }
+                  } catch (err) {
+                    Alert.alert("Error", "Failed to verify OTP");
+                    console.error("Verify OTP Error:", err);
+                  }
+                }}
+              >
+                <Text style={styles.btnSmallText}>Verify OTP</Text>
+              </TouchableOpacity>
+            </>
           )}
-        </View>
-      ))}
-      {editing && (
-        <View style={{ flexDirection: "row", marginBottom: 15 }}>
-          <TextInput
-            style={[styles.input, { flex: 1 }]}
-            placeholder="Add Skill"
-            value={skillInput}
-            onChangeText={setSkillInput}
-          />
-          <TouchableOpacity
-            style={[styles.btn, { paddingHorizontal: 12 }]}
-            onPress={addSkill}
-          >
-            <Text style={styles.btnText}>Add</Text>
-          </TouchableOpacity>
         </View>
       )}
 
-      {/* Save / Update */}
+      {/* Selected Skills */}
+      <Text style={{ fontWeight: "700", marginTop: 10 }}>Selected Skills:</Text>
+      {skills.length > 0 ? (
+        skills.map((code, i) => {
+          const cat = categories.find((c) => c.code === code);
+          return (
+            <View key={i} style={styles.skillItem}>
+              <Text style={{ fontWeight: "600" }}>
+                {cat ? cat.skillName || cat.name : code}
+              </Text>
+              {editing && (
+                <TouchableOpacity onPress={() => removeSkill(code)}>
+                  <Text style={{ color: "red", fontWeight: "700" }}>X</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          );
+        })
+      ) : (
+        <Text style={{ color: "#666", marginVertical: 8 }}>
+          No skills selected
+        </Text>
+      )}
+
+      {/* Skill Picker */}
+      {editing && (
+        <>
+          <TouchableOpacity
+            style={[styles.btnSmall, { backgroundColor: "#009688" }]}
+            onPress={() => setShowCategories(!showCategories)}
+          >
+            <Text style={styles.btnSmallText}>
+              {showCategories ? "Hide Skill List" : "Choose Skills"}
+            </Text>
+          </TouchableOpacity>
+
+          {showCategories && (
+            <View style={styles.categoryList}>
+              {categories.map((cat) => {
+                const selected = skills.includes(cat.code);
+                return (
+                  <TouchableOpacity
+                    key={cat.code}
+                    style={[
+                      styles.skillItem,
+                      { backgroundColor: selected ? "#C8E6C9" : "#f1f5f9" },
+                    ]}
+                    onPress={() => {
+                      if (selected) removeSkill(cat.code);
+                      else setSkills([...skills, cat.code]);
+                    }}
+                  >
+                    <View
+                      style={{ flexDirection: "row", alignItems: "center" }}
+                    >
+                      <Ionicons
+                        name={selected ? "checkmark-circle" : "ellipse-outline"}
+                        size={20}
+                        color={selected ? "#2e7d32" : "#888"}
+                        style={{ marginRight: 8 }}
+                      />
+                      <View>
+                        <Text style={{ fontWeight: "600" }}>
+                          {cat.skillName || cat.name}
+                        </Text>
+                        <Text style={{ color: "#777", fontSize: 12 }}>
+                          Code: {cat.code}
+                        </Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+        </>
+      )}
+
+      {/* Save Profile */}
       <TouchableOpacity style={styles.btn} onPress={submitProfile}>
         <Text style={styles.btnText}>
           {saving ? "Saving..." : "Save Profile"}
         </Text>
       </TouchableOpacity>
-
-      {/* OTP Section */}
-      {!phoneVerified && profileSaved && !otpSent && (
-        <TouchableOpacity
-          style={[styles.btnSmall, { backgroundColor: "#2196f3" }]}
-          onPress={handleSendOtp}
-        >
-          <Text style={styles.btnSmallText}>Send OTP to Verify Phone</Text>
-        </TouchableOpacity>
-      )}
-      {!phoneVerified && otpSent && (
-        <View>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter OTP"
-            keyboardType="numeric"
-            value={otp}
-            onChangeText={setOtp}
-          />
-          <TouchableOpacity style={styles.btnSmall} onPress={handleVerifyOtp}>
-            <Text style={styles.btnSmallText}>Verify OTP</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* KYC Section */}
-      {kycVisible && (
-        <TouchableOpacity
-          style={[
-            styles.btn,
-            {
-              backgroundColor: kycPending ? "#FF9800" : "#4CAF50",
-              marginTop: 15,
-            },
-          ]}
-          onPress={() => {
-            if (kycPending)
-              Alert.alert("Pending Review", "Your KYC is under review");
-            else navigation.navigate("KYCPage");
-          }}
-        >
-          <Text style={styles.btnText}>
-            {kycUploaded
-              ? kycPending
-                ? "KYC Pending Review"
-                : "KYC Uploaded"
-              : "Upload KYC"}
-          </Text>
-        </TouchableOpacity>
-      )}
     </ScrollView>
   );
 }
@@ -1096,7 +2553,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     alignItems: "center",
-    justifyContent: "center",
+    marginTop: 10,
   },
   btnText: { color: "#fff", fontWeight: "700" },
   btnSmall: {
@@ -1110,16 +2567,19 @@ const styles = StyleSheet.create({
   skillItem: {
     flexDirection: "row",
     justifyContent: "space-between",
-    padding: 8,
+    padding: 10,
     backgroundColor: "#f1f5f9",
     borderRadius: 8,
-    marginBottom: 5,
+    marginBottom: 6,
+    alignItems: "center",
   },
-  verified: {
-    color: "green",
-    fontWeight: "bold",
-    marginLeft: 5,
-    marginBottom: 10,
-  },
+  verified: { color: "green", fontWeight: "bold", marginBottom: 10 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  categoryList: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    marginTop: 10,
+    padding: 8,
+  },
 });

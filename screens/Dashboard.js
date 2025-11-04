@@ -1,366 +1,4 @@
-// import React, { useEffect, useState } from "react";
-// import {
-//   View,
-//   Text,
-//   ScrollView,
-//   TouchableOpacity,
-//   ActivityIndicator,
-//   StyleSheet,
-//   Alert,
-// } from "react-native";
-// import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// export default function Dashboard({ navigation }) {
-//   const [profile, setProfile] = useState(null);
-//   const [loading, setLoading] = useState(true);
-
-//   useEffect(() => {
-//     const unsubscribe = navigation.addListener("focus", () => {
-//       loadProfile();
-//     });
-//     return unsubscribe;
-//   }, [navigation]);
-
-//   const loadProfile = async () => {
-//     try {
-//       const storedProfile = await AsyncStorage.getItem("doerProfile");
-//       if (storedProfile) {
-//         setProfile(JSON.parse(storedProfile));
-//       } else {
-//         setProfile(null);
-//       }
-//     } catch (err) {
-//       console.error(err);
-//       Alert.alert("Error", "Failed to load profile");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const logout = async () => {
-//     await AsyncStorage.removeItem("authToken");
-//     await AsyncStorage.removeItem("doerProfile");
-//     navigation.reset({ index: 0, routes: [{ name: "RoleSelect" }] });
-//   };
-
-//   if (loading) {
-//     return (
-//       <View style={styles.center}>
-//         <ActivityIndicator size="large" color="#2196f3" />
-//         <Text style={{ marginTop: 10 }}>Loading profile...</Text>
-//       </View>
-//     );
-//   }
-
-//   // Sample jobs (dummy data)
-//   const jobs = [
-//     { id: 1, title: "Pick up documents", price: 150, distance: 0.8, time: 20 },
-//     { id: 2, title: "Bring groceries", price: 100, distance: 1.2, time: 30 },
-//     { id: 3, title: "Clean garage", price: 200, distance: 1.5, time: 45 },
-//   ];
-
-//   return (
-//     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
-//       {/* First-time user */}
-//       {!profile ? (
-//         <View style={styles.centerContent}>
-//           <Text style={styles.welcomeText}>
-//             Welcome! Complete your profile to continue.
-//           </Text>
-//           <TouchableOpacity
-//             style={[styles.profileBtn, styles.editBtn]}
-//             onPress={() => navigation.replace("EditProfile")}
-//           >
-//             <Text style={styles.profileBtnText}>Complete Profile</Text>
-//           </TouchableOpacity>
-//         </View>
-//       ) : (
-//         <>
-//           {/* User Info */}
-//           <View style={styles.header}>
-//             <Text style={styles.name}>Hi, {profile?.name || "User"}</Text>
-//             <View style={styles.buttonGroup}>
-//               <TouchableOpacity
-//                 style={[styles.profileBtn, styles.editBtn]}
-//                 onPress={() => navigation.navigate("EditProfile", { profile })}
-//               >
-//                 <Text style={styles.profileBtnText}>EDIT PROFILE</Text>
-//               </TouchableOpacity>
-
-//               <TouchableOpacity
-//                 style={[styles.profileBtn, styles.viewBtn]}
-//                 onPress={() => navigation.navigate("DoerProfile", { profile })}
-//               >
-//                 <Text style={styles.profileBtnText}>VIEW PROFILE</Text>
-//               </TouchableOpacity>
-//             </View>
-//           </View>
-
-//           {/* Bio Section */}
-//           <View style={styles.bioSection}>
-//             <Text style={styles.bioText}>{profile?.bio || "No bio available"}</Text>
-//             <Text style={styles.bioText}>
-//               Skills: {profile?.skills?.join(", ") || "No skills"}
-//             </Text>
-//           </View>
-
-//           {/* Jobs List */}
-//           <Text style={styles.sectionTitle}>Available Jobs</Text>
-//           {jobs.map((job) => (
-//             <View key={job.id} style={styles.jobCard}>
-//               <Text style={styles.jobTitle}>{job.title}</Text>
-//               <Text style={styles.jobInfo}>💰 ₹{job.price}</Text>
-//               <Text style={styles.jobInfo}>📍 {job.distance} km</Text>
-//               <Text style={styles.jobInfo}>🕒 {job.time} min</Text>
-//             </View>
-//           ))}
-//         </>
-//       )}
-
-//       {/* Logout */}
-//       <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
-//         <Text style={styles.logoutBtnText}>Logout</Text>
-//       </TouchableOpacity>
-//     </ScrollView>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: { flex: 1, padding: 15, backgroundColor: "#f5f7fa" },
-//   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-//   centerContent: { alignItems: "center", marginVertical: 40 },
-
-//   welcomeText: { fontSize: 18, textAlign: "center", marginBottom: 20 },
-
-//   header: { marginBottom: 20 },
-//   name: { fontSize: 24, fontWeight: "700", color: "#333", marginBottom: 15 },
-
-//   buttonGroup: { flexDirection: "row", justifyContent: "flex-start" },
-//   profileBtn: {
-//     flex: 1,
-//     paddingVertical: 12,
-//     borderRadius: 10,
-//     alignItems: "center",
-//     marginHorizontal: 5,
-//   },
-//   editBtn: { backgroundColor: "#1976D2" },
-//   viewBtn: { backgroundColor: "#4CAF50" },
-//   profileBtnText: { color: "#fff", fontWeight: "600", fontSize: 14 },
-
-//   bioSection: {
-//     backgroundColor: "#fff",
-//     padding: 15,
-//     borderRadius: 12,
-//     marginBottom: 20,
-//     elevation: 3,
-//   },
-//   bioText: { fontSize: 16, color: "#555", marginBottom: 5 },
-
-//   sectionTitle: {
-//     fontSize: 20,
-//     fontWeight: "700",
-//     color: "#333",
-//     marginBottom: 10,
-//   },
-//   jobCard: {
-//     backgroundColor: "#fff",
-//     padding: 15,
-//     borderRadius: 12,
-//     marginBottom: 15,
-//     elevation: 2,
-//   },
-//   jobTitle: { fontSize: 16, fontWeight: "600", marginBottom: 5, color: "#333" },
-//   jobInfo: { fontSize: 14, color: "#555", marginBottom: 2 },
-
-//   logoutBtn: {
-//     backgroundColor: "#ff4d4d",
-//     paddingVertical: 15,
-//     borderRadius: 12,
-//     alignItems: "center",
-//     marginTop: 20,
-//   },
-//   logoutBtnText: { color: "#fff", fontWeight: "700", fontSize: 16 },
-// });
-
-// import React, { useEffect, useState } from "react";
-// import {
-//   View,
-//   Text,
-//   ScrollView,
-//   TouchableOpacity,
-//   ActivityIndicator,
-//   StyleSheet,
-//   Alert,
-// } from "react-native";
-// import AsyncStorage from "@react-native-async-storage/async-storage";
-
-// export default function Dashboard({ navigation }) {
-//   const [profile, setProfile] = useState(null);
-//   const [loading, setLoading] = useState(true);
-
-//   useEffect(() => {
-//     const unsubscribe = navigation.addListener("focus", () => {
-//       loadProfile();
-//     });
-//     return unsubscribe;
-//   }, [navigation]);
-
-//   const loadProfile = async () => {
-//     setLoading(true);
-//     try {
-//       const storedProfile = await AsyncStorage.getItem("doerProfile");
-//       if (storedProfile) setProfile(JSON.parse(storedProfile));
-//       else setProfile(null);
-//     } catch (err) {
-//       console.error(err);
-//       Alert.alert("Error", "Failed to load profile");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const logout = async () => {
-//     await AsyncStorage.removeItem("authToken");
-//     await AsyncStorage.removeItem("doerProfile");
-//     navigation.reset({ index: 0, routes: [{ name: "RoleSelect" }] });
-//   };
-
-//   if (loading)
-//     return (
-//       <View style={styles.center}>
-//         <ActivityIndicator size="large" color="#2196f3" />
-//         <Text>Loading profile...</Text>
-//       </View>
-//     );
-
-//   const jobs = [
-//     { id: 1, title: "Pick up documents", price: 150, distance: 0.8, time: 20 },
-//     { id: 2, title: "Bring groceries", price: 100, distance: 1.2, time: 30 },
-//     { id: 3, title: "Clean garage", price: 200, distance: 1.5, time: 45 },
-//   ];
-
-//   return (
-//     <ScrollView
-//       style={styles.container}
-//       contentContainerStyle={{ paddingBottom: 40 }}
-//     >
-//       {!profile ? (
-//         <View style={styles.centerContent}>
-//           <Text style={styles.welcomeText}>
-//             Welcome! Complete your profile to continue.
-//           </Text>
-//           <TouchableOpacity
-//             style={[styles.profileBtn, styles.editBtn]}
-//             onPress={() => navigation.replace("EditProfile")}
-//           >
-//             <Text style={styles.profileBtnText}>Complete Profile</Text>
-//           </TouchableOpacity>
-//         </View>
-//       ) : (
-//         <>
-//           <View style={styles.header}>
-//             <Text style={styles.name}>Hi, {profile?.name || "User"}</Text>
-//             <View style={styles.buttonGroup}>
-//               <TouchableOpacity
-//                 style={[styles.profileBtn, styles.editBtn]}
-//                 onPress={() => navigation.navigate("EditProfile")}
-//               >
-//                 <Text style={styles.profileBtnText}>EDIT PROFILE</Text>
-//               </TouchableOpacity>
-//             </View>
-//           </View>
-
-//           <View style={styles.bioSection}>
-//             <Text style={styles.bioText}>
-//               {profile?.bio || "No bio available"}
-//             </Text>
-//             <Text style={styles.bioText}>
-//               Skills: {profile?.skills?.join(", ") || "No skills"}
-//             </Text>
-//             {profile?.is_phone_verified && (
-//               <Text style={{ color: "green", fontWeight: "700" }}>
-//                 ✅ Phone Verified
-//               </Text>
-//             )}
-//             {profile?.kycLevel > 0 && (
-//               <Text
-//                 style={{
-//                   color: profile.is_phone_verified ? "green" : "orange",
-//                 }}
-//               >
-//                 {profile.is_phone_verified ? "KYC Verified" : "KYC Pending"}
-//               </Text>
-//             )}
-//           </View>
-
-//           <Text style={styles.sectionTitle}>Available Jobs</Text>
-//           {jobs.map((job) => (
-//             <View key={job.id} style={styles.jobCard}>
-//               <Text style={styles.jobTitle}>{job.title}</Text>
-//               <Text style={styles.jobInfo}>💰 ₹{job.price}</Text>
-//               <Text style={styles.jobInfo}>📍 {job.distance} km</Text>
-//               <Text style={styles.jobInfo}>🕒 {job.time} min</Text>
-//             </View>
-//           ))}
-//         </>
-//       )}
-
-//       <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
-//         <Text style={styles.logoutBtnText}>Logout</Text>
-//       </TouchableOpacity>
-//     </ScrollView>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: { flex: 1, padding: 15, backgroundColor: "#f5f7fa" },
-//   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-//   centerContent: { alignItems: "center", marginVertical: 40 },
-//   welcomeText: { fontSize: 18, textAlign: "center", marginBottom: 20 },
-//   header: { marginBottom: 20 },
-//   name: { fontSize: 24, fontWeight: "700", color: "#333", marginBottom: 15 },
-//   buttonGroup: { flexDirection: "row", justifyContent: "flex-start" },
-//   profileBtn: {
-//     flex: 1,
-//     paddingVertical: 12,
-//     borderRadius: 10,
-//     alignItems: "center",
-//     marginHorizontal: 5,
-//   },
-//   editBtn: { backgroundColor: "#1976D2" },
-//   profileBtnText: { color: "#fff", fontWeight: "600", fontSize: 14 },
-//   bioSection: {
-//     backgroundColor: "#fff",
-//     padding: 15,
-//     borderRadius: 12,
-//     marginBottom: 20,
-//     elevation: 3,
-//   },
-//   bioText: { fontSize: 16, color: "#555", marginBottom: 5 },
-//   sectionTitle: {
-//     fontSize: 20,
-//     fontWeight: "700",
-//     color: "#333",
-//     marginBottom: 10,
-//   },
-//   jobCard: {
-//     backgroundColor: "#fff",
-//     padding: 15,
-//     borderRadius: 12,
-//     marginBottom: 15,
-//     elevation: 2,
-//   },
-//   jobTitle: { fontSize: 16, fontWeight: "600", marginBottom: 5, color: "#333" },
-//   jobInfo: { fontSize: 14, color: "#555", marginBottom: 2 },
-//   logoutBtn: {
-//     backgroundColor: "#ff4d4d",
-//     paddingVertical: 15,
-//     borderRadius: 12,
-//     alignItems: "center",
-//     marginTop: 20,
-//   },
-//   logoutBtnText: { color: "#fff", fontWeight: "700", fontSize: 16 },
-// });
 // import React, { useEffect, useState, useLayoutEffect } from "react";
 // import {
 //   View,
@@ -371,24 +9,29 @@
 //   ActivityIndicator,
 //   Modal,
 //   Alert,
-//   ScrollView,
-//   Platform,
-//   KeyboardAvoidingView,
 // } from "react-native";
 // import AsyncStorage from "@react-native-async-storage/async-storage";
 // import { Ionicons } from "@expo/vector-icons";
+// import {
+//   fetchDoerProfile,
+//   fetchAvailableJobs,
+//   fetchCurrentJobs,
+//   acceptJob,
+//   fetchJobHistory,
+// } from "../api/doer";
 
 // export default function DoerDashboard({ navigation }) {
 //   const [profile, setProfile] = useState(null);
 //   const [loading, setLoading] = useState(false);
 //   const [sidebarVisible, setSidebarVisible] = useState(false);
-//   const [refreshing, setRefreshing] = useState(false);
-
-//   const jobs = [
-//     { id: 1, title: "Pick up documents", price: 150, distance: 0.8, time: 20 },
-//     { id: 2, title: "Bring groceries", price: 100, distance: 1.2, time: 30 },
-//     { id: 3, title: "Clean garage", price: 200, distance: 1.5, time: 45 },
-//   ];
+//   const [availableJobs, setAvailableJobs] = useState([]);
+//   const [currentJobs, setCurrentJobs] = useState([]);
+//   const [jobHistory, setJobHistory] = useState([]);
+//   const [page, setPage] = useState(0);
+//   const [hasMore, setHasMore] = useState(true);
+//   const [jobsLoading, setJobsLoading] = useState(false);
+//   const [acceptingMap, setAcceptingMap] = useState({});
+//   const [hasPendingJob, setHasPendingJob] = useState(false);
 
 //   // ---------- Header ----------
 //   useLayoutEffect(() => {
@@ -411,52 +54,155 @@
 //     });
 //   }, [navigation]);
 
-//   // ---------- Load Profile ----------
+//   // ---------- Load Data ----------
 //   useEffect(() => {
 //     const unsubscribe = navigation.addListener("focus", () => {
-//       loadProfile();
+//       loadAllData();
 //     });
 //     return unsubscribe;
 //   }, [navigation]);
 
+//   const loadAllData = async () => {
+//     await loadProfile();
+//     await loadAvailableJobs();
+//     await loadCurrentJobs();
+//     await loadJobHistory(true);
+//     await checkPendingJob();
+//   };
+
+//   // Auto-refresh every 10 seconds
+//   useEffect(() => {
+//     const interval = setInterval(() => {
+//       loadAvailableJobs();
+//       loadCurrentJobs();
+//     }, 10000);
+//     return () => clearInterval(interval);
+//   }, []);
+
 //   const loadProfile = async () => {
 //     try {
 //       setLoading(true);
-//       const storedProfile = await AsyncStorage.getItem("doerProfile");
-//       if (storedProfile) {
-//         const data = JSON.parse(storedProfile);
-//         setProfile(data);
+//       const stored = await AsyncStorage.getItem("doerProfile");
+//       if (stored) {
+//         setProfile(JSON.parse(stored));
 //       } else {
-//         setProfile(null);
-//         Alert.alert("Profile Missing", "Please complete your profile.");
-//         navigation.reset({ index: 0, routes: [{ name: "EditProfile" }] });
+//         const res = await fetchDoerProfile();
+//         if (res?.data) {
+//           setProfile(res.data);
+//           await AsyncStorage.setItem("doerProfile", JSON.stringify(res.data));
+//         } else {
+//           Alert.alert("Profile Missing", "Please complete your profile.");
+//           navigation.reset({ index: 0, routes: [{ name: "EditProfile" }] });
+//         }
 //       }
 //     } catch (err) {
-//       console.warn("[Profile Error]", err.message || err);
+//       console.warn("Profile Load Error:", err.message || err);
 //       setProfile(null);
 //     } finally {
 //       setLoading(false);
 //     }
 //   };
 
-//   // ---------- Logout ----------
-//   const handleLogout = async () => {
+//   const loadAvailableJobs = async () => {
 //     try {
-//       await AsyncStorage.removeItem("authToken");
-//       await AsyncStorage.removeItem("doerProfile");
-//       navigation.reset({ index: 0, routes: [{ name: "RoleSelect" }] });
+//       setJobsLoading(true);
+//       const res = await fetchAvailableJobs();
+//       if (res?.data?.content) setAvailableJobs(res.data.content);
+//       else setAvailableJobs([]);
 //     } catch (err) {
-//       console.warn("[Logout Error]", err.message || err);
-//       Alert.alert("Error", "Logout failed. Please try again.");
+//       console.warn("Fetch Available Jobs Error:", err.message || err);
+//       setAvailableJobs([]);
+//     } finally {
+//       setJobsLoading(false);
 //     }
 //   };
 
-//   if (loading)
-//     return (
-//       <View style={styles.loader}>
-//         <ActivityIndicator size="large" color="#0b78ff" />
-//       </View>
-//     );
+//   const loadCurrentJobs = async () => {
+//     try {
+//       const res = await fetchCurrentJobs();
+//       if (res?.data?.content) setCurrentJobs(res.data.content);
+//       else setCurrentJobs([]);
+//     } catch (err) {
+//       console.warn("Fetch Current Jobs Error:", err.message || err);
+//       setCurrentJobs([]);
+//     }
+//   };
+
+//   const loadJobHistory = async (reset = false) => {
+//     try {
+//       const nextPage = reset ? 0 : page;
+//       const res = await fetchJobHistory(nextPage, 5, ["updatedAt,desc"]);
+
+//       if (res?.data?.data?.content) {
+//         const newJobs = res.data.data.content;
+//         setJobHistory((prev) =>
+//           reset ? newJobs : [...prev, ...newJobs.filter((j) => j)]
+//         );
+//         setHasMore(!res.data.data.last);
+//         setPage(nextPage + 1);
+//       }
+//     } catch (err) {
+//       console.warn("Fetch Job History Error:", err.message);
+//     }
+//   };
+
+//   const checkPendingJob = async () => {
+//     try {
+//       const res = await fetchCurrentJobs();
+//       if (res?.data?.content) {
+//         const pending = res.data.content.some(
+//           (job) => job.status === "ACCEPTED" || job.status === "IN_PROGRESS"
+//         );
+//         setHasPendingJob(pending);
+//       }
+//     } catch (err) {
+//       console.warn("Pending Job Check Error:", err.message);
+//     }
+//   };
+
+//   // ---------- Logout ----------
+//   const handleLogout = async () => {
+//     await AsyncStorage.multiRemove(["authToken", "doerProfile"]);
+//     navigation.reset({ index: 0, routes: [{ name: "RoleSelect" }] });
+//   };
+
+//   // ---------- Accept Job ----------
+//   const handleAcceptJob = async (jobId) => {
+//     if (hasPendingJob) {
+//       Alert.alert(
+//         "Already Working on a Job",
+//         "Please complete your current job before accepting another."
+//       );
+//       return;
+//     }
+
+//     try {
+//       setAcceptingMap((prev) => ({ ...prev, [jobId]: true }));
+//       const res = await acceptJob(jobId);
+//       console.log("✅ Accept Job Response:", res);
+
+//       if (res?.data?.status === "SUCCESS") {
+//         Alert.alert("Success", res.data.message || "Job accepted successfully!");
+//         await checkPendingJob();
+//         await loadAvailableJobs();
+//         await loadCurrentJobs(); // <-- ensures accepted job shows immediately
+//         await loadJobHistory(true);
+//       } else if (res?.response?.data?.message) {
+//         Alert.alert("Cannot Accept Job", res.response.data.message);
+//       } else {
+//         Alert.alert("Failed", "Could not accept job. Try again.");
+//       }
+//     } catch (err) {
+//       console.warn("Accept Job Error:", err);
+//       const msg =
+//         err?.response?.data?.message ||
+//         err?.message ||
+//         "Failed to accept job. Try again.";
+//       Alert.alert("Error", msg);
+//     } finally {
+//       setAcceptingMap((prev) => ({ ...prev, [jobId]: false }));
+//     }
+//   };
 
 //   // ---------- Sidebar ----------
 //   const Sidebar = () => (
@@ -496,18 +242,15 @@
 //           </TouchableOpacity>
 
 //           <TouchableOpacity
-//             style={[
-//               styles.menuItem,
-//               !profile?.is_phone_verified && { opacity: 0.5 },
-//             ]}
-//             disabled={!profile?.is_phone_verified}
+//             style={[styles.menuItem, !profile?.isPhoneVerified && { opacity: 0.5 }]}
+//             disabled={!profile?.isPhoneVerified}
 //             onPress={() => {
-//               if (!profile?.is_phone_verified) {
+//               if (!profile?.isPhoneVerified) {
 //                 Alert.alert("Phone not verified", "Verify your phone first.");
 //                 return;
 //               }
 //               setSidebarVisible(false);
-//               navigation.navigate("DoerKycUpload");
+//               navigation.navigate("KYCPage");
 //             }}
 //           >
 //             <Text style={styles.menuText}>🪪 Upload KYC</Text>
@@ -517,26 +260,74 @@
 //     </Modal>
 //   );
 
-//   // ---------- Render Job ----------
-//   const renderJob = ({ item }) => (
+//   // ---------- Render Available Job ----------
+//   const renderJob = ({ item }) => {
+//     const accepting = acceptingMap[item.jobId] || false;
+//     return (
+//       <View style={styles.jobCard}>
+//         <Text style={styles.jobTitle}>{item.title}</Text>
+//         <Text style={styles.jobMeta}>💰 ₹{item.amountInRs}</Text>
+//         <Text style={styles.jobMeta}>📍 {item.locationArea}</Text>
+//         <Text style={styles.jobMeta}>🕒 {item.postedAgo}</Text>
+
+//         <TouchableOpacity
+//           style={[
+//             styles.acceptBtn,
+//             (hasPendingJob || accepting) && { backgroundColor: "#ccc" },
+//           ]}
+//           disabled={hasPendingJob || accepting}
+//           onPress={() => handleAcceptJob(item.jobId)}
+//         >
+//           {accepting ? (
+//             <ActivityIndicator size="small" color="#fff" />
+//           ) : (
+//             <Text style={{ color: "#fff", fontWeight: "700" }}>
+//               {hasPendingJob ? "Complete Current Job" : "Accept Job"}
+//             </Text>
+//           )}
+//         </TouchableOpacity>
+//       </View>
+//     );
+//   };
+
+//   // ---------- Render Current Job ----------
+//   const renderCurrentJob = ({ item }) => (
 //     <View style={styles.jobCard}>
 //       <Text style={styles.jobTitle}>{item.title}</Text>
-//       <Text style={styles.jobMeta}>💰 ₹{item.price}</Text>
-//       <Text style={styles.jobMeta}>📍 {item.distance} km</Text>
-//       <Text style={styles.jobMeta}>🕒 {item.time} min</Text>
+//       <Text style={styles.jobMeta}>💰 ₹{item.amountPaise / 100}</Text>
+//       <Text style={styles.jobMeta}>📂 {item.category}</Text>
+//       <Text style={styles.jobMeta}>Status: {item.status}</Text>
 //     </View>
 //   );
+
+//   // ---------- Render Job History ----------
+//   const renderHistory = ({ item }) => (
+//     <View style={styles.historyCard}>
+//       <Text style={styles.jobTitle}>{item.title}</Text>
+//       <Text style={styles.jobMeta}>💰 ₹{item.amountPaise / 100}</Text>
+//       <Text style={styles.jobMeta}>📂 {item.category}</Text>
+//       <Text style={styles.jobMeta}>📅 {item.updatedAt.split("T")[0]}</Text>
+//       <Text style={styles.statusLabel}>Status: {item.status}</Text>
+//     </View>
+//   );
+
+//   if (loading)
+//     return (
+//       <View style={styles.loader}>
+//         <ActivityIndicator size="large" color="#0b78ff" />
+//       </View>
+//     );
 
 //   return (
 //     <>
 //       <Sidebar />
 
 //       <FlatList
-//         data={jobs}
-//         keyExtractor={(item) => item.id.toString()}
+//         data={availableJobs}
+//         keyExtractor={(item) => item.jobId.toString()}
 //         renderItem={renderJob}
-//         onRefresh={loadProfile}
-//         refreshing={refreshing}
+//         onRefresh={loadAllData}
+//         refreshing={jobsLoading}
 //         contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
 //         ListHeaderComponent={
 //           <>
@@ -549,10 +340,10 @@
 //               <Text
 //                 style={[
 //                   styles.value,
-//                   { color: profile?.is_phone_verified ? "green" : "red" },
+//                   { color: profile?.isPhoneVerified ? "green" : "red" },
 //                 ]}
 //               >
-//                 {profile?.is_phone_verified ? "Yes" : "No"}
+//                 {profile?.isPhoneVerified ? "Yes" : "No"}
 //               </Text>
 
 //               <Text style={styles.label}>🪪 KYC Level</Text>
@@ -577,24 +368,46 @@
 //             <Text style={styles.sectionHeader}>📋 Available Jobs</Text>
 //           </>
 //         }
-//         ListEmptyComponent={
-//           <Text style={{ textAlign: "center", color: "#555", marginTop: 20 }}>
-//             No jobs available right now.
-//           </Text>
+//         ListFooterComponent={
+//           <>
+//             <Text style={styles.sectionHeader}>📌 Current Jobs</Text>
+//             <FlatList
+//               data={currentJobs}
+//               renderItem={renderCurrentJob}
+//               keyExtractor={(item) => `current-${item.jobId}`}
+//               ListEmptyComponent={
+//                 <Text style={{ textAlign: "center", color: "#666", marginVertical: 8 }}>
+//                   No current jobs.
+//                 </Text>
+//               }
+//             />
+
+//             <Text style={styles.sectionHeader}>📜 Job History</Text>
+//             <FlatList
+//               data={jobHistory}
+//               renderItem={renderHistory}
+//               keyExtractor={(item) => `history-${item.jobId}`}
+//               onEndReached={() => {
+//                 if (hasMore) loadJobHistory();
+//               }}
+//               onEndReachedThreshold={0.5}
+//               ListEmptyComponent={
+//                 <Text style={{ textAlign: "center", color: "#666", marginVertical: 10 }}>
+//                   No past jobs yet.
+//                 </Text>
+//               }
+//             />
+//           </>
 //         }
 //       />
 //     </>
 //   );
 // }
 
+// // ---------- Styles ----------
 // const styles = StyleSheet.create({
 //   loader: { flex: 1, justifyContent: "center", alignItems: "center" },
-//   header: {
-//     fontSize: 22,
-//     fontWeight: "700",
-//     marginBottom: 12,
-//     color: "#0b4da0",
-//   },
+//   header: { fontSize: 22, fontWeight: "700", marginBottom: 12, color: "#0b4da0" },
 //   card: {
 //     backgroundColor: "#fff",
 //     borderRadius: 10,
@@ -613,38 +426,32 @@
 //     borderWidth: 1,
 //     borderColor: "#ddd",
 //   },
+//   historyCard: {
+//     backgroundColor: "#f8f8f8",
+//     borderRadius: 10,
+//     padding: 12,
+//     marginBottom: 8,
+//     borderWidth: 1,
+//     borderColor: "#ccc",
+//   },
+//   statusLabel: { fontSize: 13, color: "#444", marginTop: 3 },
 //   jobTitle: { fontSize: 16, fontWeight: "700", color: "#333" },
 //   jobMeta: { fontSize: 13, color: "#555", marginTop: 2 },
-//   sectionHeader: {
-//     fontSize: 18,
-//     fontWeight: "700",
-//     marginTop: 10,
-//     marginBottom: 10,
-//     color: "#0b4da0",
-//   },
-//   logoutBtn: {
-//     backgroundColor: "#e74c3c",
-//     paddingHorizontal: 12,
-//     paddingVertical: 6,
+//   acceptBtn: {
+//     marginTop: 8,
+//     paddingVertical: 8,
 //     borderRadius: 6,
-//     marginRight: 10,
+//     backgroundColor: "#0b78ff",
+//     alignItems: "center",
 //   },
-//   overlay: {
-//     flex: 1,
-//     backgroundColor: "rgba(0,0,0,0.3)",
-//     flexDirection: "row",
-//   },
-//   sidebar: {
-//     backgroundColor: "#fff",
-//     width: "70%",
-//     padding: 20,
-//     paddingTop: 36,
-//     borderTopRightRadius: 20,
-//     borderBottomRightRadius: 20,
-//   },
+//   sectionHeader: { fontSize: 18, fontWeight: "700", marginTop: 10, marginBottom: 10, color: "#0b4da0" },
+//   logoutBtn: { backgroundColor: "#e74c3c", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6, marginRight: 10 },
+//   overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.3)", flexDirection: "row" },
+//   sidebar: { backgroundColor: "#fff", width: "70%", padding: 20, paddingTop: 36, borderTopRightRadius: 20, borderBottomRightRadius: 20 },
 //   menuItem: { paddingVertical: 12, borderBottomWidth: 1, borderColor: "#eee" },
 //   menuText: { fontSize: 16, color: "#333" },
 // });
+
 import React, { useEffect, useState, useLayoutEffect } from "react";
 import {
   View,
@@ -655,22 +462,29 @@ import {
   ActivityIndicator,
   Modal,
   Alert,
-  ScrollView,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
+import {
+  fetchDoerProfile,
+  fetchAvailableJobs,
+  fetchCurrentJobs,
+  acceptJob,
+  fetchJobHistory,
+} from "../api/doer";
 
 export default function DoerDashboard({ navigation }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const jobs = [
-    { id: 1, title: "Pick up documents", price: 150, distance: 0.8, time: 20 },
-    { id: 2, title: "Bring groceries", price: 100, distance: 1.2, time: 30 },
-    { id: 3, title: "Clean garage", price: 200, distance: 1.5, time: 45 },
-  ];
+  const [availableJobs, setAvailableJobs] = useState([]);
+  const [currentJobs, setCurrentJobs] = useState([]);
+  const [jobHistory, setJobHistory] = useState([]);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [jobsLoading, setJobsLoading] = useState(false);
+  const [acceptingMap, setAcceptingMap] = useState({});
+  const [hasPendingJob, setHasPendingJob] = useState(false);
 
   // ---------- Header ----------
   useLayoutEffect(() => {
@@ -693,42 +507,142 @@ export default function DoerDashboard({ navigation }) {
     });
   }, [navigation]);
 
-  // ---------- Load Profile ----------
+  // ---------- Load Data ----------
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", () => {
-      loadProfile();
+      loadAllData();
     });
     return unsubscribe;
   }, [navigation]);
 
+  const loadAllData = async () => {
+    await loadProfile();
+    await loadAvailableJobs();
+    await loadCurrentJobs();
+    await loadJobHistory(true);
+    await checkPendingJob();
+  };
+
+  // Auto-refresh every 10 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadAvailableJobs();
+      loadCurrentJobs();
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // ---------- Load Profile ----------
   const loadProfile = async () => {
     try {
       setLoading(true);
-      const storedProfile = await AsyncStorage.getItem("doerProfile");
-      if (storedProfile) {
-        setProfile(JSON.parse(storedProfile));
-      } else {
-        setProfile(null);
-        Alert.alert("Profile Missing", "Please complete your profile.");
-        navigation.reset({ index: 0, routes: [{ name: "EditProfile" }] });
+      const stored = await AsyncStorage.getItem("doerProfile");
+      if (stored) setProfile(JSON.parse(stored));
+      else {
+        const res = await fetchDoerProfile();
+        if (res?.data) {
+          setProfile(res.data);
+          await AsyncStorage.setItem("doerProfile", JSON.stringify(res.data));
+        } else {
+          Alert.alert("Profile Missing", "Please complete your profile.");
+          navigation.reset({ index: 0, routes: [{ name: "EditProfile" }] });
+        }
       }
     } catch (err) {
-      console.warn("[Profile Error]", err.message || err);
+      console.warn("Profile Load Error:", err.message || err);
       setProfile(null);
     } finally {
       setLoading(false);
     }
   };
 
+  // ---------- Load Jobs ----------
+  const loadAvailableJobs = async () => {
+    try {
+      setJobsLoading(true);
+      const res = await fetchAvailableJobs();
+      setAvailableJobs(res?.data?.content || []);
+    } catch (err) {
+      console.warn("Fetch Available Jobs Error:", err.message || err);
+      setAvailableJobs([]);
+    } finally {
+      setJobsLoading(false);
+    }
+  };
+
+  const loadCurrentJobs = async () => {
+    try {
+      const res = await fetchCurrentJobs();
+      setCurrentJobs(res?.data?.content || []);
+    } catch (err) {
+      console.warn(
+        "Fetch Current Jobs Error:",
+        err.response?.data || err.message
+      );
+      setCurrentJobs([]);
+    }
+  };
+
+  const loadJobHistory = async (reset = false) => {
+    try {
+      const nextPage = reset ? 0 : page;
+      const res = await fetchJobHistory(nextPage, 5, ["updatedAt,desc"]);
+      if (res?.data?.data?.content) {
+        const newJobs = res.data.data.content;
+        setJobHistory((prev) => (reset ? newJobs : [...prev, ...newJobs]));
+        setHasMore(!res.data.data.last);
+        setPage(nextPage + 1);
+      }
+    } catch (err) {
+      console.warn("Fetch Job History Error:", err.message);
+    }
+  };
+
+  const checkPendingJob = async () => {
+    try {
+      const res = await fetchCurrentJobs();
+      const pending = res?.data?.content?.some(
+        (job) => job.status === "ACCEPTED" || job.status === "IN_PROGRESS"
+      );
+      setHasPendingJob(!!pending);
+    } catch (err) {
+      console.warn("Pending Job Check Error:", err.message);
+      setHasPendingJob(false);
+    }
+  };
+
   // ---------- Logout ----------
   const handleLogout = async () => {
+    await AsyncStorage.multiRemove(["authToken", "doerProfile"]);
+    navigation.reset({ index: 0, routes: [{ name: "RoleSelect" }] });
+  };
+
+  // ---------- Accept Job ----------
+  const handleAcceptJob = async (jobId) => {
+    if (hasPendingJob) {
+      Alert.alert(
+        "Already Working on a Job",
+        "Please complete your current job first."
+      );
+      return;
+    }
     try {
-      await AsyncStorage.removeItem("authToken");
-      await AsyncStorage.removeItem("doerProfile");
-      navigation.reset({ index: 0, routes: [{ name: "RoleSelect" }] });
+      setAcceptingMap((prev) => ({ ...prev, [jobId]: true }));
+      const res = await acceptJob(jobId);
+      if (res?.status === "SUCCESS") {
+        Alert.alert("Success", res.message || "Job accepted!");
+        await loadCurrentJobs();
+        await loadAvailableJobs();
+        await loadJobHistory(true);
+        await checkPendingJob();
+      } else {
+        Alert.alert("Failed", res.message || "Could not accept job");
+      }
     } catch (err) {
-      console.warn("[Logout Error]", err.message || err);
-      Alert.alert("Error", "Logout failed. Please try again.");
+      console.warn("Accept Job Error:", err.response?.data || err.message);
+      Alert.alert("Error", err.response?.data?.message || err.message);
+    } finally {
+      setAcceptingMap((prev) => ({ ...prev, [jobId]: false }));
     }
   };
 
@@ -792,12 +706,53 @@ export default function DoerDashboard({ navigation }) {
   );
 
   // ---------- Render Job ----------
-  const renderJob = ({ item }) => (
+  const renderJob = ({ item }) => {
+    const accepting = acceptingMap[item.jobId] || false;
+    return (
+      <View style={styles.jobCard}>
+        <Text style={styles.jobTitle}>{item.title}</Text>
+        <Text style={styles.jobMeta}>💰 ₹{item.amountInRs}</Text>
+        <Text style={styles.jobMeta}>📍 {item.locationArea}</Text>
+        <Text style={styles.jobMeta}>🕒 {item.postedAgo}</Text>
+
+        <TouchableOpacity
+          style={[
+            styles.acceptBtn,
+            (hasPendingJob || accepting) && { backgroundColor: "#ccc" },
+          ]}
+          disabled={hasPendingJob || accepting}
+          onPress={() => handleAcceptJob(item.jobId)}
+        >
+          {accepting ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={{ color: "#fff", fontWeight: "700" }}>
+              {hasPendingJob ? "Complete Current Job" : "Accept Job"}
+            </Text>
+          )}
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  // ---------- Render Current Job ----------
+  const renderCurrentJob = ({ item }) => (
     <View style={styles.jobCard}>
       <Text style={styles.jobTitle}>{item.title}</Text>
-      <Text style={styles.jobMeta}>💰 ₹{item.price}</Text>
-      <Text style={styles.jobMeta}>📍 {item.distance} km</Text>
-      <Text style={styles.jobMeta}>🕒 {item.time} min</Text>
+      <Text style={styles.jobMeta}>💰 ₹{item.amountPaise / 100}</Text>
+      <Text style={styles.jobMeta}>📂 {item.category}</Text>
+      <Text style={styles.jobMeta}>Status: {item.status}</Text>
+    </View>
+  );
+
+  // ---------- Render Job History ----------
+  const renderHistory = ({ item }) => (
+    <View style={styles.historyCard}>
+      <Text style={styles.jobTitle}>{item.title}</Text>
+      <Text style={styles.jobMeta}>💰 ₹{item.amountPaise / 100}</Text>
+      <Text style={styles.jobMeta}>📂 {item.category}</Text>
+      <Text style={styles.jobMeta}>📅 {item.updatedAt.split("T")[0]}</Text>
+      <Text style={styles.statusLabel}>Status: {item.status}</Text>
     </View>
   );
 
@@ -813,11 +768,11 @@ export default function DoerDashboard({ navigation }) {
       <Sidebar />
 
       <FlatList
-        data={jobs}
-        keyExtractor={(item) => item.id.toString()}
+        data={availableJobs}
+        keyExtractor={(item) => item.jobId.toString()}
         renderItem={renderJob}
-        onRefresh={loadProfile}
-        refreshing={refreshing}
+        onRefresh={loadAllData}
+        refreshing={jobsLoading}
         contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
         ListHeaderComponent={
           <>
@@ -858,16 +813,53 @@ export default function DoerDashboard({ navigation }) {
             <Text style={styles.sectionHeader}>📋 Available Jobs</Text>
           </>
         }
-        ListEmptyComponent={
-          <Text style={{ textAlign: "center", color: "#555", marginTop: 20 }}>
-            No jobs available right now.
-          </Text>
+        ListFooterComponent={
+          <>
+            <Text style={styles.sectionHeader}>📌 Current Jobs</Text>
+            <FlatList
+              data={currentJobs}
+              renderItem={renderCurrentJob}
+              keyExtractor={(item) => `current-${item.jobId}`}
+              ListEmptyComponent={
+                <Text
+                  style={{
+                    textAlign: "center",
+                    color: "#666",
+                    marginVertical: 8,
+                  }}
+                >
+                  No current jobs.
+                </Text>
+              }
+            />
+
+            <Text style={styles.sectionHeader}>📜 Job History</Text>
+            <FlatList
+              data={jobHistory}
+              renderItem={renderHistory}
+              keyExtractor={(item) => `history-${item.jobId}`}
+              onEndReached={() => hasMore && loadJobHistory()}
+              onEndReachedThreshold={0.5}
+              ListEmptyComponent={
+                <Text
+                  style={{
+                    textAlign: "center",
+                    color: "#666",
+                    marginVertical: 10,
+                  }}
+                >
+                  No past jobs yet.
+                </Text>
+              }
+            />
+          </>
         }
       />
     </>
   );
 }
 
+// ---------- Styles ----------
 const styles = StyleSheet.create({
   loader: { flex: 1, justifyContent: "center", alignItems: "center" },
   header: {
@@ -894,8 +886,24 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ddd",
   },
+  historyCard: {
+    backgroundColor: "#f8f8f8",
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "#ccc",
+  },
+  statusLabel: { fontSize: 13, color: "#444", marginTop: 3 },
   jobTitle: { fontSize: 16, fontWeight: "700", color: "#333" },
   jobMeta: { fontSize: 13, color: "#555", marginTop: 2 },
+  acceptBtn: {
+    marginTop: 8,
+    paddingVertical: 8,
+    borderRadius: 6,
+    backgroundColor: "#0b78ff",
+    alignItems: "center",
+  },
   sectionHeader: {
     fontSize: 18,
     fontWeight: "700",

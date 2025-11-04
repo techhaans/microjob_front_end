@@ -5,8 +5,8 @@
 // // ✅ Base URL (your backend IP)
 // const BASE_URL =
 //   Platform.OS === "android"
-//     ? "http://192.168.30.218:8080/api"
-//     : "http://192.168.30.218:8080/api";
+//     ? "http://192.168.217.218:8080/api"
+//     : "http://192.168.217.218:8080/api";
 
 // // ✅ Axios instance
 // const api = axios.create({
@@ -170,8 +170,8 @@
 // // ✅ Base URL (your backend IP)
 // const BASE_URL =
 //   Platform.OS === "android"
-//     ? "http://192.168.30.218:8080/api"
-//     : "http://192.168.30.218:8080/api";
+//     ? "http://192.168.217.218:8080/api"
+//     : "http://192.168.217.218:8080/api";
 
 // // ✅ Axios instance
 // const api = axios.create({
@@ -355,8 +355,8 @@ import { Platform } from "react-native";
 // ✅ Base URL (your backend IP)
 const BASE_URL =
   Platform.OS === "android"
-    ? "http://192.168.30.218:8080/api"
-    : "http://192.168.30.218:8080/api";
+    ? "http://192.168.217.218:8080/api"
+    : "http://192.168.217.218:8080/api";
 
 // ✅ Axios instance
 const api = axios.create({
@@ -465,6 +465,43 @@ export const uploadDoerKyc = async (fileUri, docType) => {
 };
 
 // ============================================================
+// 🧰 FETCH DOER CATEGORIES (SKILLS)
+// ============================================================
+
+export const fetchDoerCategories = async () => {
+  const token = await AsyncStorage.getItem("authToken");
+  if (!token) throw new Error("Token not found");
+
+  const res = await api.get("/doer/jobs/categories", {
+    headers: {
+      Authorization: token.startsWith("Bearer ") ? token : `Bearer ${token}`,
+    },
+  });
+
+  return res.data;
+};
+
+// ✅ Fetch Available Jobs
+export const fetchAvailableJobs = async (page = 0, size = 20) => {
+  const res = await api.get("/doer/jobs/available", {
+    params: { page, size },
+  });
+  return res.data;
+};
+// ✅ Get job history
+export const fetchJobHistory = async (
+  page = 0,
+  size = 5,
+  sort = ["updatedAt,desc"]
+) => {
+  const token = await AsyncStorage.getItem("authToken");
+  return axios.get(`${BASE_URL}/doer/jobs/history`, {
+    params: { page, size, sort },
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
+
+// ============================================================
 // 📱 PHONE VERIFICATION (AFTER PROFILE SAVE)
 // ============================================================
 
@@ -540,6 +577,31 @@ export const fetchKycStatus = async (userId) => {
     console.error("Fetch KYC Status Error:", err.response?.data || err.message);
     return { status: "ERROR", message: "Failed to fetch KYC status" };
   }
+};
+// // Accept a job
+// export const acceptJob = async (jobId) => {
+//   try {
+//     const res = await api.post(`/doer/jobs/accept/${jobId}`);
+//     return res.data; // { status, message, data, timestamp }
+//   } catch (err) {
+//     console.warn("Accept Job Error:", err.message || err);
+//     return { status: "ERROR", message: "Failed to accept job" };
+//   }
+// };
+// ✅ Accept Job — FIXED ✅
+export const acceptJob = async (jobId) => {
+  try {
+    const res = await api.post(`/doer/jobs/accept/${jobId}`);
+    return res.data; // returns ApiResponse (data, message, status, timestamp)
+  } catch (error) {
+    console.log("❌ Accept Job Error:", error.response?.data || error.message);
+    throw error;
+  }
+};
+// ✅ Current Jobs
+export const fetchCurrentJobs = async () => {
+  const res = await api.get("/doer/jobs/current");
+  return res.data;
 };
 
 // ============================================================

@@ -1,4 +1,3 @@
-
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
@@ -8,8 +7,8 @@ import { Platform } from "react-native";
 // ============================================================
 const BASE_URL =
   Platform.OS === "android"
-    ? "http://192.168.30.218:8080/api"
-    : "http://192.168.30.218:8080/api";
+    ? "http://192.168.217.218:8080/api"
+    : "http://192.168.217.218:8080/api";
 
 // ============================================================
 // ⚙️ AXIOS INSTANCE
