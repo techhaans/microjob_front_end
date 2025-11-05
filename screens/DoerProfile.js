@@ -449,7 +449,9 @@ export default function DoerProfile({ navigation }) {
 
         <Text style={styles.label}>Skills</Text>
         <Text style={styles.value}>
-          {profile.skills.length ? profile.skills.join(", ") : "No skills added"}
+          {profile.skills.length
+            ? profile.skills.join(", ")
+            : "No skills added"}
         </Text>
       </View>
 
@@ -470,8 +472,6 @@ export default function DoerProfile({ navigation }) {
 
         <Text style={styles.label}>📋 Verification Status</Text>
         <Text style={styles.value}>{profile.verificationStatus}</Text>
-
-       
       </View>
     </ScrollView>
   );
