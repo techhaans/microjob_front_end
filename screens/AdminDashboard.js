@@ -1068,7 +1068,7 @@ import axios from "axios";
 import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const BASE_URL = "http:// 192.168.97.218:8080/api";
+const BASE_URL = "http://192.168.97.218:8080/api";
 
 export default function AdminDashboard({ navigation }) {
   const [kycList, setKycList] = useState([]);

@@ -137,7 +137,7 @@ import axios from "axios";
 
 // Axios instance
 const api = axios.create({
-  baseURL: "http:// 192.168.97.218:8080/api", // 🧠 use your backend machine IP
+  baseURL: "http://192.168.97.218:8080/api", // 🧠 use your backend machine IP
   headers: { "Content-Type": "application/json" },
 });
 
