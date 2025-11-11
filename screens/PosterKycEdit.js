@@ -23,7 +23,7 @@ const uploadPosterKyc = async (fileUri, docType, token) => {
   formData.append("docType", docType);
 
   const res = await fetch(
-    "http://192.168.217.218:8080/api/poster/profile/doc/upload",
+    "http:// 192.168.97.218:8080/api/poster/profile/doc/upload",
     {
       method: "POST",
       body: formData,

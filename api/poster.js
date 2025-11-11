@@ -5,8 +5,8 @@
 
 // const BASE_URL =
 //   Platform.OS === "android"
-//     ? "http://192.168.217.218:8080/api"
-//     : "http://192.168.217.218:8080/api";
+//     ? "http:// 192.168.97.218:8080/api"
+//     : "http:// 192.168.97.218:8080/api";
 
 // const api = axios.create({
 //   baseURL: BASE_URL,
@@ -250,8 +250,8 @@
 
 // const BASE_URL =
 //   Platform.OS === "android"
-//     ? "http://192.168.217.218:8080/api"
-//     : "http://192.168.217.218:8080/api";
+//     ? "http:// 192.168.97.218:8080/api"
+//     : "http:// 192.168.97.218:8080/api";
 
 // const api = axios.create({
 //   baseURL: BASE_URL,
@@ -513,8 +513,8 @@
 
 // const BASE_URL =
 //   Platform.OS === "android"
-//     ? "http://192.168.217.218:8080/api"
-//     : "http://192.168.217.218:8080/api";
+//     ? "http:// 192.168.97.218:8080/api"
+//     : "http:// 192.168.97.218:8080/api";
 
 // // Axios instance
 // const api = axios.create({
@@ -821,8 +821,8 @@ import { Platform } from "react-native";
 
 const BASE_URL =
   Platform.OS === "android"
-    ? "http://192.168.217.218:8080/api"
-    : "http://192.168.217.218:8080/api";
+    ? "http://192.168.97.218:8080/api" // 192.168.97.218
+    : "http://192.168.97.218:8080/api";
 
 // ----------------- Axios Instance -----------------
 const api = axios.create({
@@ -1106,7 +1106,11 @@ export const getPosterJobs = async (
     });
 
     if (!res.data) {
-      return { status: "ERROR", data: [], message: "No data returned from server" };
+      return {
+        status: "ERROR",
+        data: [],
+        message: "No data returned from server",
+      };
     }
 
     return {
@@ -1124,11 +1128,13 @@ export const getPosterJobs = async (
     return {
       status: "ERROR",
       data: [],
-      message: err.response?.data?.message || err.message || "Failed to fetch poster jobs",
+      message:
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to fetch poster jobs",
     };
   }
 };
-
 
 export const updatePosterJob = async (jobId, updateData) => {
   try {
@@ -1159,6 +1165,62 @@ export const deletePosterJob = async (jobId) => {
       status: "ERROR",
       message: err.response?.data?.message || "Failed to delete job",
     };
+  }
+};
+
+// ----------------- 💰 Job Price Items APIs -----------------
+export const fetchJobPriceItems = async (jobId) => {
+  try {
+    const res = await api.get(`/poster/jobs/${jobId}/price-items`);
+    return res.data;
+  } catch (err) {
+    console.error(
+      "❌ fetchJobPriceItems Error:",
+      err.response?.data || err.message
+    );
+    return { status: "ERROR", message: "Failed to fetch price items" };
+  }
+};
+
+export const addJobPriceItem = async (jobId, item) => {
+  try {
+    const res = await api.post(`/poster/jobs/${jobId}/price-items/add`, item);
+    return res.data;
+  } catch (err) {
+    console.error(
+      "❌ addJobPriceItem Error:",
+      err.response?.data || err.message
+    );
+    return { status: "ERROR", message: "Failed to add price item" };
+  }
+};
+
+export const updateJobPriceItem = async (jobId, itemId, item) => {
+  try {
+    const res = await api.put(
+      `/poster/jobs/${jobId}/price-items/${itemId}`,
+      item
+    );
+    return res.data;
+  } catch (err) {
+    console.error(
+      "❌ updateJobPriceItem Error:",
+      err.response?.data || err.message
+    );
+    return { status: "ERROR", message: "Failed to update price item" };
+  }
+};
+
+export const deleteJobPriceItem = async (jobId, itemId) => {
+  try {
+    const res = await api.delete(`/poster/jobs/${jobId}/price-items/${itemId}`);
+    return res.data;
+  } catch (err) {
+    console.error(
+      "❌ deleteJobPriceItem Error:",
+      err.response?.data || err.message
+    );
+    return { status: "ERROR", message: "Failed to delete price item" };
   }
 };
 

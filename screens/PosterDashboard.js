@@ -1117,7 +1117,621 @@
 //     color: "#0b4da0",
 //   },
 // });
-// PosterDashboard.js
+// // PosterDashboard.js
+// import React, { useEffect, useState, useRef } from "react";
+// import {
+//   View,
+//   Text,
+//   TouchableOpacity,
+//   StyleSheet,
+//   ActivityIndicator,
+//   Alert,
+//   Platform,
+//   FlatList,
+//   TextInput,
+//   KeyboardAvoidingView,
+//   ScrollView,
+//   Animated,
+//   Dimensions,
+//   SafeAreaView,
+//   StatusBar,
+//   Easing,
+// } from "react-native";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
+// import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+// import RNPickerSelect from "react-native-picker-select";
+// import {
+//   fetchPosterProfile,
+//   logoutPoster,
+//   getPosterJobs,
+//   deletePosterJob,
+//   updatePosterJob,
+//   fetchCategories,
+//   fetchPosterAddresses,
+// } from "../api/poster";
+
+// const { width, height } = Dimensions.get("window");
+
+// export default function PosterDashboard({ navigation }) {
+//   // data states
+//   const [profile, setProfile] = useState(null);
+//   const [loading, setLoading] = useState(false);
+//   const [jobs, setJobs] = useState([]);
+//   const [refreshing, setRefreshing] = useState(false);
+//   const [jobStatusFilter, setJobStatusFilter] = useState("POSTED");
+
+//   // sidebar animation
+//   const slideAnim = useRef(new Animated.Value(-width * 0.72)).current; // hidden left
+//   const overlayAnim = useRef(new Animated.Value(0)).current;
+//   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+//   // update modal & form (kept for compatibility)
+//   const [updateModalVisible, setUpdateModalVisible] = useState(false);
+//   const [selectedJob, setSelectedJob] = useState(null);
+//   const [title, setTitle] = useState("");
+//   const [description, setDescription] = useState("");
+//   const [categoryCode, setCategoryCode] = useState("");
+//   const [amountPaise, setAmountPaise] = useState("");
+//   const [deadline, setDeadline] = useState(new Date());
+//   const [addressId, setAddressId] = useState("");
+//   const [categories, setCategories] = useState([]);
+//   const [addresses, setAddresses] = useState([]);
+
+//   // ---------- loaders ----------
+//   useEffect(() => {
+//     const unsub = navigation.addListener("focus", () => {
+//       loadAll();
+//     });
+//     // initial load too
+//     loadAll();
+//     return unsub;
+//     // eslint-disable-next-line react-hooks/exhaustive-deps
+//   }, [navigation, jobStatusFilter]);
+
+//   const loadAll = async () => {
+//     setLoading(true);
+//     await Promise.all([
+//       loadProfile(),
+//       loadJobs(jobStatusFilter),
+//       loadCategories(),
+//       loadAddresses(),
+//     ]);
+//     setLoading(false);
+//   };
+
+//   const loadProfile = async () => {
+//     try {
+//       const res = await fetchPosterProfile();
+//       if (res?.status === "SUCCESS" && res.data) {
+//         setProfile(res.data);
+//         await AsyncStorage.setItem("posterProfile", JSON.stringify(res.data));
+//       } else {
+//         setProfile(null);
+//       }
+//     } catch (err) {
+//       console.warn("[Profile Error]", err?.message || err);
+//       setProfile(null);
+//     }
+//   };
+
+//   const loadJobs = async (status = "POSTED") => {
+//     setRefreshing(true);
+//     try {
+//       const res = await getPosterJobs(0, 20, status);
+//       if (res?.data) setJobs(res.data);
+//       else setJobs([]);
+//     } catch (err) {
+//       console.warn("[Jobs Error]", err?.message || err);
+//       setJobs([]);
+//     } finally {
+//       setRefreshing(false);
+//     }
+//   };
+
+//   const loadCategories = async () => {
+//     try {
+//       const res = await fetchCategories();
+//       if (res?.status === "SUCCESS" && Array.isArray(res.data))
+//         setCategories(res.data);
+//     } catch (err) {
+//       console.warn("[Categories Error]", err?.message || err);
+//     }
+//   };
+
+//   const loadAddresses = async () => {
+//     try {
+//       const res = await fetchPosterAddresses();
+//       if (res?.status === "SUCCESS" && Array.isArray(res.data))
+//         setAddresses(res.data);
+//     } catch (err) {
+//       console.warn("[Addresses Error]", err?.message || err);
+//     }
+//   };
+
+//   // ---------- sidebar controls ----------
+//   const openSidebar = () => {
+//     setSidebarOpen(true);
+//     Animated.parallel([
+//       Animated.timing(slideAnim, {
+//         toValue: 0,
+//         duration: 260,
+//         easing: Easing.out(Easing.cubic),
+//         useNativeDriver: true,
+//       }),
+//       Animated.timing(overlayAnim, {
+//         toValue: 0.45,
+//         duration: 260,
+//         easing: Easing.out(Easing.cubic),
+//         useNativeDriver: true,
+//       }),
+//     ]).start();
+//   };
+
+//   const closeSidebar = () => {
+//     Animated.parallel([
+//       Animated.timing(slideAnim, {
+//         toValue: -width * 0.72,
+//         duration: 200,
+//         easing: Easing.in(Easing.cubic),
+//         useNativeDriver: true,
+//       }),
+//       Animated.timing(overlayAnim, {
+//         toValue: 0,
+//         duration: 200,
+//         easing: Easing.in(Easing.cubic),
+//         useNativeDriver: true,
+//       }),
+//     ]).start(() => setSidebarOpen(false));
+//   };
+
+//   const toggleSidebar = () => {
+//     if (sidebarOpen) closeSidebar();
+//     else openSidebar();
+//   };
+
+//   // ---------- logout ----------
+//   const handleLogout = async () => {
+//     try {
+//       await logoutPoster();
+//       navigation.reset({ index: 0, routes: [{ name: "LoginPage" }] });
+//     } catch (err) {
+//       Alert.alert("Error", "Logout failed.");
+//     }
+//   };
+
+//   // ---------- delete ----------
+//   const handleDeleteJob = (jobId) => {
+//     Alert.alert("Confirm Delete", "Are you sure you want to delete this job?", [
+//       { text: "Cancel" },
+//       {
+//         text: "Delete",
+//         onPress: async () => {
+//           try {
+//             await deletePosterJob(jobId);
+//             Alert.alert("Deleted", "Job deleted successfully");
+//             loadJobs(jobStatusFilter);
+//           } catch (err) {
+//             Alert.alert("Error", "Failed to delete job");
+//           }
+//         },
+//       },
+//     ]);
+//   };
+
+//   // ---------- update (open modal prefill) ----------
+//   const handleOpenUpdate = (job) => {
+//     setSelectedJob(job);
+//     setTitle(job.title || "");
+//     setDescription(job.description || "");
+//     setAmountPaise(String(job.amountPaise || ""));
+//     setDeadline(new Date(job.deadline || new Date()));
+
+//     const matchedCategory = categories.find(
+//       (c) => c.name?.toLowerCase() === job.category?.toLowerCase()
+//     );
+//     const matchedAddress = addresses.find(
+//       (a) => a.label?.toLowerCase() === job.addressLabel?.toLowerCase()
+//     );
+//     setCategoryCode(String(matchedCategory?.code || ""));
+//     setAddressId(String(matchedAddress?.id || ""));
+//     setUpdateModalVisible(true);
+//   };
+
+//   const handleUpdateJob = async () => {
+//     if (!title || !description || !categoryCode || !addressId) {
+//       return Alert.alert("Validation", "All fields are required");
+//     }
+//     try {
+//       const payload = {
+//         title,
+//         description,
+//         categoryCode: Number(categoryCode),
+//         amountPaise: Number(amountPaise),
+//         deadline: deadline.toISOString(),
+//         addressId: Number(addressId),
+//       };
+//       const res = await updatePosterJob(selectedJob.id, payload);
+//       if (res.status === "SUCCESS") {
+//         Alert.alert("✅ Updated", "Job updated successfully");
+//         setUpdateModalVisible(false);
+//         loadJobs(jobStatusFilter);
+//       } else {
+//         Alert.alert("Error", res.message || "Failed to update job");
+//       }
+//     } catch (err) {
+//       Alert.alert("Error", "Something went wrong");
+//     }
+//   };
+
+//   // ---------- Job card (clean) ----------
+//   const renderJobItem = ({ item }) => {
+//     return (
+//       <View style={styles.jobCard}>
+//         <View style={styles.jobHeader}>
+//           <Text style={styles.jobTitle}>{item.title}</Text>
+//           <View
+//             style={[
+//               styles.statusBadge,
+//               {
+//                 backgroundColor:
+//                   item.status === "POSTED" ? "#007bff20" : "#28a74520",
+//               },
+//             ]}
+//           >
+//             <Text
+//               style={[
+//                 styles.statusText,
+//                 { color: item.status === "POSTED" ? "#007bff" : "#28a745" },
+//               ]}
+//             >
+//               {item.status}
+//             </Text>
+//           </View>
+//         </View>
+
+//         <View style={styles.jobDetails}>
+//           <View style={styles.jobRow}>
+//             <Ionicons name="briefcase-outline" size={16} color="#555" />
+//             <Text style={styles.jobInfo}>{item.category || "No Category"}</Text>
+//           </View>
+
+//           <View style={styles.jobRow}>
+//             <Ionicons name="location-outline" size={16} color="#555" />
+//             <Text style={styles.jobInfo}>
+//               {item.addressLabel || "No Address"}
+//             </Text>
+//           </View>
+
+//           <View style={styles.jobRow}>
+//             <Ionicons name="calendar-outline" size={16} color="#555" />
+//             <Text style={styles.jobInfo}>
+//               {new Date(item.createdAt).toLocaleDateString()}
+//             </Text>
+//           </View>
+//         </View>
+
+//         {item.status === "POSTED" && (
+//           <View style={styles.actionRow}>
+//             <TouchableOpacity
+//               style={[styles.actionBtn, { backgroundColor: "#007bff" }]}
+//               onPress={() => handleOpenUpdate(item)}
+//             >
+//               <Ionicons name="create-outline" size={16} color="#fff" />
+//               <Text style={styles.actionText}>Update</Text>
+//             </TouchableOpacity>
+
+//             <TouchableOpacity
+//               style={[styles.actionBtn, { backgroundColor: "#e74c3c" }]}
+//               onPress={() => handleDeleteJob(item.id)}
+//             >
+//               <Ionicons name="trash-outline" size={16} color="#fff" />
+//               <Text style={styles.actionText}>Delete</Text>
+//             </TouchableOpacity>
+//           </View>
+//         )}
+//       </View>
+//     );
+//   };
+
+//   if (loading) {
+//     return (
+//       <SafeAreaView style={styles.loader}>
+//         <ActivityIndicator size="large" color="#0b78ff" />
+//       </SafeAreaView>
+//     );
+//   }
+
+//   return (
+//     <SafeAreaView
+//       style={[styles.container, { paddingTop: StatusBar.currentHeight || 0 }]}
+//     >
+//       <StatusBar
+//         translucent
+//         backgroundColor="#111827"
+//         barStyle="light-content"
+//       />
+
+//       {/* Top bar (custom) */}
+//       <View style={styles.topBar}>
+//         <View style={{ flexDirection: "row", alignItems: "center" }}>
+//           <TouchableOpacity onPress={toggleSidebar} style={styles.iconBtn}>
+//             <Ionicons name="menu" size={22} color="#fff" />
+//           </TouchableOpacity>
+//           <Text style={styles.topTitle}>Poster Dashboard</Text>
+//         </View>
+//         <TouchableOpacity onPress={handleLogout}>
+//           <Ionicons name="log-out-outline" size={22} color="#fff" />
+//         </TouchableOpacity>
+//       </View>
+
+//       {/* Content area */}
+//       <FlatList
+//         data={jobs}
+//         keyExtractor={(item, i) => item.id?.toString() || String(i)}
+//         renderItem={renderJobItem}
+//         refreshing={refreshing}
+//         onRefresh={() => loadJobs(jobStatusFilter)}
+//         contentContainerStyle={styles.contentContainer}
+//         ListHeaderComponent={
+//           <>
+//             <Text style={styles.header}>
+//               Welcome {profile?.name ? profile.name.split(" ")[0] : ""} 👋
+//             </Text>
+
+//             <TouchableOpacity
+//               style={styles.createBtn}
+//               onPress={() => navigation.navigate("CreateJobScreen")}
+//             >
+//               <Text style={styles.createBtnText}>Create New Job</Text>
+//             </TouchableOpacity>
+
+//             <View style={styles.filterContainer}>
+//               {["POSTED", "ACCEPTED"].map((status) => (
+//                 <TouchableOpacity
+//                   key={status}
+//                   style={[
+//                     styles.filterBtn,
+//                     {
+//                       backgroundColor:
+//                         jobStatusFilter === status ? "#0b78ff" : "#ddd",
+//                     },
+//                   ]}
+//                   onPress={() => {
+//                     setJobStatusFilter(status);
+//                     loadJobs(status);
+//                   }}
+//                 >
+//                   <Text
+//                     style={{
+//                       color: jobStatusFilter === status ? "#fff" : "#333",
+//                       fontWeight: "700",
+//                     }}
+//                   >
+//                     {status}
+//                   </Text>
+//                 </TouchableOpacity>
+//               ))}
+//             </View>
+
+//             <Text style={styles.sectionHeader}>📋 Your Job Posts</Text>
+//           </>
+//         }
+//       />
+
+//       {/* Overlay (absolute) */}
+//       {sidebarOpen && (
+//         <Animated.View
+//           style={[styles.overlay, { opacity: overlayAnim }]}
+//           pointerEvents={sidebarOpen ? "auto" : "none"}
+//         >
+//           <TouchableOpacity
+//             style={{ flex: 1 }}
+//             activeOpacity={1}
+//             onPress={closeSidebar}
+//           />
+//         </Animated.View>
+//       )}
+
+//       {/* Sidebar (animated) */}
+//       <Animated.View
+//         style={[styles.sidebar, { transform: [{ translateX: slideAnim }] }]}
+//       >
+//         <View style={styles.sidebarHeader}>
+//           <Text style={styles.sidebarTitle}>Menu</Text>
+//           <TouchableOpacity onPress={closeSidebar}>
+//             <Ionicons name="close" size={22} color="#111827" />
+//           </TouchableOpacity>
+//         </View>
+
+//         <TouchableOpacity
+//           style={styles.menuItem}
+//           onPress={() => {
+//             closeSidebar();
+//             navigation.navigate("PosterDashboard");
+//           }}
+//         >
+//           <Ionicons name="home-outline" size={20} color="#2563eb" />
+//           <Text style={styles.menuText}>Dashboard</Text>
+//         </TouchableOpacity>
+
+//         <TouchableOpacity
+//           style={styles.menuItem}
+//           onPress={() => {
+//             closeSidebar();
+//             navigation.navigate("PosterProfileView");
+//           }}
+//         >
+//           <Ionicons name="person-circle-outline" size={20} color="#2563eb" />
+//           <Text style={styles.menuText}>View Profile</Text>
+//         </TouchableOpacity>
+
+//         <TouchableOpacity
+//           style={styles.menuItem}
+//           onPress={() => {
+//             closeSidebar();
+//             navigation.navigate("PosterProfileEdit");
+//           }}
+//         >
+//           <MaterialIcons name="edit" size={20} color="#2563eb" />
+//           <Text style={styles.menuText}>Edit Profile</Text>
+//         </TouchableOpacity>
+
+//         <TouchableOpacity
+//           style={styles.menuItem}
+//           onPress={() => {
+//             closeSidebar();
+//             navigation.navigate("PosterKycUpload");
+//           }}
+//         >
+//           <Ionicons name="document-text-outline" size={20} color="#2563eb" />
+//           <Text style={styles.menuText}>Upload KYC</Text>
+//         </TouchableOpacity>
+
+//         <View style={{ flex: 1 }} />
+
+//         <TouchableOpacity style={styles.logoutMenu} onPress={handleLogout}>
+//           <Ionicons name="log-out-outline" size={20} color="#ef4444" />
+//           <Text style={[styles.menuText, { color: "#ef4444" }]}>Logout</Text>
+//         </TouchableOpacity>
+//       </Animated.View>
+//     </SafeAreaView>
+//   );
+// }
+
+// // ---------- styles ----------
+// const styles = StyleSheet.create({
+//   container: { flex: 1, backgroundColor: "#f8fafc" },
+//   contentContainer: { padding: 16, paddingBottom: 100 },
+
+//   // Top bar
+//   topBar: {
+//     height: 56,
+//     backgroundColor: "#111827",
+//     paddingHorizontal: 14,
+//     flexDirection: "row",
+//     alignItems: "center",
+//     justifyContent: "space-between",
+//   },
+//   iconBtn: { padding: 6, marginRight: 8 },
+//   topTitle: { color: "#fff", fontWeight: "800", fontSize: 18 },
+
+//   // Header + create button
+//   header: {
+//     fontSize: 22,
+//     fontWeight: "700",
+//     marginBottom: 12,
+//     color: "#0f172a",
+//   },
+//   createBtn: {
+//     backgroundColor: "#0b78ff",
+//     padding: 12,
+//     borderRadius: 10,
+//     alignItems: "center",
+//     marginBottom: 12,
+//   },
+//   createBtnText: { color: "#fff", fontWeight: "800" },
+
+//   // Filters
+//   filterContainer: { flexDirection: "row", marginBottom: 12 },
+//   filterBtn: {
+//     flex: 1,
+//     padding: 10,
+//     marginHorizontal: 5,
+//     borderRadius: 8,
+//     alignItems: "center",
+//   },
+
+//   sectionHeader: {
+//     fontSize: 18,
+//     fontWeight: "700",
+//     marginTop: 6,
+//     marginBottom: 12,
+//     color: "#0b4da0",
+//   },
+
+//   // Job card
+//   jobCard: {
+//     backgroundColor: "#fff",
+//     borderRadius: 14,
+//     padding: 14,
+//     marginBottom: 15,
+//     shadowColor: "#000",
+//     shadowOffset: { width: 0, height: 1 },
+//     shadowOpacity: 0.08,
+//     shadowRadius: 4,
+//     elevation: 3,
+//     borderWidth: 1,
+//     borderColor: "#eee",
+//   },
+//   jobHeader: {
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     alignItems: "center",
+//     marginBottom: 8,
+//   },
+//   jobTitle: { fontSize: 16, fontWeight: "700", color: "#111", flex: 1 },
+//   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+//   statusText: { fontSize: 12, fontWeight: "700", textTransform: "uppercase" },
+
+//   jobDetails: { marginTop: 2 },
+//   jobRow: { flexDirection: "row", alignItems: "center", marginVertical: 4 },
+//   jobInfo: { fontSize: 13, color: "#444", marginLeft: 8 },
+
+//   actionRow: {
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     marginTop: 12,
+//   },
+//   actionBtn: {
+//     flex: 1,
+//     flexDirection: "row",
+//     alignItems: "center",
+//     justifyContent: "center",
+//     paddingVertical: 10,
+//     borderRadius: 10,
+//     marginHorizontal: 6,
+//   },
+//   actionText: { color: "#fff", fontWeight: "700", fontSize: 14, marginLeft: 6 },
+
+//   // overlay & sidebar
+//   overlay: {
+//     position: "absolute",
+//     top: 0,
+//     left: 0,
+//     right: 0,
+//     bottom: 0,
+//     backgroundColor: "#000",
+//     zIndex: 9,
+//   },
+//   sidebar: {
+//     position: "absolute",
+//     top: 0,
+//     bottom: 0,
+//     left: 0,
+//     width: width * 0.72,
+//     backgroundColor: "#fff",
+//     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight || 20 : 34,
+//     paddingHorizontal: 18,
+//     paddingBottom: 22,
+//     borderTopRightRadius: 18,
+//     borderBottomRightRadius: 18,
+//     elevation: 12,
+//     zIndex: 10,
+//   },
+//   sidebarHeader: {
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     alignItems: "center",
+//     marginBottom: 16,
+//   },
+//   sidebarTitle: { fontSize: 18, fontWeight: "800", color: "#0f172a" },
+
+//   menuItem: { flexDirection: "row", alignItems: "center", paddingVertical: 12 },
+//   menuText: { marginLeft: 12, fontSize: 16, color: "#111", fontWeight: "700" },
+
+//   logoutMenu: { flexDirection: "row", alignItems: "center", marginTop: 16 },
+//   loader: { flex: 1, justifyContent: "center", alignItems: "center" },
+// });
 import React, { useEffect, useState, useRef } from "react";
 import {
   View,
@@ -1129,17 +1743,18 @@ import {
   Platform,
   FlatList,
   TextInput,
-  KeyboardAvoidingView,
   ScrollView,
   Animated,
   Dimensions,
   SafeAreaView,
   StatusBar,
-  Easing,
+  Modal,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import RNPickerSelect from "react-native-picker-select";
+import DateTimePicker from "@react-native-community/datetimepicker";
+
 import {
   fetchPosterProfile,
   logoutPoster,
@@ -1148,24 +1763,27 @@ import {
   updatePosterJob,
   fetchCategories,
   fetchPosterAddresses,
+  addJobPriceItem,
 } from "../api/poster";
 
 const { width, height } = Dimensions.get("window");
 
 export default function PosterDashboard({ navigation }) {
-  // data states
+  // ---------- State ----------
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [jobs, setJobs] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [jobStatusFilter, setJobStatusFilter] = useState("POSTED");
+  const [categories, setCategories] = useState([]);
+  const [addresses, setAddresses] = useState([]);
 
-  // sidebar animation
-  const slideAnim = useRef(new Animated.Value(-width * 0.72)).current; // hidden left
+  // Sidebar animation
+  const slideAnim = useRef(new Animated.Value(-width * 0.72)).current;
   const overlayAnim = useRef(new Animated.Value(0)).current;
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // update modal & form (kept for compatibility)
+  // ---------- Update Modal ----------
   const [updateModalVisible, setUpdateModalVisible] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
   const [title, setTitle] = useState("");
@@ -1174,18 +1792,21 @@ export default function PosterDashboard({ navigation }) {
   const [amountPaise, setAmountPaise] = useState("");
   const [deadline, setDeadline] = useState(new Date());
   const [addressId, setAddressId] = useState("");
-  const [categories, setCategories] = useState([]);
-  const [addresses, setAddresses] = useState([]);
+  const [jobType, setJobType] = useState("PHYSICAL");
 
-  // ---------- loaders ----------
+  const [priceItems, setPriceItems] = useState([]);
+  const [label, setLabel] = useState("");
+  const [price, setPrice] = useState("");
+
+  const [showPicker, setShowPicker] = useState(false);
+
+  // ---------- Load Data ----------
   useEffect(() => {
     const unsub = navigation.addListener("focus", () => {
       loadAll();
     });
-    // initial load too
     loadAll();
     return unsub;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigation, jobStatusFilter]);
 
   const loadAll = async () => {
@@ -1205,9 +1826,7 @@ export default function PosterDashboard({ navigation }) {
       if (res?.status === "SUCCESS" && res.data) {
         setProfile(res.data);
         await AsyncStorage.setItem("posterProfile", JSON.stringify(res.data));
-      } else {
-        setProfile(null);
-      }
+      } else setProfile(null);
     } catch (err) {
       console.warn("[Profile Error]", err?.message || err);
       setProfile(null);
@@ -1248,48 +1867,39 @@ export default function PosterDashboard({ navigation }) {
     }
   };
 
-  // ---------- sidebar controls ----------
+  // ---------- Sidebar ----------
   const openSidebar = () => {
     setSidebarOpen(true);
     Animated.parallel([
       Animated.timing(slideAnim, {
         toValue: 0,
         duration: 260,
-        easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
       Animated.timing(overlayAnim, {
         toValue: 0.45,
         duration: 260,
-        easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
     ]).start();
   };
-
   const closeSidebar = () => {
     Animated.parallel([
       Animated.timing(slideAnim, {
         toValue: -width * 0.72,
         duration: 200,
-        easing: Easing.in(Easing.cubic),
         useNativeDriver: true,
       }),
       Animated.timing(overlayAnim, {
         toValue: 0,
         duration: 200,
-        easing: Easing.in(Easing.cubic),
         useNativeDriver: true,
       }),
     ]).start(() => setSidebarOpen(false));
   };
+  const toggleSidebar = () => (sidebarOpen ? closeSidebar() : openSidebar());
 
-  const toggleSidebar = () => {
-    if (sidebarOpen) closeSidebar();
-    else openSidebar();
-  };
-
-  // ---------- logout ----------
+  // ---------- Logout ----------
   const handleLogout = async () => {
     try {
       await logoutPoster();
@@ -1299,7 +1909,7 @@ export default function PosterDashboard({ navigation }) {
     }
   };
 
-  // ---------- delete ----------
+  // ---------- Delete ----------
   const handleDeleteJob = (jobId) => {
     Alert.alert("Confirm Delete", "Are you sure you want to delete this job?", [
       { text: "Cancel" },
@@ -1318,29 +1928,113 @@ export default function PosterDashboard({ navigation }) {
     ]);
   };
 
-  // ---------- update (open modal prefill) ----------
+  // ---------- Update Modal Prefill ----------
   const handleOpenUpdate = (job) => {
     setSelectedJob(job);
     setTitle(job.title || "");
     setDescription(job.description || "");
-    setAmountPaise(String(job.amountPaise || ""));
+    setAmountPaise(String(job.amountPaise || 0));
     setDeadline(new Date(job.deadline || new Date()));
+    setJobType(job.jobType || "PHYSICAL");
 
     const matchedCategory = categories.find(
-      (c) => c.name?.toLowerCase() === job.category?.toLowerCase()
-    );
-    const matchedAddress = addresses.find(
-      (a) => a.label?.toLowerCase() === job.addressLabel?.toLowerCase()
+      (c) => String(c.code) === String(job.categoryCode)
     );
     setCategoryCode(String(matchedCategory?.code || ""));
+
+    const matchedAddress = addresses.find(
+      (a) => String(a.id) === String(job.addressId)
+    );
     setAddressId(String(matchedAddress?.id || ""));
+
+    setPriceItems(job.priceItems || []);
     setUpdateModalVisible(true);
   };
 
-  const handleUpdateJob = async () => {
-    if (!title || !description || !categoryCode || !addressId) {
-      return Alert.alert("Validation", "All fields are required");
+  // ---------- Date Picker ----------
+  const onChangeDate = (event, selectedDate) => {
+    if (Platform.OS === "android") setShowPicker(false);
+    if (selectedDate) setDeadline(selectedDate);
+  };
+
+  // ---------- Job Card ----------
+  const renderJobItem = ({ item }) => (
+    <View style={styles.jobCard}>
+      <View style={styles.jobHeader}>
+        <Text style={styles.jobTitle}>{item.title}</Text>
+        <View
+          style={[
+            styles.statusBadge,
+            {
+              backgroundColor:
+                item.status === "POSTED" ? "#007bff20" : "#28a74520",
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.statusText,
+              { color: item.status === "POSTED" ? "#007bff" : "#28a745" },
+            ]}
+          >
+            {item.status}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.jobDetails}>
+        <View style={styles.jobRow}>
+          <Ionicons name="briefcase-outline" size={16} color="#555" />
+          <Text style={styles.jobInfo}>{item.category || "No Category"}</Text>
+        </View>
+
+        <View style={styles.jobRow}>
+          <Ionicons name="location-outline" size={16} color="#555" />
+          <Text style={styles.jobInfo}>
+            {item.addressLabel || "No Address"}
+          </Text>
+        </View>
+
+        <View style={styles.jobRow}>
+          <Ionicons name="calendar-outline" size={16} color="#555" />
+          <Text style={styles.jobInfo}>
+            {new Date(item.createdAt).toLocaleDateString()}
+          </Text>
+        </View>
+      </View>
+
+      {item.status === "POSTED" && (
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+            style={[styles.actionBtn, { backgroundColor: "#007bff" }]}
+            onPress={() => handleOpenUpdate(item)}
+          >
+            <Ionicons name="create-outline" size={16} color="#fff" />
+            <Text style={styles.actionText}>Update</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionBtn, { backgroundColor: "#e74c3c" }]}
+            onPress={() => handleDeleteJob(item.id)}
+          >
+            <Ionicons name="trash-outline" size={16} color="#fff" />
+            <Text style={styles.actionText}>Delete</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  );
+
+  // ---------- Update Modal Save ----------
+  const handleSaveUpdate = async () => {
+    if (
+      !title ||
+      !description ||
+      !categoryCode ||
+      (jobType === "PHYSICAL" && !addressId)
+    ) {
+      return Alert.alert("Validation", "All required fields must be filled.");
     }
+
     try {
       const payload = {
         title,
@@ -1348,11 +2042,22 @@ export default function PosterDashboard({ navigation }) {
         categoryCode: Number(categoryCode),
         amountPaise: Number(amountPaise),
         deadline: deadline.toISOString(),
-        addressId: Number(addressId),
+        addressId: jobType === "PHYSICAL" ? Number(addressId) : null,
+        jobType,
       };
       const res = await updatePosterJob(selectedJob.id, payload);
+
       if (res.status === "SUCCESS") {
-        Alert.alert("✅ Updated", "Job updated successfully");
+        // Update price items
+        for (const item of priceItems) {
+          await addJobPriceItem(selectedJob.id, {
+            label: item.label,
+            description: item.description || "",
+            priceRupees: item.priceRupees,
+          });
+        }
+
+        Alert.alert("✅ Updated", "Job and price items updated successfully");
         setUpdateModalVisible(false);
         loadJobs(jobStatusFilter);
       } else {
@@ -1363,83 +2068,12 @@ export default function PosterDashboard({ navigation }) {
     }
   };
 
-  // ---------- Job card (clean) ----------
-  const renderJobItem = ({ item }) => {
-    return (
-      <View style={styles.jobCard}>
-        <View style={styles.jobHeader}>
-          <Text style={styles.jobTitle}>{item.title}</Text>
-          <View
-            style={[
-              styles.statusBadge,
-              {
-                backgroundColor:
-                  item.status === "POSTED" ? "#007bff20" : "#28a74520",
-              },
-            ]}
-          >
-            <Text
-              style={[
-                styles.statusText,
-                { color: item.status === "POSTED" ? "#007bff" : "#28a745" },
-              ]}
-            >
-              {item.status}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.jobDetails}>
-          <View style={styles.jobRow}>
-            <Ionicons name="briefcase-outline" size={16} color="#555" />
-            <Text style={styles.jobInfo}>{item.category || "No Category"}</Text>
-          </View>
-
-          <View style={styles.jobRow}>
-            <Ionicons name="location-outline" size={16} color="#555" />
-            <Text style={styles.jobInfo}>
-              {item.addressLabel || "No Address"}
-            </Text>
-          </View>
-
-          <View style={styles.jobRow}>
-            <Ionicons name="calendar-outline" size={16} color="#555" />
-            <Text style={styles.jobInfo}>
-              {new Date(item.createdAt).toLocaleDateString()}
-            </Text>
-          </View>
-        </View>
-
-        {item.status === "POSTED" && (
-          <View style={styles.actionRow}>
-            <TouchableOpacity
-              style={[styles.actionBtn, { backgroundColor: "#007bff" }]}
-              onPress={() => handleOpenUpdate(item)}
-            >
-              <Ionicons name="create-outline" size={16} color="#fff" />
-              <Text style={styles.actionText}>Update</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.actionBtn, { backgroundColor: "#e74c3c" }]}
-              onPress={() => handleDeleteJob(item.id)}
-            >
-              <Ionicons name="trash-outline" size={16} color="#fff" />
-              <Text style={styles.actionText}>Delete</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-    );
-  };
-
-  if (loading) {
+  if (loading)
     return (
       <SafeAreaView style={styles.loader}>
         <ActivityIndicator size="large" color="#0b78ff" />
       </SafeAreaView>
     );
-  }
 
   return (
     <SafeAreaView
@@ -1451,7 +2085,7 @@ export default function PosterDashboard({ navigation }) {
         barStyle="light-content"
       />
 
-      {/* Top bar (custom) */}
+      {/* Top bar */}
       <View style={styles.topBar}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <TouchableOpacity onPress={toggleSidebar} style={styles.iconBtn}>
@@ -1464,26 +2098,19 @@ export default function PosterDashboard({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Content area */}
+      {/* FlatList */}
       <FlatList
         data={jobs}
         keyExtractor={(item, i) => item.id?.toString() || String(i)}
         renderItem={renderJobItem}
         refreshing={refreshing}
         onRefresh={() => loadJobs(jobStatusFilter)}
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
         ListHeaderComponent={
           <>
             <Text style={styles.header}>
-              Welcome {profile?.name ? profile.name.split(" ")[0] : ""} 👋
+              Welcome {profile?.name?.split(" ")[0] || ""} 👋
             </Text>
-
-            <TouchableOpacity
-              style={styles.createBtn}
-              onPress={() => navigation.navigate("CreateJobScreen")}
-            >
-              <Text style={styles.createBtnText}>Create New Job</Text>
-            </TouchableOpacity>
 
             <View style={styles.filterContainer}>
               {["POSTED", "ACCEPTED"].map((status) => (
@@ -1518,12 +2145,9 @@ export default function PosterDashboard({ navigation }) {
         }
       />
 
-      {/* Overlay (absolute) */}
+      {/* Sidebar Overlay */}
       {sidebarOpen && (
-        <Animated.View
-          style={[styles.overlay, { opacity: overlayAnim }]}
-          pointerEvents={sidebarOpen ? "auto" : "none"}
-        >
+        <Animated.View style={[styles.overlay, { opacity: overlayAnim }]}>
           <TouchableOpacity
             style={{ flex: 1 }}
             activeOpacity={1}
@@ -1532,7 +2156,7 @@ export default function PosterDashboard({ navigation }) {
         </Animated.View>
       )}
 
-      {/* Sidebar (animated) */}
+      {/* Sidebar */}
       <Animated.View
         style={[styles.sidebar, { transform: [{ translateX: slideAnim }] }]}
       >
@@ -1594,16 +2218,220 @@ export default function PosterDashboard({ navigation }) {
           <Text style={[styles.menuText, { color: "#ef4444" }]}>Logout</Text>
         </TouchableOpacity>
       </Animated.View>
+
+      {/* Update Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={updateModalVisible}
+        onRequestClose={() => setUpdateModalVisible(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.4)",
+            justifyContent: "center",
+            padding: 20,
+          }}
+        >
+          <ScrollView
+            style={{ backgroundColor: "#fff", borderRadius: 12, padding: 20 }}
+          >
+            <Text style={{ fontSize: 18, fontWeight: "700", marginBottom: 12 }}>
+              Update Job
+            </Text>
+
+            <TextInput
+              style={styles.input}
+              placeholder="Title"
+              value={title}
+              onChangeText={setTitle}
+            />
+            <TextInput
+              style={[styles.input, { height: 80 }]}
+              placeholder="Description"
+              multiline
+              value={description}
+              onChangeText={setDescription}
+            />
+
+            {/* Category */}
+            <RNPickerSelect
+              onValueChange={(val) => setCategoryCode(val)}
+              value={categoryCode}
+              placeholder={{ label: "Select Category", value: "" }}
+              items={categories.map((c) => ({
+                label: c.name,
+                value: String(c.code),
+              }))}
+              style={{ inputAndroid: styles.input, inputIOS: styles.input }}
+            />
+
+            {/* Address */}
+            <RNPickerSelect
+              onValueChange={(val) => setAddressId(val)}
+              value={addressId}
+              placeholder={{ label: "Select Address", value: "" }}
+              items={addresses.map((a) => ({
+                label: `${a.label} — ${a.area} (${a.pinCode})`,
+                value: String(a.id),
+              }))}
+              style={{ inputAndroid: styles.input, inputIOS: styles.input }}
+            />
+
+            {/* Job Type */}
+            <RNPickerSelect
+              onValueChange={(val) => setJobType(val)}
+              value={jobType}
+              placeholder={{ label: "Select Job Type", value: "PHYSICAL" }}
+              items={[
+                { label: "PHYSICAL", value: "PHYSICAL" },
+                { label: "ONLINE", value: "ONLINE" },
+              ]}
+              style={{ inputAndroid: styles.input, inputIOS: styles.input }}
+            />
+
+            {/* Deadline */}
+            <TouchableOpacity onPress={() => setShowPicker(true)}>
+              <View pointerEvents="none">
+                <TextInput
+                  style={styles.input}
+                  placeholder="Deadline"
+                  value={deadline?.toISOString()?.split("T")[0]}
+                  editable={false}
+                />
+              </View>
+            </TouchableOpacity>
+            {showPicker && (
+              <DateTimePicker
+                value={deadline}
+                mode="date"
+                display="default"
+                onChange={onChangeDate}
+              />
+            )}
+
+            {/* Amount */}
+            <TextInput
+              style={styles.input}
+              placeholder="Amount (Paise)"
+              keyboardType="numeric"
+              value={amountPaise}
+              onChangeText={setAmountPaise}
+            />
+
+            {/* Price Items */}
+            <Text style={{ fontWeight: "700", marginBottom: 5, marginTop: 10 }}>
+              Price Items
+            </Text>
+            {priceItems.map((item) => (
+              <View
+                key={item.id}
+                style={{
+                  flexDirection: "row",
+                  marginBottom: 5,
+                  alignItems: "center",
+                }}
+              >
+                <TextInput
+                  style={[styles.input, { flex: 2, marginRight: 5 }]}
+                  placeholder="Label"
+                  value={item.label}
+                  onChangeText={(text) =>
+                    setPriceItems(
+                      priceItems.map((i) =>
+                        i.id === item.id ? { ...i, label: text } : i
+                      )
+                    )
+                  }
+                />
+                <TextInput
+                  style={[styles.input, { flex: 1 }]}
+                  placeholder="Price"
+                  keyboardType="numeric"
+                  value={String(item.priceRupees)}
+                  onChangeText={(text) => {
+                    const val = parseInt(text) || 0;
+                    setPriceItems(
+                      priceItems.map((i) =>
+                        i.id === item.id ? { ...i, priceRupees: val } : i
+                      )
+                    );
+                  }}
+                />
+                <TouchableOpacity
+                  onPress={() =>
+                    setPriceItems(priceItems.filter((i) => i.id !== item.id))
+                  }
+                  style={{ marginLeft: 5 }}
+                >
+                  <Text style={{ color: "red" }}>Delete</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+
+            {/* Add New Price Item */}
+            <View
+              style={{ flexDirection: "row", marginTop: 5, marginBottom: 10 }}
+            >
+              <TextInput
+                style={[styles.input, { flex: 2, marginRight: 5 }]}
+                placeholder="Label"
+                value={label}
+                onChangeText={setLabel}
+              />
+              <TextInput
+                style={[styles.input, { flex: 1 }]}
+                placeholder="Price"
+                keyboardType="numeric"
+                value={price}
+                onChangeText={setPrice}
+              />
+              <TouchableOpacity
+                onPress={() => {
+                  if (!label.trim() || !price.trim()) return;
+                  setPriceItems([
+                    ...priceItems,
+                    {
+                      id: Date.now(),
+                      label: label.trim(),
+                      priceRupees: parseInt(price),
+                    },
+                  ]);
+                  setLabel("");
+                  setPrice("");
+                }}
+                style={{ marginLeft: 5, justifyContent: "center" }}
+              >
+                <Text style={{ color: "#007bff" }}>Add</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Save / Cancel */}
+            <TouchableOpacity style={styles.addBtn} onPress={handleSaveUpdate}>
+              <Text style={{ color: "#fff", fontWeight: "700" }}>
+                Update Job
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.addBtn,
+                { backgroundColor: "#ccc", marginTop: 10 },
+              ]}
+              onPress={() => setUpdateModalVisible(false)}
+            >
+              <Text style={{ color: "#333", fontWeight: "700" }}>Cancel</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
-// ---------- styles ----------
+// ---------- Styles ----------
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f8fafc" },
-  contentContainer: { padding: 16, paddingBottom: 100 },
-
-  // Top bar
   topBar: {
     height: 56,
     backgroundColor: "#111827",
@@ -1614,24 +2442,12 @@ const styles = StyleSheet.create({
   },
   iconBtn: { padding: 6, marginRight: 8 },
   topTitle: { color: "#fff", fontWeight: "800", fontSize: 18 },
-
-  // Header + create button
   header: {
     fontSize: 22,
     fontWeight: "700",
     marginBottom: 12,
     color: "#0f172a",
   },
-  createBtn: {
-    backgroundColor: "#0b78ff",
-    padding: 12,
-    borderRadius: 10,
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  createBtnText: { color: "#fff", fontWeight: "800" },
-
-  // Filters
   filterContainer: { flexDirection: "row", marginBottom: 12 },
   filterBtn: {
     flex: 1,
@@ -1640,7 +2456,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
   },
-
   sectionHeader: {
     fontSize: 18,
     fontWeight: "700",
@@ -1648,8 +2463,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     color: "#0b4da0",
   },
-
-  // Job card
   jobCard: {
     backgroundColor: "#fff",
     borderRadius: 14,
@@ -1672,11 +2485,9 @@ const styles = StyleSheet.create({
   jobTitle: { fontSize: 16, fontWeight: "700", color: "#111", flex: 1 },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   statusText: { fontSize: 12, fontWeight: "700", textTransform: "uppercase" },
-
   jobDetails: { marginTop: 2 },
   jobRow: { flexDirection: "row", alignItems: "center", marginVertical: 4 },
   jobInfo: { fontSize: 13, color: "#444", marginLeft: 8 },
-
   actionRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1692,8 +2503,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 6,
   },
   actionText: { color: "#fff", fontWeight: "700", fontSize: 14, marginLeft: 6 },
-
-  // overlay & sidebar
   overlay: {
     position: "absolute",
     top: 0,
@@ -1725,10 +2534,22 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sidebarTitle: { fontSize: 18, fontWeight: "800", color: "#0f172a" },
-
   menuItem: { flexDirection: "row", alignItems: "center", paddingVertical: 12 },
   menuText: { marginLeft: 12, fontSize: 16, color: "#111", fontWeight: "700" },
-
   logoutMenu: { flexDirection: "row", alignItems: "center", marginTop: 16 },
   loader: { flex: 1, justifyContent: "center", alignItems: "center" },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  addBtn: {
+    backgroundColor: "#0b78ff",
+    padding: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    marginTop: 10,
+  },
 });

@@ -5,8 +5,8 @@
 // // ✅ Base URL (your backend IP)
 // const BASE_URL =
 //   Platform.OS === "android"
-//     ? "http://192.168.217.218:8080/api"
-//     : "http://192.168.217.218:8080/api";
+//     ? "http:// 192.168.97.218:8080/api"
+//     : "http:// 192.168.97.218:8080/api";
 
 // // ✅ Axios instance
 // const api = axios.create({
@@ -170,8 +170,8 @@
 // // ✅ Base URL (your backend IP)
 // const BASE_URL =
 //   Platform.OS === "android"
-//     ? "http://192.168.217.218:8080/api"
-//     : "http://192.168.217.218:8080/api";
+//     ? "http:// 192.168.97.218:8080/api"
+//     : "http:// 192.168.97.218:8080/api";
 
 // // ✅ Axios instance
 // const api = axios.create({
@@ -355,8 +355,8 @@ import { Platform } from "react-native";
 // ✅ Base URL (your backend IP)
 const BASE_URL =
   Platform.OS === "android"
-    ? "http://192.168.217.218:8080/api"
-    : "http://192.168.217.218:8080/api";
+    ? "http://192.168.97.218:8080/api"
+    : "http://192.168.97.218:8080/api";
 
 // ✅ Axios instance
 const api = axios.create({
@@ -481,24 +481,45 @@ export const fetchDoerCategories = async () => {
   return res.data;
 };
 
-// ✅ Fetch Available Jobs
-export const fetchAvailableJobs = async (page = 0, size = 20) => {
-  const res = await api.get("/doer/jobs/available", {
-    params: { page, size },
-  });
-  return res.data;
-};
-// ✅ Get job history
-export const fetchJobHistory = async (
+// // ✅ Fetch Available Jobs
+// export const fetchAvailableJobs = async (page = 0, size = 20) => {
+//   const res = await api.get("/doer/jobs/available", {
+//     params: { page, size },
+//   });
+//   return res.data;
+// };
+// ✅ Fetch Available Jobs (with GPS + Radius)
+export const fetchAvailableJobs = async (
+  lat,
+  lon,
+  radius = 5000, // meters
   page = 0,
-  size = 5,
-  sort = ["updatedAt,desc"]
+  size = 20,
+  sort = ["createdAt,desc"]
 ) => {
-  const token = await AsyncStorage.getItem("authToken");
-  return axios.get(`${BASE_URL}/doer/jobs/history`, {
-    params: { page, size, sort },
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  try {
+    const token = await AsyncStorage.getItem("authToken");
+    if (!token) throw new Error("Auth token missing");
+
+    const headers = { Authorization: `Bearer ${token}` };
+
+    const params = { lat, lon, radius, page, size, sort };
+
+    // ❌ old: `${BASE_URL}/api/doer/jobs/available`
+    // ✅ fixed:
+    const { data } = await axios.get(`${BASE_URL}/doer/jobs/available`, {
+      headers,
+      params,
+    });
+
+    return data;
+  } catch (err) {
+    console.warn(
+      "⚠️ Fetch Available Jobs Error:",
+      err.response?.data || err.message
+    );
+    throw err;
+  }
 };
 
 // ============================================================

@@ -1,3 +1,29 @@
+// {
+//   "expo": {
+//     "name": "microjob",
+//     "slug": "microjob",
+//     "version": "1.0.0",
+//     "plugins": [
+//       "expo-web-browser",
+//       [
+//         "expo-media-library",
+//         {
+//           "photosPermission": "Allow microjob to access and save your media files."
+//         }
+//       ]
+//     ],
+//     "android": {
+//       "permissions": [
+//         "READ_EXTERNAL_STORAGE",
+//         "WRITE_EXTERNAL_STORAGE",
+//         "READ_MEDIA_IMAGES",
+//         "READ_MEDIA_VIDEO",
+//         "READ_MEDIA_AUDIO"
+//       ],
+//       "package": "com.microjob.app"
+//     }
+//   }
+// }
 {
   "expo": {
     "name": "microjob",
@@ -8,12 +34,22 @@
       [
         "expo-media-library",
         {
-          "photosPermission": "Allow microjob to access and save your media files."
+          "photosPermission": "Allow MicroJob to access and save your media files."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow MicroJob to access your location even when running in the background to find nearby jobs.",
+          "locationWhenInUsePermission": "Allow MicroJob to access your location while using the app to show nearby jobs."
         }
       ]
     ],
     "android": {
       "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "FOREGROUND_SERVICE",
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
         "READ_MEDIA_IMAGES",
