@@ -1,4 +1,3 @@
-
 // import React, { useEffect, useState, useRef } from "react";
 // import {
 //   View,
@@ -11,6 +10,7 @@
 //   Animated,
 //   FlatList,
 //   Alert,
+//   ScrollView,
 // } from "react-native";
 // import AsyncStorage from "@react-native-async-storage/async-storage";
 // import { Ionicons } from "@expo/vector-icons";
@@ -40,7 +40,6 @@
 //   const fadeAnim = useRef(new Animated.Value(0)).current;
 //   const locationWatcher = useRef(null);
 
-//   // Debounced job fetch to reduce frequent API calls
 //   const debouncedLoadJobs = useDebouncedCallback(async (rad) => {
 //     if (location) await loadAvailableJobs(location, rad);
 //   }, 500);
@@ -76,9 +75,10 @@
 //       if (stored) setProfile(JSON.parse(stored));
 //       else {
 //         const res = await fetchDoerProfile();
-//         console.log("Doer Profile Response:", res?.data);
-//         setProfile(res.data);
-//         await AsyncStorage.setItem("doerProfile", JSON.stringify(res.data));
+//         if (res?.data) {
+//           setProfile(res.data);
+//           await AsyncStorage.setItem("doerProfile", JSON.stringify(res.data));
+//         }
 //       }
 //     } catch (err) {
 //       console.warn("Profile Error:", err.message);
@@ -93,14 +93,11 @@
 //         return;
 //       }
 
-//       // Fetch initial location
 //       const loc = await Location.getCurrentPositionAsync({});
 //       const coords = { lat: loc.coords.latitude, lon: loc.coords.longitude };
-//       console.log("Doer's current coordinates:", coords);
 //       setLocation(coords);
 //       await loadAvailableJobs(coords, radius);
 
-//       // Watch live location
 //       locationWatcher.current = await Location.watchPositionAsync(
 //         { distanceInterval: 50 },
 //         (loc) => {
@@ -108,7 +105,6 @@
 //             lat: loc.coords.latitude,
 //             lon: loc.coords.longitude,
 //           };
-//           console.log("Updated live coordinates:", newCoords);
 //           setLocation(newCoords);
 //           debouncedLoadJobs(radius);
 //         }
@@ -117,162 +113,11 @@
 //       console.warn("Location Error:", err.message);
 //     }
 //   };
-//   const renderProfileSection = () => {
-//     const acceptedCount = currentJobs.length;
-//     const completedCount = jobHistory.length;
-//     const rating = profile?.rating ?? 4.7;
-//     const isNewUser = !profile?.isKycDone && !profile?.isProfileUpdated;
-
-//     return (
-//       <ScrollView style={{ flex: 1, backgroundColor: "#fff" }}>
-//         <View
-//           style={{
-//             backgroundColor: "#2563eb",
-//             padding: 20,
-//             alignItems: "center",
-//           }}
-//         >
-//           <Text style={{ fontSize: 18, fontWeight: "800", color: "#fff" }}>
-//             {profile?.name || "New User"}
-//           </Text>
-//           <Text style={{ color: "#f3f4f6", marginTop: 4 }}>
-//             {profile?.phone || "No phone"}
-//           </Text>
-//           <Text style={{ color: "#cbd5e1", marginTop: 2 }}>
-//             Member since {profile?.createdAt?.slice(0, 10) || "—"}
-//           </Text>
-//         </View>
-
-//         <View
-//           style={{
-//             flexDirection: "row",
-//             justifyContent: "space-around",
-//             paddingVertical: 16,
-//           }}
-//         >
-//           <View style={{ alignItems: "center" }}>
-//             <Text style={{ fontSize: 16, fontWeight: "800", color: "#111827" }}>
-//               {acceptedCount}
-//             </Text>
-//             <Text style={{ color: "#6b7280", fontSize: 12 }}>Active Jobs</Text>
-//           </View>
-//           <View style={{ alignItems: "center" }}>
-//             <Text style={{ fontSize: 16, fontWeight: "800", color: "#111827" }}>
-//               {completedCount}
-//             </Text>
-//             <Text style={{ color: "#6b7280", fontSize: 12 }}>Completed</Text>
-//           </View>
-//           <View style={{ alignItems: "center" }}>
-//             <Text style={{ fontSize: 16, fontWeight: "800", color: "#111827" }}>
-//               {rating.toFixed(1)}
-//             </Text>
-//             <Text style={{ color: "#6b7280", fontSize: 12 }}>Rating</Text>
-//           </View>
-//         </View>
-
-//         <Text
-//           style={{
-//             fontSize: 16,
-//             fontWeight: "700",
-//             color: "#111827",
-//             marginHorizontal: 16,
-//             marginTop: 20,
-//           }}
-//         >
-//           My Account
-//         </Text>
-
-//         {!isNewUser && (
-//           <TouchableOpacity
-//             style={{
-//               flexDirection: "row",
-//               alignItems: "center",
-//               paddingVertical: 14,
-//               marginHorizontal: 16,
-//               borderBottomWidth: 1,
-//               borderColor: "#e5e7eb",
-//             }}
-//             onPress={() => navigation.navigate("DoerProfile")}
-//           >
-//             <Ionicons name="person-circle-outline" size={20} color="#2563eb" />
-//             <Text style={{ marginLeft: 10, color: "#111827", fontSize: 15 }}>
-//               View Profile
-//             </Text>
-//           </TouchableOpacity>
-//         )}
-
-//         <TouchableOpacity
-//           style={{
-//             flexDirection: "row",
-//             alignItems: "center",
-//             paddingVertical: 14,
-//             marginHorizontal: 16,
-//             borderBottomWidth: 1,
-//             borderColor: "#e5e7eb",
-//           }}
-//           onPress={() => navigation.navigate("EditProfile")}
-//         >
-//           <Ionicons name="create-outline" size={20} color="#2563eb" />
-//           <Text style={{ marginLeft: 10, color: "#111827", fontSize: 15 }}>
-//             Edit Profile
-//           </Text>
-//         </TouchableOpacity>
-
-//         <TouchableOpacity
-//           style={{
-//             flexDirection: "row",
-//             alignItems: "center",
-//             paddingVertical: 14,
-//             marginHorizontal: 16,
-//             borderBottomWidth: 1,
-//             borderColor: "#e5e7eb",
-//             opacity: profile?.isPhoneVerified ? 1 : 0.5,
-//           }}
-//           disabled={!profile?.isPhoneVerified}
-//           onPress={() => {
-//             if (!profile?.isPhoneVerified) {
-//               Alert.alert("Phone not verified", "Verify your phone first.");
-//               return;
-//             }
-//             navigation.navigate("KYCPage");
-//           }}
-//         >
-//           <Ionicons name="document-text-outline" size={20} color="#2563eb" />
-//           <Text style={{ marginLeft: 10, color: "#111827", fontSize: 15 }}>
-//             Upload KYC
-//           </Text>
-//         </TouchableOpacity>
-
-//         <TouchableOpacity
-//           style={{
-//             flexDirection: "row",
-//             alignItems: "center",
-//             paddingVertical: 14,
-//             marginHorizontal: 16,
-//             borderBottomWidth: 1,
-//             borderColor: "#e5e7eb",
-//           }}
-//           onPress={handleLogout}
-//         >
-//           <Ionicons name="log-out-outline" size={20} color="#ef4444" />
-//           <Text style={{ marginLeft: 10, color: "#ef4444", fontSize: 15 }}>
-//             Logout
-//           </Text>
-//         </TouchableOpacity>
-//       </ScrollView>
-//     );
-//   };
 
 //   const loadAvailableJobs = async (coords = location, rad = radius) => {
 //     if (!coords) return;
 //     try {
-//       console.log("Requesting available jobs with:", {
-//         lat: coords.lat,
-//         lon: coords.lon,
-//         radius: rad,
-//       });
 //       const res = await fetchAvailableJobs(coords.lat, coords.lon, rad);
-//       console.log("Available Jobs Response:", res?.data);
 //       setAvailableJobs(res?.data?.content || []);
 //     } catch (err) {
 //       console.warn("Available Jobs Error:", err.message);
@@ -282,9 +127,7 @@
 
 //   const loadCurrentJobs = async () => {
 //     try {
-//       console.log("Requesting current jobs for Doer");
 //       const res = await fetchCurrentJobs();
-//       console.log("Current Jobs Response:", res?.data);
 //       setCurrentJobs(res?.data?.content || []);
 //     } catch (err) {
 //       console.warn("Current Jobs Error:", err?.message);
@@ -293,9 +136,7 @@
 
 //   const loadJobHistory = async () => {
 //     try {
-//       console.log("Requesting job history page=0 size=10 sort=updatedAt,desc");
 //       const res = await fetchJobHistory(0, 10, ["updatedAt,desc"]);
-//       console.log("Job History Response:", res?.data);
 //       setJobHistory(res?.data?.content || []);
 //     } catch (err) {
 //       console.warn("Job History Error:", err?.message);
@@ -304,10 +145,8 @@
 
 //   const handleAcceptJob = async (jobId) => {
 //     try {
-//       console.log("Accepting Job with ID:", jobId);
 //       setAcceptingMap((p) => ({ ...p, [jobId]: true }));
 //       const res = await acceptJob(jobId);
-//       console.log("Accept Job Response:", res?.data || res);
 //       Alert.alert("Success", res?.message || "Job accepted!");
 //       await Promise.all([
 //         loadCurrentJobs(),
@@ -315,7 +154,6 @@
 //         loadJobHistory(),
 //       ]);
 //     } catch (err) {
-//       console.log("Accept Job Error:", err?.response?.data || err.message);
 //       Alert.alert(
 //         "Error",
 //         err?.response?.data?.message || "Something went wrong"
@@ -324,18 +162,15 @@
 //       setAcceptingMap((p) => ({ ...p, [jobId]: false }));
 //     }
 //   };
+
 //   const handleLogout = async () => {
 //     try {
-//       // Clear AsyncStorage
 //       await AsyncStorage.clear();
-
-//       // Navigate to login screen
 //       navigation.reset({
 //         index: 0,
-//         routes: [{ name: "LoginPage" }], // make sure the route name matches your login screen
+//         routes: [{ name: "LoginPage" }],
 //       });
 //     } catch (err) {
-//       console.warn("Logout Error:", err.message);
 //       Alert.alert("Error", "Unable to logout. Try again.");
 //     }
 //   };
@@ -412,6 +247,120 @@
 //     );
 //   };
 
+//   const renderProfileSection = () => {
+//     const acceptedCount = currentJobs.length;
+//     const completedCount = jobHistory.length;
+//     const rating = profile?.rating ?? 4.7;
+//     const isNewUser = !profile?.isKycDone && !profile?.isProfileUpdated;
+
+//     return (
+//       <ScrollView style={{ flex: 1, backgroundColor: "#fff" }}>
+//         <View
+//           style={{
+//             backgroundColor: "#2563eb",
+//             padding: 20,
+//             alignItems: "center",
+//           }}
+//         >
+//           <Text style={{ fontSize: 18, fontWeight: "800", color: "#fff" }}>
+//             {profile?.name || "New User"}
+//           </Text>
+//           <Text style={{ color: "#f3f4f6", marginTop: 4 }}>
+//             {profile?.phone || "No phone"}
+//           </Text>
+//           <Text style={{ color: "#cbd5e1", marginTop: 2 }}>
+//             Member since {profile?.createdAt?.slice(0, 10) || "—"}
+//           </Text>
+//         </View>
+
+//         <View
+//           style={{
+//             flexDirection: "row",
+//             justifyContent: "space-around",
+//             paddingVertical: 16,
+//           }}
+//         >
+//           <View style={{ alignItems: "center" }}>
+//             <Text style={{ fontSize: 16, fontWeight: "800", color: "#111827" }}>
+//               {acceptedCount}
+//             </Text>
+//             <Text style={{ color: "#6b7280", fontSize: 12 }}>Active Jobs</Text>
+//           </View>
+//           <View style={{ alignItems: "center" }}>
+//             <Text style={{ fontSize: 16, fontWeight: "800", color: "#111827" }}>
+//               {completedCount}
+//             </Text>
+//             <Text style={{ color: "#6b7280", fontSize: 12 }}>Completed</Text>
+//           </View>
+//           <View style={{ alignItems: "center" }}>
+//             <Text style={{ fontSize: 16, fontWeight: "800", color: "#111827" }}>
+//               {rating.toFixed(1)}
+//             </Text>
+//             <Text style={{ color: "#6b7280", fontSize: 12 }}>Rating</Text>
+//           </View>
+//         </View>
+
+//         <Text
+//           style={{
+//             fontSize: 16,
+//             fontWeight: "700",
+//             color: "#111827",
+//             marginHorizontal: 16,
+//             marginTop: 20,
+//           }}
+//         >
+//           My Account
+//         </Text>
+
+//         {!isNewUser && (
+//           <TouchableOpacity
+//             style={styles.profileBtn}
+//             onPress={() => navigation.navigate("DoerProfile")}
+//           >
+//             <Ionicons name="person-circle-outline" size={20} color="#2563eb" />
+//             <Text style={styles.profileBtnText}>View Profile</Text>
+//           </TouchableOpacity>
+//         )}
+
+//         <TouchableOpacity
+//           style={styles.profileBtn}
+//           onPress={() => navigation.navigate("EditProfile")}
+//         >
+//           <Ionicons name="create-outline" size={20} color="#2563eb" />
+//           <Text style={styles.profileBtnText}>Edit Profile</Text>
+//         </TouchableOpacity>
+
+//         <TouchableOpacity
+//           style={[
+//             styles.profileBtn,
+//             { opacity: profile?.isPhoneVerified ? 1 : 0.5 },
+//           ]}
+//           disabled={!profile?.isPhoneVerified}
+//           onPress={() => {
+//             if (!profile?.isPhoneVerified) {
+//               Alert.alert("Phone not verified", "Verify your phone first.");
+//               return;
+//             }
+//             navigation.navigate("KYCPage");
+//           }}
+//         >
+//           <Ionicons name="document-text-outline" size={20} color="#2563eb" />
+//           <Text style={styles.profileBtnText}>Upload KYC</Text>
+//         </TouchableOpacity>
+
+//         <TouchableOpacity
+//           style={[styles.profileBtn, { borderColor: "#ef4444" }]}
+//           onPress={handleLogout}
+//         >
+//           <Ionicons name="log-out-outline" size={20} color="#ef4444" />
+//           <Text style={[styles.profileBtnText, { color: "#ef4444" }]}>
+//             Logout
+//           </Text>
+//         </TouchableOpacity>
+//       </ScrollView>
+//     );
+//   };
+
 //   if (loading)
 //     return (
 //       <SafeAreaView style={styles.loader}>
@@ -428,6 +377,8 @@
 //           <Ionicons name="log-out-outline" size={24} color="#fff" />
 //         </TouchableOpacity>
 //       </View>
+
+//       {activeTab === "profile" && renderProfileSection()}
 
 //       {activeTab === "available" && (
 //         <View style={{ flex: 1 }}>
@@ -487,7 +438,7 @@
 //         </View>
 //       )}
 
-//       {activeTab !== "available" && (
+//       {activeTab !== "available" && activeTab !== "profile" && (
 //         <FlatList
 //           data={activeTab === "current" ? currentJobs : jobHistory}
 //           keyExtractor={(item) => item.jobId.toString()}
@@ -545,6 +496,7 @@
 //     alignItems: "center",
 //   },
 //   topTitle: { color: "#fff", fontWeight: "800", fontSize: 18 },
+//   logoutBtn: { position: "absolute", right: 16 },
 //   radiusBox: {
 //     padding: 14,
 //     backgroundColor: "#fff",
@@ -600,6 +552,15 @@
 //   },
 //   navItem: { alignItems: "center", justifyContent: "center" },
 //   navLabel: { fontSize: 12, marginTop: 2 },
+//   profileBtn: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     paddingVertical: 14,
+//     marginHorizontal: 16,
+//     borderBottomWidth: 1,
+//     borderColor: "#e5e7eb",
+//   },
+//   profileBtnText: { marginLeft: 10, color: "#111827", fontSize: 15 },
 // });
 import React, { useEffect, useState, useRef } from "react";
 import {
@@ -778,6 +739,7 @@ export default function DoerDashboard() {
     }
   };
 
+  // ✅ UPDATED renderJobCard with View Details for all tabs
   const renderJobCard = ({ item, index }) => {
     const accepting = acceptingMap[item.jobId] || false;
     const statusColor =
@@ -818,6 +780,7 @@ export default function DoerDashboard() {
         <Text style={styles.desc} numberOfLines={2}>
           {item.description || "No description available"}
         </Text>
+
         {item.amountInRs > 0 && (
           <View style={styles.metaRow}>
             <Ionicons name="cash-outline" size={16} color="#475569" />
@@ -833,19 +796,32 @@ export default function DoerDashboard() {
             )}
           </View>
         )}
-        {activeTab === "available" && (
+
+        {/* ✅ Buttons Area */}
+        <View style={{ flexDirection: "row", gap: 10, marginTop: 10 }}>
+          {activeTab === "available" && (
+            <TouchableOpacity
+              style={[styles.actionBtn, { backgroundColor: "#2563eb" }]}
+              onPress={() => handleAcceptJob(item.jobId)}
+              disabled={accepting}
+            >
+              {accepting ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.actionText}>Accept Job</Text>
+              )}
+            </TouchableOpacity>
+          )}
+
           <TouchableOpacity
-            style={styles.acceptBtn}
-            onPress={() => handleAcceptJob(item.jobId)}
-            disabled={accepting}
+            style={[styles.actionBtn, { backgroundColor: "#6b7280" }]}
+            onPress={() =>
+              navigation.navigate("JobDetails", { jobId: item.jobId })
+            }
           >
-            {accepting ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.acceptText}>Accept Job</Text>
-            )}
+            <Text style={styles.actionText}>View Details</Text>
           </TouchableOpacity>
-        )}
+        </View>
       </Animated.View>
     );
   };
@@ -854,10 +830,10 @@ export default function DoerDashboard() {
     const acceptedCount = currentJobs.length;
     const completedCount = jobHistory.length;
     const rating = profile?.rating ?? 4.7;
-    const isNewUser = !profile?.isKycDone && !profile?.isProfileUpdated;
 
     return (
       <ScrollView style={{ flex: 1, backgroundColor: "#fff" }}>
+        {/* HEADER */}
         <View
           style={{
             backgroundColor: "#2563eb",
@@ -866,7 +842,7 @@ export default function DoerDashboard() {
           }}
         >
           <Text style={{ fontSize: 18, fontWeight: "800", color: "#fff" }}>
-            {profile?.name || "New User"}
+            {profile?.name || "Doer"}
           </Text>
           <Text style={{ color: "#f3f4f6", marginTop: 4 }}>
             {profile?.phone || "No phone"}
@@ -876,6 +852,7 @@ export default function DoerDashboard() {
           </Text>
         </View>
 
+        {/* JOB STATS */}
         <View
           style={{
             flexDirection: "row",
@@ -903,6 +880,103 @@ export default function DoerDashboard() {
           </View>
         </View>
 
+        {/* PERSONAL INFO */}
+        <View style={{ paddingHorizontal: 16 }}>
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "700",
+              color: "#111827",
+              marginBottom: 8,
+            }}
+          >
+            Personal Information
+          </Text>
+
+          {[
+            ["Email", profile?.email],
+            ["Bio", profile?.bio],
+            ["Skills", profile?.skills?.join(", ")],
+          ].map(([label, value], idx) => (
+            <View
+              key={idx}
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                borderBottomWidth: 0.5,
+                borderColor: "#e5e7eb",
+                paddingVertical: 8,
+              }}
+            >
+              <Text style={{ fontWeight: "600", color: "#374151" }}>
+                {label}
+              </Text>
+              <Text
+                style={{
+                  color: "#111827",
+                  flex: 1,
+                  textAlign: "right",
+                  marginLeft: 10,
+                }}
+              >
+                {value || "—"}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        {/* VERIFICATION INFO */}
+        <View style={{ paddingHorizontal: 16, marginTop: 16 }}>
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "700",
+              color: "#111827",
+              marginBottom: 8,
+            }}
+          >
+            Verification Details
+          </Text>
+
+          {[
+            ["Phone Verified", profile?.isPhoneVerified ? "Yes" : "No"],
+            ["KYC Level", profile?.kycLevel?.toString()],
+            ["Account Verified", profile?.isVerified ? "Yes" : "No"],
+            ["Verification Status", profile?.verificationStatus],
+            ["Rejection Reason", profile?.rejectionReason],
+          ].map(([label, value], idx) => (
+            <View
+              key={idx}
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                borderBottomWidth: 0.5,
+                borderColor: "#e5e7eb",
+                paddingVertical: 8,
+              }}
+            >
+              <Text style={{ fontWeight: "600", color: "#374151" }}>
+                {label}
+              </Text>
+              <Text
+                style={{
+                  color:
+                    label === "Verification Status" &&
+                    value?.toLowerCase() === "rejected"
+                      ? "#dc2626"
+                      : "#111827",
+                  flex: 1,
+                  textAlign: "right",
+                  marginLeft: 10,
+                }}
+              >
+                {value || "—"}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        {/* ACTION BUTTONS */}
         <Text
           style={{
             fontSize: 16,
@@ -912,18 +986,16 @@ export default function DoerDashboard() {
             marginTop: 20,
           }}
         >
-          My Account
+          Actions
         </Text>
 
-        {!isNewUser && (
-          <TouchableOpacity
-            style={styles.profileBtn}
-            onPress={() => navigation.navigate("DoerProfile")}
-          >
-            <Ionicons name="person-circle-outline" size={20} color="#2563eb" />
-            <Text style={styles.profileBtnText}>View Profile</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          style={styles.profileBtn}
+          onPress={() => navigation.navigate("DoerProfile")}
+        >
+          <Ionicons name="person-circle-outline" size={20} color="#2563eb" />
+          <Text style={styles.profileBtnText}>View Profile</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.profileBtn}
@@ -960,6 +1032,8 @@ export default function DoerDashboard() {
             Logout
           </Text>
         </TouchableOpacity>
+
+        <View style={{ height: 60 }} />
       </ScrollView>
     );
   };
@@ -1126,42 +1200,66 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  title: { fontSize: 16, fontWeight: "700", color: "#0f172a" },
-  desc: { color: "#475569", fontSize: 13, marginVertical: 6 },
-  metaRow: { flexDirection: "row", alignItems: "center", marginTop: 2 },
-  metaText: { marginLeft: 6, color: "#475569", fontSize: 13 },
-  statusTag: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 },
-  statusText: { fontSize: 12, fontWeight: "700" },
-  acceptBtn: {
-    marginTop: 10,
-    backgroundColor: "#2563eb",
-    paddingVertical: 10,
+  title: { fontSize: 16, fontWeight: "700", color: "#111827" },
+  desc: { fontSize: 13, color: "#4b5563", marginTop: 4 },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 6,
+  },
+  metaText: { fontSize: 13, color: "#475569", marginLeft: 4 },
+  statusTag: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  actionBtn: {
+    flex: 1,
+    paddingVertical: 8,
     borderRadius: 8,
     alignItems: "center",
   },
-  acceptText: { color: "#fff", fontWeight: "800" },
-  emptyText: { textAlign: "center", color: "#6b7280", fontSize: 14 },
+  actionText: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+  emptyText: {
+    textAlign: "center",
+    color: "#6b7280",
+    fontSize: 14,
+    marginTop: 40,
+  },
+  profileBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 10,
+    marginHorizontal: 16,
+    marginTop: 12,
+    backgroundColor: "#fff",
+  },
+  profileBtnText: {
+    marginLeft: 10,
+    fontSize: 15,
+    color: "#111827",
+    fontWeight: "600",
+  },
   bottomNav: {
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-    height: 60,
-    borderTopWidth: 1,
-    borderColor: "#e5e7eb",
+    paddingVertical: 10,
     backgroundColor: "#fff",
-    position: "absolute",
-    bottom: 0,
-    width: "100%",
+    borderTopWidth: 1,
+    borderTopColor: "#e5e7eb",
+    elevation: 10,
   },
   navItem: { alignItems: "center", justifyContent: "center" },
-  navLabel: { fontSize: 12, marginTop: 2 },
-  profileBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 14,
-    marginHorizontal: 16,
-    borderBottomWidth: 1,
-    borderColor: "#e5e7eb",
-  },
-  profileBtnText: { marginLeft: 10, color: "#111827", fontSize: 15 },
+  navLabel: { fontSize: 12, fontWeight: "600", marginTop: 2 },
 });

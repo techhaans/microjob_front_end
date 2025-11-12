@@ -34,7 +34,7 @@ import Dashboard from "./screens/Dashboard";
 import EditProfile from "./screens/EditProfile";
 import DoerProfile from "./screens/DoerProfile";
 import KYCPage from "./screens/KYCPage";
-import JobPriceItemsScreen from "./screens/JobPriceItemsScreen";
+import JobDetails from "./screens/JobDetails";
 
 // Poster Screens
 import PosterDashboard from "./screens/PosterDashboard";
@@ -177,11 +177,7 @@ export default function App() {
             component={CreateJobScreen}
             options={{ headerShown: true, title: "Create Job" }}
           />
-          <Stack.Screen
-            name="JobPriceItems"
-            component={JobPriceItemsScreen}
-            options={{ headerShown: true, title: "Add Job Price Items" }}
-          />
+          <Stack.Screen name="JobDetails" component={JobDetails} />
         </Stack.Group>
 
         {/* Admin Screens */}

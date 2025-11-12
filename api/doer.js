@@ -624,6 +624,25 @@ export const fetchCurrentJobs = async () => {
   const res = await api.get("/doer/jobs/current");
   return res.data;
 };
+// ✅ Fetch Job History
+// ✅ Fetch Job History (fixed)
+export const fetchJobHistory = async (
+  page = 0,
+  size = 10,
+  sort = ["createdAt,desc"]
+) => {
+  const token = await AsyncStorage.getItem("authToken");
+  const headers = { Authorization: `Bearer ${token}` };
+  const params = { page, size, sort };
+
+  // ✅ FIXED: removed duplicate /api
+  const { data } = await axios.get(`${BASE_URL}/doer/jobs/history`, {
+    headers,
+    params,
+  });
+
+  return data?.data?.content || [];
+};
 
 // ============================================================
 // 🚪 LOGOUT
