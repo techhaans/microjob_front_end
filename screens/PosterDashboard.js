@@ -1645,28 +1645,89 @@ export default function PosterDashboard({ navigation }) {
     ]);
   };
 
-  // ---------- Update Modal Prefill ----------
+  // // ---------- Update Modal Prefill ----------
+  // const handleOpenUpdate = (job) => {
+  //   setSelectedJob(job);
+  //   setTitle(job.title || "");
+  //   setDescription(job.description || "");
+  //   // keep amountPaise as string of paise (if backend uses paise)
+  //   setAmountPaise(job.amountPaise != null ? String(job.amountPaise) : "");
+  //   setDeadline(job.deadline ? new Date(job.deadline) : null);
+  //   setJobType(job.jobType || "PHYSICAL");
+  //   setCategoryCode(job.categoryCode != null ? String(job.categoryCode) : "");
+  //   setAddressId(job.addressId != null ? String(job.addressId) : "");
+  //   // merge existing price items (map to expected local shape)
+  //   setPriceItems(
+  //     (job.priceItems || []).map((it) => ({
+  //       label: it.label || it.name || "",
+  //       description: it.description || it.desc || "",
+  //       priceRupees: it.priceRupees != null ? it.priceRupees : it.amount || 0,
+  //     }))
+  //   );
+  //   setNewItemLabel("");
+  //   setNewItemDescription("");
+  //   setNewItemPrice("");
+  //   setUpdateModalVisible(true);
+  // };
+
   const handleOpenUpdate = (job) => {
+    console.log("🚀 Job object received for update:", job);
+
     setSelectedJob(job);
-    setTitle(job.title || "");
-    setDescription(job.description || "");
-    // keep amountPaise as string of paise (if backend uses paise)
-    setAmountPaise(job.amountPaise != null ? String(job.amountPaise) : "");
+
+    // Map API fields to modal state
+    setTitle(job.title || ""); // simple string
+    setDescription(job.description || job.job_description || ""); // try alternate key
+    setAmountPaise(
+      job.amountPaise != null
+        ? String(job.amountPaise)
+        : job.amount != null
+        ? String(job.amount)
+        : ""
+    );
+
     setDeadline(job.deadline ? new Date(job.deadline) : null);
-    setJobType(job.jobType || "PHYSICAL");
-    setCategoryCode(job.categoryCode != null ? String(job.categoryCode) : "");
-    setAddressId(job.addressId != null ? String(job.addressId) : "");
-    // merge existing price items (map to expected local shape)
+
+    setJobType(job.jobType || job.job_type || "PHYSICAL");
+
+    // Category: could be nested object
+    setCategoryCode(
+      job.categoryCode != null
+        ? String(job.categoryCode)
+        : job.category?.code != null
+        ? String(job.category.code)
+        : ""
+    );
+
+    // Address: could be nested object
+    setAddressId(
+      job.addressId != null
+        ? String(job.addressId)
+        : job.address?.id != null
+        ? String(job.address.id)
+        : ""
+    );
+
+    // Price Items: map correctly to local state
     setPriceItems(
       (job.priceItems || []).map((it) => ({
         label: it.label || it.name || "",
         description: it.description || it.desc || "",
-        priceRupees: it.priceRupees != null ? it.priceRupees : it.amount || 0,
+        priceRupees:
+          it.priceRupees != null
+            ? it.priceRupees
+            : it.amount != null
+            ? it.amount
+            : 0,
       }))
     );
+
+    // Clear new item inputs
     setNewItemLabel("");
     setNewItemDescription("");
     setNewItemPrice("");
+
+    // Show modal
     setUpdateModalVisible(true);
   };
 
@@ -2439,4 +2500,3 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 });
-

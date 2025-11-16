@@ -35,6 +35,7 @@ import EditProfile from "./screens/EditProfile";
 import DoerProfile from "./screens/DoerProfile";
 import KYCPage from "./screens/KYCPage";
 import JobDetails from "./screens/JobDetails";
+import RouteMap from "./screens/RouteMap";
 
 // Poster Screens
 import PosterDashboard from "./screens/PosterDashboard";
@@ -155,6 +156,11 @@ export default function App() {
           <Stack.Screen name="EditProfile" component={EditProfile} />
           <Stack.Screen name="DoerProfile" component={DoerProfile} />
           <Stack.Screen name="KYCPage" component={KYCPage} />
+          <Stack.Screen
+            name="RouteMap"
+            component={RouteMap}
+            options={{ headerShown: false }}
+          />
         </Stack.Group>
 
         {/* Poster Screens */}

@@ -1,5 +1,3 @@
-
-
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
@@ -48,20 +46,11 @@ export const sendDoerOtp = async (phone) => {
 //   return res.data;
 // };
 
-export const verifyDoerOtp = async (sessionId, otp) => {
-  const res = await api.post("/auth/otp/doer/verify", { sessionId, otp });
-  const data = res.data?.data;
-
-  if (data?.token) {
-    await AsyncStorage.setItem("authToken", data.token);
-    if (data.roleCode) await AsyncStorage.setItem("userRole", data.roleCode);
-  }
-
-  // ✅ Fetch profile to check verification
-  const profile = await api.get("/doer/profile");
-  if (profile.data?.is_phone_verified) {
-    await AsyncStorage.setItem("is_phone_verified", "true");
-  }
+export const verifyDoerPhoneOtp = async (sessionId, otp) => {
+  const res = await api.post("/doer/profile/phone/verify", {
+    sessionId: String(sessionId),
+    otp: String(otp),
+  });
 
   return res.data;
 };
@@ -75,9 +64,26 @@ export const fetchDoerProfile = async () => {
   return res.data;
 };
 
+// export const updateDoerProfile = async (payload) => {
+//   const res = await api.put("/doer/profile/", payload);
+//   return res.data;
+// };
 export const updateDoerProfile = async (payload) => {
-  const res = await api.put("/doer/profile/", payload);
-  return res.data;
+  try {
+    console.log("🚀 Sending update payload:", payload);
+
+    const res = await api.put("/doer/profile/", payload, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    console.log("✅ Update Response:", res.data);
+    return res.data;
+  } catch (error) {
+    console.log("❌ Update Error:", error.response?.data || error);
+    throw error;
+  }
 };
 
 // ============================================================
@@ -204,29 +210,42 @@ export const sendPhoneOtp = async () => {
   }
 };
 
-// ✅ Verify phone OTP
+// export const verifyPhoneOtp = async (sessionId, otp) => {
+//   try {
+//     const token = await AsyncStorage.getItem("authToken");
+//     if (!token) throw new Error("JWT token missing. Please login again.");
+
+//     const res = await axios.post(
+//       `${BASE_URL}/doer/profile/phone/verify`,
+//       {
+//         sessionId: String(sessionId),
+//         otp: String(otp),
+//       },
+//       {
+//         headers: { Authorization: `Bearer ${token}` },
+//       }
+//     );
+
+//     return res.data;
+//   } catch (err) {
+//     return (
+//       err.response?.data || {
+//         status: "ERROR",
+//         message: "Network error while verifying OTP",
+//       }
+//     );
+//   }
+// };
 export const verifyPhoneOtp = async (sessionId, otp) => {
   try {
-    const token = await AsyncStorage.getItem("authToken");
-    if (!token) throw new Error("JWT token missing. Please login again.");
-
-    const res = await axios.post(
-      `${BASE_URL}/doer/profile/phone/verify`,
-      { sessionId, otp },
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-
-    return res.data;
-  } catch (err) {
-    //console.error("Verify Phone OTP Error:", err.response?.data || err.message);
-    return (
-      err.response?.data || {
-        status: "ERROR",
-        message: "Network error while verifying OTP",
-      }
-    );
+    const response = await api.post("/doer/profile/phone/verify", {
+      sessionId: sessionId,
+      otp: otp,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("verifyPhoneOtp error:", error.response?.data || error);
+    throw error.response?.data || error;
   }
 };
 
@@ -304,5 +323,3 @@ export const logoutDoer = async () => {
   await AsyncStorage.removeItem("authToken");
   await AsyncStorage.removeItem("userRole");
 };
-
-export default api;

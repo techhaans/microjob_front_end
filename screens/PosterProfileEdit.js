@@ -797,6 +797,994 @@
 //   },
 //   buttonText: { color: "#fff", fontWeight: "bold" },
 // });
+// import React, { useEffect, useState } from "react";
+// import {
+//   View,
+//   Text,
+//   TextInput,
+//   TouchableOpacity,
+//   ActivityIndicator,
+//   Alert,
+//   StyleSheet,
+//   ScrollView,
+// } from "react-native";
+// import { Ionicons } from "@expo/vector-icons";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
+// import {
+//   fetchPosterProfile,
+//   updatePosterProfile,
+//   sendPosterPhoneOtp,
+//   verifyPosterPhoneOtp,
+// } from "../api/poster";
+
+// export default function PosterProfileScreen({ navigation }) {
+//   const [loading, setLoading] = useState(true);
+//   const [saving, setSaving] = useState(false);
+//   const [sendingOtp, setSendingOtp] = useState(false);
+//   const [verifyingOtp, setVerifyingOtp] = useState(false);
+
+//   const [profile, setProfile] = useState({
+//     Name: "",
+//     email: "",
+//     phone: "+91",
+//     about: "",
+//     isPhoneVerified: false,
+//   });
+
+//   const [otp, setOtp] = useState("");
+//   const [otpSessionId, setOtpSessionId] = useState(null);
+
+//   // Fetch existing profile
+//   const loadProfile = async () => {
+//     setLoading(true);
+//     try {
+//       const data = await fetchPosterProfile();
+//       setProfile({
+//         Name: data.Name || "",
+//         email: data.email || "",
+//         phone: data.phone?.startsWith("+91")
+//           ? data.phone
+//           : `+91${data.phone || ""}`,
+//         about: data.about || "",
+//         isPhoneVerified: data.isPhoneVerified || false,
+//       });
+//     } catch (err) {
+//       console.error("❌ Fetch Profile Error:", err);
+
+//       // Handle new user
+//       if (err.response?.data?.details?.message === "No Data") {
+//         const token = await AsyncStorage.getItem("authToken");
+//         let email = "";
+//         if (token) {
+//           try {
+//             const payload = JSON.parse(atob(token.split(".")[1]));
+//             email = payload.email || "";
+//           } catch {}
+//         }
+//         setProfile({
+//           Name: "",
+//           email,
+//           phone: "+91",
+//           about: "",
+//           isPhoneVerified: false,
+//         });
+//       } else {
+//         Alert.alert("Error", "Failed to load profile");
+//       }
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   useEffect(() => {
+//     loadProfile();
+//   }, []);
+
+//   // Save profile
+//   const handleSave = async () => {
+//     if (!profile.Name.trim()) {
+//       return Alert.alert("Error", "Name is required");
+//     }
+//     if (!profile.phone || profile.phone.length < 10) {
+//       return Alert.alert("Error", "Valid phone number is required");
+//     }
+
+//     setSaving(true);
+//     try {
+//       const payload = {
+//         Name: profile.Name.trim(),
+//         phone: profile.phone.trim(),
+//         about: profile.about.trim(),
+//       };
+
+//       const res = await updatePosterProfile(payload);
+
+//       if (res?.status === "ERROR") {
+//         Alert.alert("Error", res.message || "Failed to update profile");
+//       } else {
+//         Alert.alert("Success", "Profile saved successfully");
+//       }
+//     } catch (err) {
+//       console.error("❌ updatePosterProfile Error:", err);
+//       const msg =
+//         err.response?.data?.details?.Name ||
+//         err.response?.data?.details?.phone ||
+//         "Failed to update profile";
+//       Alert.alert("Error", msg);
+//     } finally {
+//       setSaving(false);
+//     }
+//   };
+
+//   // Send OTP
+//   const handleSendOtp = async () => {
+//     if (!profile.phone || profile.phone.length < 10)
+//       return Alert.alert("Error", "Enter a valid phone number");
+
+//     setSendingOtp(true);
+//     try {
+//       const res = await sendPosterPhoneOtp(profile.phone);
+//       if (res.status === "SUCCESS") {
+//         setOtpSessionId(res.data.sessionId);
+//         Alert.alert("OTP Sent", res.data.message || "OTP sent successfully");
+//       } else {
+//         Alert.alert("Error", res.message || "Failed to send OTP");
+//       }
+//     } catch (err) {
+//       console.error("Send OTP Error:", err);
+//       Alert.alert("Error", "Failed to send OTP");
+//     } finally {
+//       setSendingOtp(false);
+//     }
+//   };
+
+//   // Verify OTP
+//   const handleVerifyOtp = async () => {
+//     if (!otpSessionId || !otp) {
+//       return Alert.alert("Error", "Enter OTP first");
+//     }
+
+//     setVerifyingOtp(true);
+//     try {
+//       const res = await verifyPosterPhoneOtp(otpSessionId, otp);
+//       if (res.status === "SUCCESS") {
+//         Alert.alert("Success", "Phone verified successfully");
+//         setProfile((prev) => ({ ...prev, isPhoneVerified: true }));
+//       } else {
+//         Alert.alert("Error", res.message || "OTP verification failed");
+//       }
+//     } catch (err) {
+//       console.error("Verify OTP Error:", err);
+//       Alert.alert("Error", "OTP verification failed");
+//     } finally {
+//       setVerifyingOtp(false);
+//     }
+//   };
+
+//   if (loading) return <ActivityIndicator size="large" style={{ flex: 1 }} />;
+
+//   return (
+//     <View style={styles.wrapper}>
+//       {/* Header with back button */}
+//       <View style={styles.header}>
+//         <TouchableOpacity
+//           style={styles.backButton}
+//           onPress={() => navigation.navigate("PosterDashboard")}
+//         >
+//           <Ionicons name="arrow-back" size={24} color="#333" />
+//         </TouchableOpacity>
+//         <Text style={styles.headerTitle}>Poster Profile</Text>
+//       </View>
+
+//       <ScrollView style={styles.container}>
+//         <Text style={styles.label}>Email</Text>
+//         <TextInput
+//           style={[styles.input, { backgroundColor: "#f2f2f2" }]}
+//           value={profile.email}
+//           editable={false}
+//         />
+
+//         <Text style={styles.label}>Full Name</Text>
+//         <TextInput
+//           style={styles.input}
+//           value={profile.Name}
+//           onChangeText={(text) => setProfile({ ...profile, Name: text })}
+//           placeholder="Enter your full name"
+//         />
+
+//         <Text style={styles.label}>Phone Number</Text>
+//         <TextInput
+//           style={styles.input}
+//           value={profile.phone}
+//           onChangeText={(text) => {
+//             let newPhone = text.startsWith("+91")
+//               ? text
+//               : `+91${text.replace(/^(\+91)?/, "")}`;
+//             setProfile({ ...profile, phone: newPhone });
+//           }}
+//           keyboardType="phone-pad"
+//           placeholder="+919876543210"
+//         />
+
+//         <Text style={styles.label}>About You</Text>
+//         <TextInput
+//           style={[styles.input, { height: 90, textAlignVertical: "top" }]}
+//           value={profile.about}
+//           onChangeText={(text) => setProfile({ ...profile, about: text })}
+//           multiline
+//           placeholder="Write something about yourself..."
+//         />
+
+//         {/* Save Profile */}
+//         <TouchableOpacity
+//           style={[styles.button, { backgroundColor: "#ff6b6b" }]}
+//           onPress={handleSave}
+//           disabled={saving}
+//         >
+//           <Text style={styles.buttonText}>
+//             {saving ? "Saving..." : "Save Profile"}
+//           </Text>
+//         </TouchableOpacity>
+
+//         {/* OTP Section */}
+//         {!profile.isPhoneVerified && profile.phone ? (
+//           <View style={styles.otpSection}>
+//             <TouchableOpacity
+//               style={[styles.button, { backgroundColor: "#007bff" }]}
+//               onPress={handleSendOtp}
+//               disabled={sendingOtp}
+//             >
+//               <Text style={styles.buttonText}>
+//                 {sendingOtp ? "Sending OTP..." : "Send OTP"}
+//               </Text>
+//             </TouchableOpacity>
+
+//             {otpSessionId && (
+//               <>
+//                 <TextInput
+//                   style={styles.input}
+//                   value={otp}
+//                   onChangeText={setOtp}
+//                   placeholder="Enter OTP"
+//                   keyboardType="number-pad"
+//                 />
+//                 <TouchableOpacity
+//                   style={[styles.button, { backgroundColor: "#28a745" }]}
+//                   onPress={handleVerifyOtp}
+//                   disabled={verifyingOtp}
+//                 >
+//                   <Text style={styles.buttonText}>
+//                     {verifyingOtp ? "Verifying..." : "Verify OTP"}
+//                   </Text>
+//                 </TouchableOpacity>
+//               </>
+//             )}
+//           </View>
+//         ) : (
+//           profile.phone && (
+//             <Text style={styles.verifiedText}>✅ Phone Verified</Text>
+//           )
+//         )}
+//       </ScrollView>
+//     </View>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   wrapper: {
+//     flex: 1,
+//     backgroundColor: "#fff",
+//   },
+//   header: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     paddingVertical: 12,
+//     paddingHorizontal: 15,
+//     borderBottomWidth: 1,
+//     borderBottomColor: "#ddd",
+//   },
+//   backButton: {
+//     marginRight: 10,
+//   },
+//   headerTitle: {
+//     fontSize: 18,
+//     fontWeight: "bold",
+//     color: "#333",
+//   },
+//   container: {
+//     padding: 20,
+//   },
+//   label: {
+//     fontWeight: "600",
+//     marginTop: 15,
+//     color: "#333",
+//   },
+//   input: {
+//     borderWidth: 1,
+//     borderColor: "#ccc",
+//     borderRadius: 8,
+//     padding: 10,
+//     marginTop: 5,
+//     fontSize: 15,
+//   },
+//   button: {
+//     borderRadius: 8,
+//     paddingVertical: 14,
+//     marginTop: 18,
+//     alignItems: "center",
+//     shadowColor: "#000",
+//     shadowOpacity: 0.1,
+//     shadowOffset: { width: 0, height: 2 },
+//     shadowRadius: 4,
+//   },
+//   buttonText: {
+//     color: "#fff",
+//     fontWeight: "bold",
+//     fontSize: 16,
+//   },
+//   otpSection: {
+//     marginTop: 25,
+//   },
+//   verifiedText: {
+//     color: "green",
+//     textAlign: "center",
+//     marginTop: 15,
+//     fontSize: 16,
+//     fontWeight: "bold",
+//   },
+// });
+// import React, { useEffect, useState } from "react";
+// import {
+//   View,
+//   Text,
+//   TextInput,
+//   TouchableOpacity,
+//   ActivityIndicator,
+//   Alert,
+//   StyleSheet,
+//   ScrollView,
+// } from "react-native";
+// import { Ionicons } from "@expo/vector-icons";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
+// import {
+//   fetchPosterProfile,
+//   updatePosterProfile,
+//   sendPosterPhoneOtp,
+//   verifyPosterPhoneOtp,
+// } from "../api/poster";
+
+// export default function PosterProfileScreen({ navigation }) {
+//   const [loading, setLoading] = useState(true);
+//   const [saving, setSaving] = useState(false);
+//   const [sendingOtp, setSendingOtp] = useState(false);
+//   const [verifyingOtp, setVerifyingOtp] = useState(false);
+
+//   // ---------- PROFILE STATE ----------
+//   const [profile, setProfile] = useState({
+//     name: "",
+//     email: "",
+//     phone: "+91",
+//     about: "",
+//     isPhoneVerified: false,
+//   });
+
+//   const [otp, setOtp] = useState("");
+//   const [otpSessionId, setOtpSessionId] = useState(null);
+
+//   // ---------- FETCH PROFILE ----------
+//   const loadProfile = async () => {
+//     setLoading(true);
+//     try {
+//       const data = await fetchPosterProfile();
+
+//       setProfile({
+//         name: data.name || "",
+//         email: data.email || "",
+//         phone: data.phone?.startsWith("+91")
+//           ? data.phone
+//           : `+91${data.phone || ""}`,
+//         about: data.about || "",
+//         isPhoneVerified: data.isPhoneVerified || false,
+//       });
+//     } catch (err) {
+//       console.log("❌ Fetch Error:", err);
+
+//       // --- No profile found (FIRST TIME USER) ---
+//       if (err.response?.data?.details?.message === "No Data") {
+//         const token = await AsyncStorage.getItem("authToken");
+//         let email = "";
+
+//         if (token) {
+//           try {
+//             const payload = JSON.parse(atob(token.split(".")[1]));
+//             email = payload.email || "";
+//           } catch {}
+//         }
+
+//         setProfile({
+//           name: "",
+//           email,
+//           phone: "+91",
+//           about: "",
+//           isPhoneVerified: false,
+//         });
+//       } else {
+//         Alert.alert("Error", "Failed to load profile");
+//       }
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   useEffect(() => {
+//     loadProfile();
+//   }, []);
+
+//   // ---------- SAVE PROFILE ----------
+//   const handleSave = async () => {
+//     if (!profile.name.trim()) {
+//       return Alert.alert("Error", "Name is required");
+//     }
+//     if (!profile.phone || profile.phone.length < 10) {
+//       return Alert.alert("Error", "Valid phone number is required");
+//     }
+
+//     const payload = {
+//       name: profile.name.trim(),
+//       phone: profile.phone.trim(),
+//       about: profile.about.trim(),
+//     };
+
+//     setSaving(true);
+//     try {
+//       const res = await updatePosterProfile(payload);
+
+//       if (res?.status === "ERROR") {
+//         Alert.alert("Error", res.message || "Failed to update profile");
+//       } else {
+//         Alert.alert("Success", "Profile saved successfully");
+//       }
+//     } catch (err) {
+//       console.error("❌ Update Error:", err);
+
+//       const msg =
+//         err.response?.data?.details?.name ||
+//         err.response?.data?.details?.phone ||
+//         "Failed to update profile";
+
+//       Alert.alert("Error", msg);
+//     } finally {
+//       setSaving(false);
+//     }
+//   };
+
+//   // ---------- SEND OTP ----------
+//   const handleSendOtp = async () => {
+//     if (!profile.phone || profile.phone.length < 10)
+//       return Alert.alert("Error", "Enter valid phone number");
+
+//     setSendingOtp(true);
+//     try {
+//       const res = await sendPosterPhoneOtp(profile.phone);
+//       if (res.status === "SUCCESS") {
+//         setOtpSessionId(res.data.sessionId);
+//         Alert.alert("OTP Sent", res.data.message || "OTP sent successfully");
+//       } else {
+//         Alert.alert("Error", res.message || "Failed to send OTP");
+//       }
+//     } catch (err) {
+//       console.log("OTP Error:", err);
+//       Alert.alert("Error", "Failed to send OTP");
+//     } finally {
+//       setSendingOtp(false);
+//     }
+//   };
+
+//   // ---------- VERIFY OTP ----------
+//   const handleVerifyOtp = async () => {
+//     if (!otpSessionId || !otp)
+//       return Alert.alert("Error", "Enter OTP first");
+
+//     setVerifyingOtp(true);
+//     try {
+//       const res = await verifyPosterPhoneOtp(otpSessionId, otp);
+
+//       if (res.status === "SUCCESS") {
+//         Alert.alert("Success", "Phone verified successfully");
+//         setProfile(prev => ({ ...prev, isPhoneVerified: true }));
+//       } else {
+//         Alert.alert("Error", res.message || "OTP verification failed");
+//       }
+//     } catch (err) {
+//       console.log("Verify Error:", err);
+//       Alert.alert("Error", "OTP verification failed");
+//     } finally {
+//       setVerifyingOtp(false);
+//     }
+//   };
+
+//   if (loading)
+//     return <ActivityIndicator size="large" style={{ flex: 1 }} />;
+
+//   return (
+//     <View style={styles.wrapper}>
+//       {/* HEADER */}
+//       <View style={styles.header}>
+//         <TouchableOpacity
+//           style={styles.backButton}
+//           onPress={() => navigation.navigate("PosterDashboard")}
+//         >
+//           <Ionicons name="arrow-back" size={24} color="#333" />
+//         </TouchableOpacity>
+//         <Text style={styles.headerTitle}>Poster Profile</Text>
+//       </View>
+
+//       {/* BODY */}
+//       <ScrollView style={styles.container}>
+//         {/* EMAIL */}
+//         <Text style={styles.label}>Email</Text>
+//         <TextInput
+//           style={[styles.input, { backgroundColor: "#eee" }]}
+//           value={profile.email}
+//           editable={false}
+//         />
+
+//         {/* NAME */}
+//         <Text style={styles.label}>Full Name</Text>
+//         <TextInput
+//           style={styles.input}
+//           value={profile.name}
+//           onChangeText={(text) =>
+//             setProfile({ ...profile, name: text })
+//           }
+//           placeholder="Enter your full name"
+//         />
+
+//         {/* PHONE */}
+//         <Text style={styles.label}>Phone Number</Text>
+//         <TextInput
+//           style={styles.input}
+//           value={profile.phone}
+//           onChangeText={(text) => {
+//             let p = text.startsWith("+91")
+//               ? text
+//               : `+91${text.replace(/^(\+91)?/, "")}`;
+//             setProfile({ ...profile, phone: p });
+//           }}
+//           keyboardType="phone-pad"
+//         />
+
+//         {/* ABOUT */}
+//         <Text style={styles.label}>About You</Text>
+//         <TextInput
+//           style={[styles.input, { height: 90, textAlignVertical: "top" }]}
+//           value={profile.about}
+//           onChangeText={(text) =>
+//             setProfile({ ...profile, about: text })
+//           }
+//           multiline
+//           placeholder="Say something about yourself..."
+//         />
+
+//         {/* SAVE BUTTON */}
+//         <TouchableOpacity
+//           style={[styles.button, { backgroundColor: "#ff6b6b" }]}
+//           onPress={handleSave}
+//           disabled={saving}
+//         >
+//           <Text style={styles.buttonText}>
+//             {saving ? "Saving..." : "Save Profile"}
+//           </Text>
+//         </TouchableOpacity>
+
+//         {/* OTP SECTION */}
+//         {!profile.isPhoneVerified ? (
+//           <View style={styles.otpSection}>
+//             <TouchableOpacity
+//               style={[styles.button, { backgroundColor: "#007bff" }]}
+//               onPress={handleSendOtp}
+//               disabled={sendingOtp}
+//             >
+//               <Text style={styles.buttonText}>
+//                 {sendingOtp ? "Sending OTP..." : "Send OTP"}
+//               </Text>
+//             </TouchableOpacity>
+
+//             {otpSessionId && (
+//               <>
+//                 <TextInput
+//                   style={styles.input}
+//                   value={otp}
+//                   onChangeText={setOtp}
+//                   placeholder="Enter OTP"
+//                   keyboardType="number-pad"
+//                 />
+//                 <TouchableOpacity
+//                   style={[styles.button, { backgroundColor: "#28a745" }]}
+//                   onPress={handleVerifyOtp}
+//                   disabled={verifyingOtp}
+//                 >
+//                   <Text style={styles.buttonText}>
+//                     {verifyingOtp ? "Verifying..." : "Verify OTP"}
+//                   </Text>
+//                 </TouchableOpacity>
+//               </>
+//             )}
+//           </View>
+//         ) : (
+//           <Text style={styles.verifiedText}>✅ Phone Verified</Text>
+//         )}
+//       </ScrollView>
+//     </View>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   wrapper: { flex: 1, backgroundColor: "#fff" },
+//   header: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     padding: 15,
+//     borderBottomWidth: 1,
+//     borderBottomColor: "#ddd",
+//   },
+//   backButton: { marginRight: 10 },
+//   headerTitle: { fontSize: 18, fontWeight: "bold" },
+//   container: { padding: 20 },
+//   label: { fontWeight: "600", marginTop: 15 },
+//   input: {
+//     borderWidth: 1,
+//     borderColor: "#ccc",
+//     borderRadius: 8,
+//     padding: 10,
+//     marginTop: 5,
+//     fontSize: 15,
+//   },
+//   button: {
+//     borderRadius: 8,
+//     paddingVertical: 14,
+//     marginTop: 18,
+//     alignItems: "center",
+//   },
+//   buttonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+//   otpSection: { marginTop: 25 },
+//   verifiedText: {
+//     color: "green",
+//     textAlign: "center",
+//     marginTop: 15,
+//     fontSize: 16,
+//     fontWeight: "bold",
+//   },
+// });
+// import React, { useEffect, useState } from "react";
+// import {
+//   View,
+//   Text,
+//   TextInput,
+//   TouchableOpacity,
+//   ActivityIndicator,
+//   Alert,
+//   StyleSheet,
+//   ScrollView,
+// } from "react-native";
+// import { Ionicons } from "@expo/vector-icons";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
+
+// import {
+//   fetchPosterProfile,
+//   updatePosterProfile,
+//   sendPosterPhoneOtp,
+//   verifyPosterPhoneOtp,
+// } from "../api/poster";
+
+// export default function PosterProfileScreen({ navigation }) {
+//   const [loading, setLoading] = useState(true);
+//   const [saving, setSaving] = useState(false);
+//   const [sendingOtp, setSendingOtp] = useState(false);
+//   const [verifyingOtp, setVerifyingOtp] = useState(false);
+
+//   const [profile, setProfile] = useState({
+//     name: "",
+//     email: "",
+//     phone: "+91",
+//     about: "",
+//     isPhoneVerified: false,
+//   });
+
+//   const [otp, setOtp] = useState("");
+//   const [otpSessionId, setOtpSessionId] = useState(null);
+
+//   // =====================================================
+//   // 🔹 LOAD PROFILE (Option B backend format)
+//   // =====================================================
+//   const loadProfile = async () => {
+//     setLoading(true);
+//     try {
+//       const data = await fetchPosterProfile(); // <-- returns Option B format
+
+//       console.log("Fetched backend data:", data);
+
+//       setProfile({
+//         name: data.name || "",
+//         email: data.email || "",
+//         phone: data.phone
+//           ? data.phone.startsWith("+91")
+//             ? data.phone
+//             : `+91${data.phone}`
+//           : "+91",
+//         about: data.about || "",
+//         isPhoneVerified: data.isPhoneVerified || false,
+//       });
+//     } catch (err) {
+//       console.log("❌ Fetch Error:", err);
+
+//       // IF backend sends "No Data"
+//       const backendMsg = err?.response?.data?.details?.message;
+
+//       if (backendMsg === "No Data") {
+//         // Extract email from token (first login)
+//         const token = await AsyncStorage.getItem("authToken");
+//         let email = "";
+
+//         if (token) {
+//           try {
+//             const payload = JSON.parse(atob(token.split(".")[1]));
+//             email = payload.email || "";
+//           } catch {}
+//         }
+
+//         setProfile({
+//           name: "",
+//           email,
+//           phone: "+91",
+//           about: "",
+//           isPhoneVerified: false,
+//         });
+//       } else {
+//         Alert.alert("Error", "Failed to load profile");
+//       }
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   useEffect(() => {
+//     loadProfile();
+//   }, []);
+
+//   // =====================================================
+//   // 🔹 UPDATE PROFILE (send only changed fields)
+//   // =====================================================
+//   const handleSave = async () => {
+//     if (!profile.name.trim()) {
+//       return Alert.alert("Error", "Name is required");
+//     }
+
+//     if (!profile.phone || profile.phone.length < 10) {
+//       return Alert.alert("Error", "Valid phone number is required");
+//     }
+
+//     const payload = {
+//       name: profile.name.trim(),
+//       phone: profile.phone.trim(),
+//       about: profile.about.trim(),
+//     };
+
+//     console.log("Sending FINAL payload:", payload);
+
+//     setSaving(true);
+//     try {
+//       const res = await updatePosterProfile(payload);
+
+//       Alert.alert("Success", "Profile updated successfully");
+//     } catch (err) {
+//       console.log("❌ Update Error:", err);
+
+//       const msg =
+//         err.response?.data?.details?.name ||
+//         err.response?.data?.details?.phone ||
+//         err.response?.data?.details?.about ||
+//         "Failed to update profile";
+
+//       Alert.alert("Error", msg);
+//     } finally {
+//       setSaving(false);
+//     }
+//   };
+
+//   // =====================================================
+//   // 🔹 SEND OTP
+//   // =====================================================
+//   const handleSendOtp = async () => {
+//     if (!profile.phone || profile.phone.length < 10)
+//       return Alert.alert("Error", "Enter valid phone number");
+
+//     setSendingOtp(true);
+//     try {
+//       const res = await sendPosterPhoneOtp(profile.phone);
+//       setOtpSessionId(res.data.sessionId);
+
+//       Alert.alert("OTP Sent", res.data.message);
+//     } catch (err) {
+//       console.log("OTP error:", err);
+//       Alert.alert("Error", "Failed to send OTP");
+//     } finally {
+//       setSendingOtp(false);
+//     }
+//   };
+
+//   // =====================================================
+//   // 🔹 VERIFY OTP
+//   // =====================================================
+//   const handleVerifyOtp = async () => {
+//     if (!otpSessionId || !otp) return Alert.alert("Enter OTP");
+
+//     setVerifyingOtp(true);
+//     try {
+//       const res = await verifyPosterPhoneOtp(otpSessionId, otp);
+
+//       if (res.status === "SUCCESS") {
+//         Alert.alert("Success", "Phone Verified");
+//         setProfile((prev) => ({ ...prev, isPhoneVerified: true }));
+//       } else {
+//         Alert.alert("Error", "Verification failed");
+//       }
+//     } catch (err) {
+//       Alert.alert("Error", "Verification failed");
+//     } finally {
+//       setVerifyingOtp(false);
+//     }
+//   };
+
+//   // =====================================================
+//   // 🔹 UI
+//   // =====================================================
+//   if (loading) {
+//     return <ActivityIndicator size="large" style={{ flex: 1 }} />;
+//   }
+
+//   return (
+//     <View style={styles.wrapper}>
+//       {/* HEADER */}
+//       <View style={styles.header}>
+//         <TouchableOpacity
+//           style={styles.backButton}
+//           onPress={() => navigation.navigate("PosterDashboard")}
+//         >
+//           <Ionicons name="arrow-back" size={24} color="#333" />
+//         </TouchableOpacity>
+//         <Text style={styles.headerTitle}>Poster Profile</Text>
+//       </View>
+
+//       <ScrollView style={styles.container}>
+//         {/* EMAIL */}
+//         <Text style={styles.label}>Email</Text>
+//         <TextInput
+//           style={[styles.input, { backgroundColor: "#eee" }]}
+//           value={profile.email}
+//           editable={false}
+//         />
+
+//         {/* NAME */}
+//         <Text style={styles.label}>Full Name</Text>
+//         <TextInput
+//           style={styles.input}
+//           value={profile.name}
+//           onChangeText={(text) => setProfile({ ...profile, name: text })}
+//         />
+
+//         {/* PHONE */}
+//         <Text style={styles.label}>Phone Number</Text>
+//         <TextInput
+//           style={styles.input}
+//           value={profile.phone}
+//           onChangeText={(text) => {
+//             let p = text.startsWith("+91")
+//               ? text
+//               : `+91${text.replace(/^(\+91)?/, "")}`;
+//             setProfile({ ...profile, phone: p });
+//           }}
+//           keyboardType="phone-pad"
+//         />
+
+//         {/* ABOUT */}
+//         <Text style={styles.label}>About You</Text>
+//         <TextInput
+//           style={[styles.input, { height: 90 }]}
+//           value={profile.about}
+//           multiline
+//           onChangeText={(t) => setProfile({ ...profile, about: t })}
+//         />
+
+//         {/* SAVE BUTTON */}
+//         <TouchableOpacity
+//           style={[styles.button, { backgroundColor: "#ff6b6b" }]}
+//           onPress={handleSave}
+//           disabled={saving}
+//         >
+//           <Text style={styles.buttonText}>
+//             {saving ? "Saving..." : "Save Profile"}
+//           </Text>
+//         </TouchableOpacity>
+
+//         {/* OTP SECTION */}
+//         {!profile.isPhoneVerified ? (
+//           <View style={{ marginTop: 25 }}>
+//             <TouchableOpacity
+//               style={[styles.button, { backgroundColor: "#007bff" }]}
+//               onPress={handleSendOtp}
+//               disabled={sendingOtp}
+//             >
+//               <Text style={styles.buttonText}>
+//                 {sendingOtp ? "Sending OTP..." : "Send OTP"}
+//               </Text>
+//             </TouchableOpacity>
+
+//             {otpSessionId && (
+//               <>
+//                 <TextInput
+//                   style={styles.input}
+//                   value={otp}
+//                   onChangeText={setOtp}
+//                   placeholder="Enter OTP"
+//                 />
+
+//                 <TouchableOpacity
+//                   style={[styles.button, { backgroundColor: "#28a745" }]}
+//                   onPress={handleVerifyOtp}
+//                   disabled={verifyingOtp}
+//                 >
+//                   <Text style={styles.buttonText}>
+//                     {verifyingOtp ? "Verifying..." : "Verify OTP"}
+//                   </Text>
+//                 </TouchableOpacity>
+//               </>
+//             )}
+//           </View>
+//         ) : (
+//           <Text style={styles.verifiedText}>✅ Phone Verified</Text>
+//         )}
+//       </ScrollView>
+//     </View>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   wrapper: { flex: 1, backgroundColor: "#fff" },
+//   header: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     padding: 15,
+//     borderBottomWidth: 1,
+//     borderBottomColor: "#ddd",
+//   },
+//   backButton: { marginRight: 10 },
+//   headerTitle: { fontSize: 18, fontWeight: "bold" },
+//   container: { padding: 20 },
+//   label: { fontWeight: "600", marginTop: 15 },
+//   input: {
+//     borderWidth: 1,
+//     borderColor: "#ccc",
+//     borderRadius: 8,
+//     padding: 10,
+//     marginTop: 5,
+//     fontSize: 15,
+//   },
+//   button: {
+//     borderRadius: 8,
+//     paddingVertical: 14,
+//     marginTop: 18,
+//     alignItems: "center",
+//   },
+//   buttonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+//   verifiedText: {
+//     color: "green",
+//     textAlign: "center",
+//     marginTop: 15,
+//     fontSize: 16,
+//     fontWeight: "bold",
+//   },
+// });
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -810,6 +1798,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import {
   fetchPosterProfile,
   updatePosterProfile,
@@ -824,7 +1813,7 @@ export default function PosterProfileScreen({ navigation }) {
   const [verifyingOtp, setVerifyingOtp] = useState(false);
 
   const [profile, setProfile] = useState({
-    Name: "",
+    name: "",
     email: "",
     phone: "+91",
     about: "",
@@ -834,36 +1823,51 @@ export default function PosterProfileScreen({ navigation }) {
   const [otp, setOtp] = useState("");
   const [otpSessionId, setOtpSessionId] = useState(null);
 
-  // Fetch existing profile
+  // =====================================================
+  // 🔹 LOAD PROFILE (Option B backend format)
+  // =====================================================
   const loadProfile = async () => {
     setLoading(true);
     try {
-      const data = await fetchPosterProfile();
+      const res = await fetchPosterProfile();
+
+      const data = res?.data || res || {}; // <-- backend sometimes sends { data: {...} }
+
+      console.log("Fetched backend data:", data);
+
       setProfile({
-        Name: data.Name || "",
+        name: data.name || "",
         email: data.email || "",
-        phone: data.phone?.startsWith("+91")
-          ? data.phone
-          : `+91${data.phone || ""}`,
+        phone: data.phone
+          ? data.phone.startsWith("+91")
+            ? data.phone
+            : `+91${data.phone}`
+          : "+91",
         about: data.about || "",
         isPhoneVerified: data.isPhoneVerified || false,
       });
     } catch (err) {
-      console.error("❌ Fetch Profile Error:", err);
+      console.log("❌ Fetch Error:", err);
 
-      // Handle new user
-      if (err.response?.data?.details?.message === "No Data") {
+      const backendMsg = err?.response?.data?.details?.message;
+
+      if (backendMsg === "No Data") {
+        // Extract email from token
         const token = await AsyncStorage.getItem("authToken");
         let email = "";
+
         if (token) {
           try {
-            const payload = JSON.parse(atob(token.split(".")[1]));
+            const payload = JSON.parse(
+              Buffer.from(token.split(".")[1], "base64").toString()
+            );
             email = payload.email || "";
           } catch {}
         }
+
         setProfile({
-          Name: "",
-          email,
+          name: "",
+          email: email,
           phone: "+91",
           about: "",
           isPhoneVerified: false,
@@ -880,142 +1884,150 @@ export default function PosterProfileScreen({ navigation }) {
     loadProfile();
   }, []);
 
-  // Save profile
+  // =====================================================
+  // 🔹 UPDATE PROFILE
+  // =====================================================
   const handleSave = async () => {
-    if (!profile.Name.trim()) {
+    if (!profile.name.trim()) {
       return Alert.alert("Error", "Name is required");
     }
+
     if (!profile.phone || profile.phone.length < 10) {
       return Alert.alert("Error", "Valid phone number is required");
     }
 
+    // Final payload
+    const payload = {
+      Name: profile.name.trim(),
+      phone: profile.phone.trim(),
+      about: profile.about.trim(),
+    };
+
+    console.log("Sending FINAL payload:", payload);
+
     setSaving(true);
     try {
-      const payload = {
-        Name: profile.Name.trim(),
-        phone: profile.phone.trim(),
-        about: profile.about.trim(),
-      };
-
-      const res = await updatePosterProfile(payload);
-
-      if (res?.status === "ERROR") {
-        Alert.alert("Error", res.message || "Failed to update profile");
-      } else {
-        Alert.alert("Success", "Profile saved successfully");
-      }
+      await updatePosterProfile(payload);
+      Alert.alert("Success", "Profile updated successfully");
     } catch (err) {
-      console.error("❌ updatePosterProfile Error:", err);
+      console.log("❌ Update Error:", err);
+
       const msg =
-        err.response?.data?.details?.Name ||
+        err.response?.data?.details?.name ||
         err.response?.data?.details?.phone ||
+        err.response?.data?.details?.about ||
         "Failed to update profile";
+
       Alert.alert("Error", msg);
     } finally {
       setSaving(false);
     }
   };
 
-  // Send OTP
+  // =====================================================
+  // 🔹 SEND OTP
+  // =====================================================
   const handleSendOtp = async () => {
     if (!profile.phone || profile.phone.length < 10)
-      return Alert.alert("Error", "Enter a valid phone number");
+      return Alert.alert("Error", "Enter valid phone number");
 
     setSendingOtp(true);
     try {
       const res = await sendPosterPhoneOtp(profile.phone);
-      if (res.status === "SUCCESS") {
-        setOtpSessionId(res.data.sessionId);
-        Alert.alert("OTP Sent", res.data.message || "OTP sent successfully");
-      } else {
-        Alert.alert("Error", res.message || "Failed to send OTP");
-      }
+
+      setOtpSessionId(res.data.sessionId);
+      Alert.alert("OTP Sent", res.data.message);
     } catch (err) {
-      console.error("Send OTP Error:", err);
+      console.log("OTP error:", err);
       Alert.alert("Error", "Failed to send OTP");
     } finally {
       setSendingOtp(false);
     }
   };
 
-  // Verify OTP
+  // =====================================================
+  // 🔹 VERIFY OTP
+  // =====================================================
   const handleVerifyOtp = async () => {
-    if (!otpSessionId || !otp) {
-      return Alert.alert("Error", "Enter OTP first");
-    }
+    if (!otpSessionId || !otp) return Alert.alert("Enter OTP");
 
     setVerifyingOtp(true);
     try {
       const res = await verifyPosterPhoneOtp(otpSessionId, otp);
+
       if (res.status === "SUCCESS") {
-        Alert.alert("Success", "Phone verified successfully");
+        Alert.alert("Success", "Phone Verified");
         setProfile((prev) => ({ ...prev, isPhoneVerified: true }));
       } else {
-        Alert.alert("Error", res.message || "OTP verification failed");
+        Alert.alert("Error", "Verification failed");
       }
     } catch (err) {
-      console.error("Verify OTP Error:", err);
-      Alert.alert("Error", "OTP verification failed");
+      Alert.alert("Error", "Verification failed");
     } finally {
       setVerifyingOtp(false);
     }
   };
 
-  if (loading) return <ActivityIndicator size="large" style={{ flex: 1 }} />;
+  // =====================================================
+  // 🔹 UI
+  // =====================================================
+  if (loading) {
+    return <ActivityIndicator size="large" style={{ flex: 1 }} />;
+  }
 
   return (
     <View style={styles.wrapper}>
-      {/* Header with back button */}
+      {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => navigation.navigate("PosterDashboard")}
+          onPress={() => navigation.goBack()}
         >
           <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
+
         <Text style={styles.headerTitle}>Poster Profile</Text>
       </View>
 
       <ScrollView style={styles.container}>
+        {/* EMAIL */}
         <Text style={styles.label}>Email</Text>
         <TextInput
-          style={[styles.input, { backgroundColor: "#f2f2f2" }]}
+          style={[styles.input, { backgroundColor: "#eee" }]}
           value={profile.email}
           editable={false}
         />
 
+        {/* NAME */}
         <Text style={styles.label}>Full Name</Text>
         <TextInput
           style={styles.input}
-          value={profile.Name}
-          onChangeText={(text) => setProfile({ ...profile, Name: text })}
-          placeholder="Enter your full name"
+          value={profile.name}
+          onChangeText={(text) => setProfile({ ...profile, name: text })}
         />
 
+        {/* PHONE */}
         <Text style={styles.label}>Phone Number</Text>
         <TextInput
           style={styles.input}
           value={profile.phone}
           onChangeText={(text) => {
-            let newPhone = text.startsWith("+91")
-              ? text
-              : `+91${text.replace(/^(\+91)?/, "")}`;
-            setProfile({ ...profile, phone: newPhone });
+            const clean = text.replace(/^\+91/, "");
+            setProfile({ ...profile, phone: `+91${clean}` });
           }}
           keyboardType="phone-pad"
-          placeholder="+919876543210"
         />
 
+        {/* ABOUT */}
         <Text style={styles.label}>About You</Text>
         <TextInput
-          style={[styles.input, { height: 90, textAlignVertical: "top" }]}
+          style={[styles.input, { height: 90 }]}
           value={profile.about}
-          onChangeText={(text) => setProfile({ ...profile, about: text })}
           multiline
-          placeholder="Write something about yourself..."
+          onChangeText={(t) => setProfile({ ...profile, about: t })}
         />
 
-        {/* Save Profile */}
+        {/* SAVE BUTTON */}
         <TouchableOpacity
           style={[styles.button, { backgroundColor: "#ff6b6b" }]}
           onPress={handleSave}
@@ -1026,9 +2038,9 @@ export default function PosterProfileScreen({ navigation }) {
           </Text>
         </TouchableOpacity>
 
-        {/* OTP Section */}
-        {!profile.isPhoneVerified && profile.phone ? (
-          <View style={styles.otpSection}>
+        {/* OTP SECTION */}
+        {!profile.isPhoneVerified ? (
+          <View style={{ marginTop: 25 }}>
             <TouchableOpacity
               style={[styles.button, { backgroundColor: "#007bff" }]}
               onPress={handleSendOtp}
@@ -1046,8 +2058,8 @@ export default function PosterProfileScreen({ navigation }) {
                   value={otp}
                   onChangeText={setOtp}
                   placeholder="Enter OTP"
-                  keyboardType="number-pad"
                 />
+
                 <TouchableOpacity
                   style={[styles.button, { backgroundColor: "#28a745" }]}
                   onPress={handleVerifyOtp}
@@ -1061,9 +2073,7 @@ export default function PosterProfileScreen({ navigation }) {
             )}
           </View>
         ) : (
-          profile.phone && (
-            <Text style={styles.verifiedText}>✅ Phone Verified</Text>
-          )
+          <Text style={styles.verifiedText}>✅ Phone Verified</Text>
         )}
       </ScrollView>
     </View>
@@ -1071,34 +2081,18 @@ export default function PosterProfileScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
+  wrapper: { flex: 1, backgroundColor: "#fff" },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 15,
+    padding: 15,
     borderBottomWidth: 1,
     borderBottomColor: "#ddd",
   },
-  backButton: {
-    marginRight: 10,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  container: {
-    padding: 20,
-  },
-  label: {
-    fontWeight: "600",
-    marginTop: 15,
-    color: "#333",
-  },
+  backButton: { marginRight: 10 },
+  headerTitle: { fontSize: 18, fontWeight: "bold" },
+  container: { padding: 20 },
+  label: { fontWeight: "600", marginTop: 15 },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
@@ -1112,19 +2106,8 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     marginTop: 18,
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
   },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  otpSection: {
-    marginTop: 25,
-  },
+  buttonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
   verifiedText: {
     color: "green",
     textAlign: "center",

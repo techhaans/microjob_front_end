@@ -1,4 +1,4 @@
-// import React, { useEffect, useState, useRef } from "react";
+// import React, { useEffect, useState, useRef, useCallback } from "react";
 // import {
 //   View,
 //   Text,
@@ -11,13 +11,16 @@
 //   FlatList,
 //   Alert,
 //   ScrollView,
+//   Switch,
+//   Linking,
 // } from "react-native";
 // import AsyncStorage from "@react-native-async-storage/async-storage";
 // import { Ionicons } from "@expo/vector-icons";
 // import * as Location from "expo-location";
 // import Slider from "@react-native-community/slider";
-// import { useNavigation } from "@react-navigation/native";
+// import { useNavigation, useFocusEffect } from "@react-navigation/native";
 // import { useDebouncedCallback } from "use-debounce";
+// import MapView, { Marker, AnimatedRegion } from "react-native-maps";
 // import {
 //   fetchDoerProfile,
 //   fetchAvailableJobs,
@@ -26,54 +29,290 @@
 //   acceptJob,
 // } from "../api/doer";
 
+// /**
+//  * DoerDashboard with integrated Swiggy-style live map + animated marker
+//  *
+//  * Requirements:
+//  *  - npm i react-native-maps
+//  *  - ../api/doer.fetchAvailableJobs(lat, lon, radius, page, size, sort)
+//  *
+//  * Behavior:
+//  *  - Requests permission when needed
+//  *  - getLocationOnce() used for initial load
+//  *  - Live watcher runs only when liveTrackingEnabled true (toggle)
+//  *  - Marker and camera animate smoothly on updates
+//  *  - Jobs are debounced when location changes
+//  */
+
 // export default function DoerDashboard() {
 //   const navigation = useNavigation();
+
+//   // app state
 //   const [profile, setProfile] = useState(null);
-//   const [loading, setLoading] = useState(true);
+//   const [loadingApp, setLoadingApp] = useState(true);
+//   const [loadingJobs, setLoadingJobs] = useState(false);
 //   const [availableJobs, setAvailableJobs] = useState([]);
 //   const [currentJobs, setCurrentJobs] = useState([]);
 //   const [jobHistory, setJobHistory] = useState([]);
+
 //   const [radius, setRadius] = useState(5);
-//   const [location, setLocation] = useState(null);
+//   const [location, setLocation] = useState(null); // { lat, lon }
 //   const [acceptingMap, setAcceptingMap] = useState({});
 //   const [activeTab, setActiveTab] = useState("current");
+
+//   // UI refs & map refs
 //   const fadeAnim = useRef(new Animated.Value(0)).current;
-//   const locationWatcher = useRef(null);
+//   const locationWatcherRef = useRef(null);
+//   const mapRef = useRef(null);
 
-//   const debouncedLoadJobs = useDebouncedCallback(async (rad) => {
-//     if (location) await loadAvailableJobs(location, rad);
-//   }, 500);
+//   // animated region for smooth marker movement
+//   const markerRegion = useRef(
+//     new AnimatedRegion({
+//       latitude: 0,
+//       longitude: 0,
+//       latitudeDelta: 0.01,
+//       longitudeDelta: 0.01,
+//     })
+//   ).current;
 
-//   useEffect(() => {
-//     loadAllData();
-//     return () => {
-//       if (locationWatcher.current) locationWatcher.current.remove();
-//     };
-//   }, []);
+//   const [liveTrackingEnabled, setLiveTrackingEnabled] = useState(false);
+//   const [locationPermissionStatus, setLocationPermissionStatus] =
+//     useState(null);
+
+//   // pull-to-refresh state
+//   const [refreshing, setRefreshing] = useState(false);
+
+//   // Debounced loader: accepts coords so it's always using freshest coordinates
+//   const debouncedLoadJobs = useDebouncedCallback(
+//     async (coords, rad) => {
+//       if (!coords) return;
+//       await loadAvailableJobs(coords, rad);
+//     },
+//     600,
+//     { leading: false }
+//   );
 
 //   const animateIn = () => {
+//     fadeAnim.setValue(0);
 //     Animated.timing(fadeAnim, {
 //       toValue: 1,
-//       duration: 600,
+//       duration: 450,
 //       useNativeDriver: true,
 //     }).start();
 //   };
 
-//   const loadAllData = async () => {
-//     setLoading(true);
-//     await loadProfile();
-//     await getLocationAndJobs();
-//     await loadCurrentJobs();
-//     await loadJobHistory();
-//     setLoading(false);
-//     animateIn();
+//   // ---------- INITIAL MOUNT ----------
+//   useEffect(() => {
+//     let mounted = true;
+//     (async () => {
+//       setLoadingApp(true);
+//       try {
+//         await loadProfile();
+
+//         // Get permission status first (but getLocationOnce will also request if needed)
+//         const perm = await Location.getForegroundPermissionsAsync();
+//         setLocationPermissionStatus(perm.status);
+
+//         // Get location once (requests permission if not granted)
+//         const coords = await getLocationOnce();
+//         if (!mounted) return;
+
+//         await Promise.all([
+//           loadAvailableJobs(coords, radius),
+//           loadCurrentJobs(),
+//           loadJobHistory(),
+//         ]);
+//       } catch (err) {
+//         console.warn("Initial load error:", err);
+//       } finally {
+//         if (mounted) {
+//           setLoadingApp(false);
+//           animateIn();
+//         }
+//       }
+//     })();
+
+//     return () => {
+//       mounted = false;
+//       stopLocationWatcher();
+//     };
+//     // eslint-disable-next-line react-hooks/exhaustive-deps
+//   }, []);
+
+//   // Focus effect: refresh current + history only
+//   useFocusEffect(
+//     useCallback(() => {
+//       loadCurrentJobs();
+//       loadJobHistory();
+//     }, [])
+//   );
+
+//   // ---------- LOCATION HELPERS ----------
+//   const getLocationOnce = async () => {
+//     try {
+//       const { status } = await Location.requestForegroundPermissionsAsync();
+//       setLocationPermissionStatus(status);
+
+//       if (status !== "granted") {
+//         // user denied
+//         return null;
+//       }
+
+//       // try last known first (fast)
+//       const last = await Location.getLastKnownPositionAsync();
+//       if (last) {
+//         const coords = {
+//           lat: last.coords.latitude,
+//           lon: last.coords.longitude,
+//         };
+//         setLocation(coords);
+//         // init marker region without animation
+//         try {
+//           markerRegion.setValue({
+//             latitude: coords.lat,
+//             longitude: coords.lon,
+//             latitudeDelta: 0.01,
+//             longitudeDelta: 0.01,
+//           });
+//         } catch {}
+//         return coords;
+//       }
+
+//       const loc = await Location.getCurrentPositionAsync({
+//         accuracy: Location.Accuracy.Balanced,
+//         maximumAge: 10000,
+//         timeout: 5000,
+//       });
+
+//       const coords = { lat: loc.coords.latitude, lon: loc.coords.longitude };
+//       setLocation(coords);
+//       try {
+//         markerRegion.setValue({
+//           latitude: coords.lat,
+//           longitude: coords.lon,
+//           latitudeDelta: 0.01,
+//           longitudeDelta: 0.01,
+//         });
+//       } catch {}
+//       return coords;
+//     } catch (err) {
+//       console.warn("getLocationOnce error:", err);
+//       return null;
+//     }
 //   };
 
+//   const startLocationWatcher = async () => {
+//     if (locationWatcherRef.current) return;
+//     try {
+//       // When live tracking enabled, use higher frequency
+//       const options = liveTrackingEnabled
+//         ? {
+//             accuracy: Location.Accuracy.BestForNavigation,
+//             timeInterval: 1000, // 1s
+//             distanceInterval: 1, // 1m
+//           }
+//         : {
+//             accuracy: Location.Accuracy.Balanced,
+//             timeInterval: 10000, // 10s
+//             distanceInterval: 50,
+//           };
+
+//       locationWatcherRef.current = await Location.watchPositionAsync(
+//         options,
+//         (loc) => {
+//           if (!loc?.coords) return;
+
+//           const newCoords = {
+//             lat: loc.coords.latitude,
+//             lon: loc.coords.longitude,
+//           };
+
+//           // update local state (used by UI text and job fetching)
+//           setLocation(newCoords);
+
+//           // animate marker smoothly
+//           try {
+//             markerRegion
+//               .timing({
+//                 latitude: newCoords.lat,
+//                 longitude: newCoords.lon,
+//                 duration: liveTrackingEnabled ? 800 : 500,
+//                 useNativeDriver: false,
+//               })
+//               .start();
+//           } catch (e) {
+//             // fallback: set value directly
+//             try {
+//               markerRegion.setValue({
+//                 latitude: newCoords.lat,
+//                 longitude: newCoords.lon,
+//               });
+//             } catch {}
+//           }
+
+//           // auto-follow map camera
+//           if (mapRef.current) {
+//             try {
+//               mapRef.current.animateToRegion(
+//                 {
+//                   latitude: newCoords.lat,
+//                   longitude: newCoords.lon,
+//                   latitudeDelta: 0.01,
+//                   longitudeDelta: 0.01,
+//                 },
+//                 liveTrackingEnabled ? 800 : 600
+//               );
+//             } catch (e) {}
+//           }
+
+//           // Reload jobs when moving (debounced)
+//           debouncedLoadJobs(newCoords, radius);
+//         }
+//       );
+//     } catch (err) {
+//       console.warn("startLocationWatcher error:", err);
+//     }
+//   };
+
+//   const stopLocationWatcher = () => {
+//     if (locationWatcherRef.current) {
+//       try {
+//         locationWatcherRef.current.remove();
+//       } catch (e) {}
+//       locationWatcherRef.current = null;
+//     }
+//   };
+
+//   // Start/stop watcher when toggle changes
+//   useEffect(() => {
+//     if (liveTrackingEnabled) startLocationWatcher();
+//     else stopLocationWatcher();
+
+//     return () => {
+//       // nothing else
+//     };
+//     // eslint-disable-next-line react-hooks/exhaustive-deps
+//   }, [liveTrackingEnabled]);
+
+//   // ---------- API LOADING FUNCTIONS ----------
 //   const loadProfile = async () => {
 //     try {
 //       const stored = await AsyncStorage.getItem("doerProfile");
-//       if (stored) setProfile(JSON.parse(stored));
-//       else {
+//       if (stored) {
+//         setProfile(JSON.parse(stored));
+//         // refresh in background
+//         fetchDoerProfile()
+//           .then((res) => {
+//             if (res?.data) {
+//               setProfile(res.data);
+//               AsyncStorage.setItem(
+//                 "doerProfile",
+//                 JSON.stringify(res.data)
+//               ).catch(() => {});
+//             }
+//           })
+//           .catch(() => {});
+//       } else {
 //         const res = await fetchDoerProfile();
 //         if (res?.data) {
 //           setProfile(res.data);
@@ -81,47 +320,42 @@
 //         }
 //       }
 //     } catch (err) {
-//       console.warn("Profile Error:", err.message);
+//       console.warn("Profile Error:", err);
 //     }
 //   };
 
-//   const getLocationAndJobs = async () => {
-//     try {
-//       const { status } = await Location.requestForegroundPermissionsAsync();
-//       if (status !== "granted") {
-//         Alert.alert("Location Denied", "Enable location to see nearby jobs.");
+//   const loadAvailableJobs = async (
+//     coords = location,
+//     rad = radius,
+//     page = 0,
+//     size = 20,
+//     sort = ["postedAgo,desc"]
+//   ) => {
+//     if (!coords) {
+//       const c = await getLocationOnce();
+//       if (!c) {
+//         setAvailableJobs([]);
 //         return;
 //       }
-
-//       const loc = await Location.getCurrentPositionAsync({});
-//       const coords = { lat: loc.coords.latitude, lon: loc.coords.longitude };
-//       setLocation(coords);
-//       await loadAvailableJobs(coords, radius);
-
-//       locationWatcher.current = await Location.watchPositionAsync(
-//         { distanceInterval: 50 },
-//         (loc) => {
-//           const newCoords = {
-//             lat: loc.coords.latitude,
-//             lon: loc.coords.longitude,
-//           };
-//           setLocation(newCoords);
-//           debouncedLoadJobs(radius);
-//         }
-//       );
-//     } catch (err) {
-//       console.warn("Location Error:", err.message);
+//       coords = c;
 //     }
-//   };
 
-//   const loadAvailableJobs = async (coords = location, rad = radius) => {
-//     if (!coords) return;
+//     setLoadingJobs(true);
 //     try {
-//       const res = await fetchAvailableJobs(coords.lat, coords.lon, rad);
+//       const res = await fetchAvailableJobs(
+//         coords.lat,
+//         coords.lon,
+//         rad,
+//         page,
+//         size,
+//         sort
+//       );
 //       setAvailableJobs(res?.data?.content || []);
 //     } catch (err) {
-//       console.warn("Available Jobs Error:", err.message);
+//       console.warn("Available Jobs Error:", err);
 //       setAvailableJobs([]);
+//     } finally {
+//       setLoadingJobs(false);
 //     }
 //   };
 
@@ -130,7 +364,8 @@
 //       const res = await fetchCurrentJobs();
 //       setCurrentJobs(res?.data?.content || []);
 //     } catch (err) {
-//       console.warn("Current Jobs Error:", err?.message);
+//       console.warn("Current Jobs Error:", err);
+//       setCurrentJobs([]);
 //     }
 //   };
 
@@ -139,10 +374,26 @@
 //       const res = await fetchJobHistory(0, 10, ["updatedAt,desc"]);
 //       setJobHistory(res?.data?.content || []);
 //     } catch (err) {
-//       console.warn("Job History Error:", err?.message);
+//       console.warn("Job History Error:", err);
+//       setJobHistory([]);
 //     }
 //   };
 
+//   // pull-to-refresh
+//   const onRefresh = async () => {
+//     setRefreshing(true);
+//     try {
+//       await Promise.all([
+//         loadAvailableJobs(location, radius),
+//         loadCurrentJobs(),
+//         loadJobHistory(),
+//       ]);
+//     } finally {
+//       setRefreshing(false);
+//     }
+//   };
+
+//   // accept job
 //   const handleAcceptJob = async (jobId) => {
 //     try {
 //       setAcceptingMap((p) => ({ ...p, [jobId]: true }));
@@ -150,7 +401,7 @@
 //       Alert.alert("Success", res?.message || "Job accepted!");
 //       await Promise.all([
 //         loadCurrentJobs(),
-//         location && loadAvailableJobs(location, radius),
+//         loadAvailableJobs(location, radius),
 //         loadJobHistory(),
 //       ]);
 //     } catch (err) {
@@ -166,15 +417,38 @@
 //   const handleLogout = async () => {
 //     try {
 //       await AsyncStorage.clear();
-//       navigation.reset({
-//         index: 0,
-//         routes: [{ name: "LoginPage" }],
-//       });
-//     } catch (err) {
+//       stopLocationWatcher();
+//       navigation.reset({ index: 0, routes: [{ name: "LoginPage" }] });
+//     } catch {
 //       Alert.alert("Error", "Unable to logout. Try again.");
 //     }
 //   };
 
+//   // ---------- UI helpers ----------
+//   const openAppSettings = () => {
+//     Linking.openSettings().catch(() => {
+//       Alert.alert(
+//         "Unable to open settings",
+//         "Open settings manually and allow location permission."
+//       );
+//     });
+//   };
+
+//   const tryRequestPermissionAgain = async () => {
+//     const { status } = await Location.requestForegroundPermissionsAsync();
+//     setLocationPermissionStatus(status);
+//     if (status === "granted") {
+//       const coords = await getLocationOnce();
+//       await loadAvailableJobs(coords, radius);
+//     } else {
+//       Alert.alert(
+//         "Permission not granted",
+//         "Location permission still not granted."
+//       );
+//     }
+//   };
+
+//   // ---------- RENDER HELPERS ----------
 //   const renderJobCard = ({ item, index }) => {
 //     const accepting = acceptingMap[item.jobId] || false;
 //     const statusColor =
@@ -212,9 +486,11 @@
 //             </Text>
 //           </View>
 //         </View>
+
 //         <Text style={styles.desc} numberOfLines={2}>
 //           {item.description || "No description available"}
 //         </Text>
+
 //         {item.amountInRs > 0 && (
 //           <View style={styles.metaRow}>
 //             <Ionicons name="cash-outline" size={16} color="#475569" />
@@ -223,26 +499,38 @@
 //             >
 //               ₹ {item.amountInRs}
 //             </Text>
-//             {item.distanceKm && (
+//             {item.distanceKm != null && (
 //               <Text style={[styles.metaText, { marginLeft: 10 }]}>
-//                 {item.distanceKm.toFixed(1)} km away
+//                 {Number(item.distanceKm).toFixed(1)} km away
 //               </Text>
 //             )}
 //           </View>
 //         )}
-//         {activeTab === "available" && (
+
+//         <View style={{ flexDirection: "row", gap: 10, marginTop: 10 }}>
+//           {activeTab === "available" && (
+//             <TouchableOpacity
+//               style={[styles.actionBtn, { backgroundColor: "#2563eb" }]}
+//               onPress={() => handleAcceptJob(item.jobId)}
+//               disabled={accepting}
+//             >
+//               {accepting ? (
+//                 <ActivityIndicator color="#fff" />
+//               ) : (
+//                 <Text style={styles.actionText}>Accept Job</Text>
+//               )}
+//             </TouchableOpacity>
+//           )}
+
 //           <TouchableOpacity
-//             style={styles.acceptBtn}
-//             onPress={() => handleAcceptJob(item.jobId)}
-//             disabled={accepting}
+//             style={[styles.actionBtn, { backgroundColor: "#6b7280" }]}
+//             onPress={() =>
+//               navigation.navigate("JobDetails", { jobId: item.jobId })
+//             }
 //           >
-//             {accepting ? (
-//               <ActivityIndicator color="#fff" />
-//             ) : (
-//               <Text style={styles.acceptText}>Accept Job</Text>
-//             )}
+//             <Text style={styles.actionText}>View Details</Text>
 //           </TouchableOpacity>
-//         )}
+//         </View>
 //       </Animated.View>
 //     );
 //   };
@@ -251,7 +539,6 @@
 //     const acceptedCount = currentJobs.length;
 //     const completedCount = jobHistory.length;
 //     const rating = profile?.rating ?? 4.7;
-//     const isNewUser = !profile?.isKycDone && !profile?.isProfileUpdated;
 
 //     return (
 //       <ScrollView style={{ flex: 1, backgroundColor: "#fff" }}>
@@ -263,7 +550,7 @@
 //           }}
 //         >
 //           <Text style={{ fontSize: 18, fontWeight: "800", color: "#fff" }}>
-//             {profile?.name || "New User"}
+//             {profile?.name || "Doer"}
 //           </Text>
 //           <Text style={{ color: "#f3f4f6", marginTop: 4 }}>
 //             {profile?.phone || "No phone"}
@@ -300,6 +587,100 @@
 //           </View>
 //         </View>
 
+//         <View style={{ paddingHorizontal: 16 }}>
+//           <Text
+//             style={{
+//               fontSize: 16,
+//               fontWeight: "700",
+//               color: "#111827",
+//               marginBottom: 8,
+//             }}
+//           >
+//             Personal Information
+//           </Text>
+
+//           {[
+//             ["Email", profile?.email],
+//             ["Bio", profile?.bio],
+//             ["Skills", profile?.skills?.join(", ")],
+//           ].map(([label, value], idx) => (
+//             <View
+//               key={idx}
+//               style={{
+//                 flexDirection: "row",
+//                 justifyContent: "space-between",
+//                 borderBottomWidth: 0.5,
+//                 borderColor: "#e5e7eb",
+//                 paddingVertical: 8,
+//               }}
+//             >
+//               <Text style={{ fontWeight: "600", color: "#374151" }}>
+//                 {label}
+//               </Text>
+//               <Text
+//                 style={{
+//                   color: "#111827",
+//                   flex: 1,
+//                   textAlign: "right",
+//                   marginLeft: 10,
+//                 }}
+//               >
+//                 {value || "—"}
+//               </Text>
+//             </View>
+//           ))}
+//         </View>
+
+//         <View style={{ paddingHorizontal: 16, marginTop: 16 }}>
+//           <Text
+//             style={{
+//               fontSize: 16,
+//               fontWeight: "700",
+//               color: "#111827",
+//               marginBottom: 8,
+//             }}
+//           >
+//             Verification Details
+//           </Text>
+
+//           {[
+//             ["Phone Verified", profile?.isPhoneVerified ? "Yes" : "No"],
+//             ["KYC Level", profile?.kycLevel?.toString()],
+//             ["Account Verified", profile?.isVerified ? "Yes" : "No"],
+//             ["Verification Status", profile?.verificationStatus],
+//             ["Rejection Reason", profile?.rejectionReason],
+//           ].map(([label, value], idx) => (
+//             <View
+//               key={idx}
+//               style={{
+//                 flexDirection: "row",
+//                 justifyContent: "space-between",
+//                 borderBottomWidth: 0.5,
+//                 borderColor: "#e5e7eb",
+//                 paddingVertical: 8,
+//               }}
+//             >
+//               <Text style={{ fontWeight: "600", color: "#374151" }}>
+//                 {label}
+//               </Text>
+//               <Text
+//                 style={{
+//                   color:
+//                     label === "Verification Status" &&
+//                     value?.toLowerCase() === "rejected"
+//                       ? "#dc2626"
+//                       : "#111827",
+//                   flex: 1,
+//                   textAlign: "right",
+//                   marginLeft: 10,
+//                 }}
+//               >
+//                 {value || "—"}
+//               </Text>
+//             </View>
+//           ))}
+//         </View>
+
 //         <Text
 //           style={{
 //             fontSize: 16,
@@ -309,18 +690,16 @@
 //             marginTop: 20,
 //           }}
 //         >
-//           My Account
+//           Actions
 //         </Text>
 
-//         {!isNewUser && (
-//           <TouchableOpacity
-//             style={styles.profileBtn}
-//             onPress={() => navigation.navigate("DoerProfile")}
-//           >
-//             <Ionicons name="person-circle-outline" size={20} color="#2563eb" />
-//             <Text style={styles.profileBtnText}>View Profile</Text>
-//           </TouchableOpacity>
-//         )}
+//         <TouchableOpacity
+//           style={styles.profileBtn}
+//           onPress={() => navigation.navigate("DoerProfile")}
+//         >
+//           <Ionicons name="person-circle-outline" size={20} color="#2563eb" />
+//           <Text style={styles.profileBtnText}>View Profile</Text>
+//         </TouchableOpacity>
 
 //         <TouchableOpacity
 //           style={styles.profileBtn}
@@ -357,16 +736,20 @@
 //             Logout
 //           </Text>
 //         </TouchableOpacity>
+
+//         <View style={{ height: 60 }} />
 //       </ScrollView>
 //     );
 //   };
 
-//   if (loading)
+//   // ---------- RENDER ----------
+//   if (loadingApp) {
 //     return (
 //       <SafeAreaView style={styles.loader}>
 //         <ActivityIndicator size="large" color="#2563eb" />
 //       </SafeAreaView>
 //     );
+//   }
 
 //   return (
 //     <SafeAreaView style={styles.container}>
@@ -378,8 +761,128 @@
 //         </TouchableOpacity>
 //       </View>
 
+//       {/* Small inline loaders and controls */}
+//       <View
+//         style={{
+//           padding: 12,
+//           backgroundColor: "#fff",
+//           borderBottomWidth: 1,
+//           borderBottomColor: "#e5e7eb",
+//         }}
+//       >
+//         <View
+//           style={{
+//             flexDirection: "row",
+//             justifyContent: "space-between",
+//             alignItems: "center",
+//           }}
+//         >
+//           <Text style={{ fontWeight: "700" }}>
+//             Location:{" "}
+//             {location
+//               ? `${location.lat.toFixed(4)}, ${location.lon.toFixed(4)}`
+//               : "Unavailable"}
+//           </Text>
+
+//           <View style={{ flexDirection: "row", alignItems: "center" }}>
+//             <Text style={{ marginRight: 8, color: "#374151" }}>Live</Text>
+//             <Switch
+//               value={liveTrackingEnabled}
+//               onValueChange={setLiveTrackingEnabled}
+//             />
+//           </View>
+//         </View>
+
+//         {!location && locationPermissionStatus !== "granted" && (
+//           <View
+//             style={{
+//               marginTop: 10,
+//               flexDirection: "row",
+//               justifyContent: "space-between",
+//               alignItems: "center",
+//             }}
+//           >
+//             <Text style={{ color: "#b91c1c", flex: 1 }}>
+//               We need location permission to show nearby jobs. Tap Retry or Open
+//               Settings to enable it.
+//             </Text>
+//             <View style={{ flexDirection: "row" }}>
+//               <TouchableOpacity
+//                 style={styles.smallBtn}
+//                 onPress={tryRequestPermissionAgain}
+//               >
+//                 <Text style={{ color: "#fff", fontWeight: "600" }}>Retry</Text>
+//               </TouchableOpacity>
+//               <TouchableOpacity
+//                 style={styles.outlineBtn}
+//                 onPress={openAppSettings}
+//               >
+//                 <Text style={{ color: "#2563eb", fontWeight: "600" }}>
+//                   Open Settings
+//                 </Text>
+//               </TouchableOpacity>
+//             </View>
+//           </View>
+//         )}
+//       </View>
+
+//       {/* Mini live map (Swiggy-style) */}
+//       <View style={{ height: 220, backgroundColor: "#fff" }}>
+//         {location ? (
+//           <MapView
+//             ref={mapRef}
+//             style={{ flex: 1 }}
+//             initialRegion={{
+//               latitude: location.lat,
+//               longitude: location.lon,
+//               latitudeDelta: 0.01,
+//               longitudeDelta: 0.01,
+//             }}
+//             showsUserLocation={false}
+//             loadingEnabled={true}
+//             toolbarEnabled={false}
+//             zoomEnabled={true}
+//             scrollEnabled={true}
+//           >
+//             <Marker.Animated coordinate={markerRegion}>
+//               <View
+//                 style={{
+//                   width: 20,
+//                   height: 20,
+//                   borderRadius: 20,
+//                   backgroundColor: "#ff4d4d",
+//                   borderWidth: 3,
+//                   borderColor: "#fff",
+//                   justifyContent: "center",
+//                   alignItems: "center",
+//                 }}
+//               >
+//                 <View
+//                   style={{
+//                     width: 8,
+//                     height: 8,
+//                     borderRadius: 8,
+//                     backgroundColor: "#fff",
+//                   }}
+//                 />
+//               </View>
+//             </Marker.Animated>
+//           </MapView>
+//         ) : (
+//           <View
+//             style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+//           >
+//             <ActivityIndicator size="small" color="#2563eb" />
+//             <Text style={{ marginTop: 6, color: "#374151" }}>
+//               Fetching location...
+//             </Text>
+//           </View>
+//         )}
+//       </View>
+
 //       {activeTab === "profile" && renderProfileSection()}
 
+//       {/* AVAILABLE */}
 //       {activeTab === "available" && (
 //         <View style={{ flex: 1 }}>
 //           <View style={styles.radiusBox}>
@@ -398,7 +901,8 @@
 //                   ]}
 //                   onPress={() => {
 //                     setRadius(r);
-//                     debouncedLoadJobs(r);
+//                     if (location) debouncedLoadJobs(location, r);
+//                     else loadAvailableJobs(null, r);
 //                   }}
 //                 >
 //                   <Text style={{ color: radius === r ? "#fff" : "#111827" }}>
@@ -416,13 +920,19 @@
 //               value={radius}
 //               onValueChange={(val) => {
 //                 setRadius(val);
-//                 debouncedLoadJobs(val);
+//                 if (location) debouncedLoadJobs(location, val);
 //               }}
 //               minimumTrackTintColor="#2563eb"
 //               maximumTrackTintColor="#ddd"
 //               thumbTintColor="#2563eb"
 //             />
 //           </View>
+
+//           {loadingJobs && (
+//             <View style={{ padding: 10, alignItems: "center" }}>
+//               <ActivityIndicator size="small" color="#2563eb" />
+//             </View>
+//           )}
 
 //           <FlatList
 //             data={availableJobs}
@@ -434,10 +944,13 @@
 //                 No nearby jobs. Try increasing the search radius.
 //               </Text>
 //             }
+//             refreshing={refreshing}
+//             onRefresh={onRefresh}
 //           />
 //         </View>
 //       )}
 
+//       {/* CURRENT / HISTORY */}
 //       {activeTab !== "available" && activeTab !== "profile" && (
 //         <FlatList
 //           data={activeTab === "current" ? currentJobs : jobHistory}
@@ -451,9 +964,12 @@
 //                 : "No completed jobs."}
 //             </Text>
 //           }
+//           refreshing={refreshing}
+//           onRefresh={onRefresh}
 //         />
 //       )}
 
+//       {/* bottom nav */}
 //       <View style={styles.bottomNav}>
 //         {[
 //           { key: "available", icon: "briefcase-outline", label: "Available" },
@@ -523,45 +1039,74 @@
 //     justifyContent: "space-between",
 //     alignItems: "center",
 //   },
-//   title: { fontSize: 16, fontWeight: "700", color: "#0f172a" },
-//   desc: { color: "#475569", fontSize: 13, marginVertical: 6 },
-//   metaRow: { flexDirection: "row", alignItems: "center", marginTop: 2 },
-//   metaText: { marginLeft: 6, color: "#475569", fontSize: 13 },
-//   statusTag: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 },
-//   statusText: { fontSize: 12, fontWeight: "700" },
-//   acceptBtn: {
-//     marginTop: 10,
-//     backgroundColor: "#2563eb",
-//     paddingVertical: 10,
+//   title: { fontSize: 16, fontWeight: "700", color: "#111827" },
+//   desc: { fontSize: 13, color: "#4b5563", marginTop: 4 },
+//   metaRow: { flexDirection: "row", alignItems: "center", marginTop: 6 },
+//   metaText: { fontSize: 13, color: "#475569", marginLeft: 4 },
+//   statusTag: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+//   statusText: { fontSize: 12, fontWeight: "600" },
+//   actionBtn: {
+//     flex: 1,
+//     paddingVertical: 8,
 //     borderRadius: 8,
 //     alignItems: "center",
 //   },
-//   acceptText: { color: "#fff", fontWeight: "800" },
-//   emptyText: { textAlign: "center", color: "#6b7280", fontSize: 14 },
+//   actionText: { color: "#fff", fontWeight: "600" },
+//   emptyText: {
+//     textAlign: "center",
+//     color: "#6b7280",
+//     fontSize: 14,
+//     marginTop: 40,
+//   },
+//   profileBtn: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     padding: 14,
+//     borderWidth: 1,
+//     borderColor: "#d1d5db",
+//     borderRadius: 10,
+//     marginHorizontal: 16,
+//     marginTop: 12,
+//     backgroundColor: "#fff",
+//   },
+//   profileBtnText: {
+//     marginLeft: 10,
+//     fontSize: 15,
+//     color: "#111827",
+//     fontWeight: "600",
+//   },
 //   bottomNav: {
 //     flexDirection: "row",
 //     justifyContent: "space-around",
 //     alignItems: "center",
-//     height: 60,
-//     borderTopWidth: 1,
-//     borderColor: "#e5e7eb",
+//     paddingVertical: 10,
 //     backgroundColor: "#fff",
-//     position: "absolute",
-//     bottom: 0,
-//     width: "100%",
+//     borderTopWidth: 1,
+//     borderTopColor: "#e5e7eb",
+//     elevation: 10,
 //   },
 //   navItem: { alignItems: "center", justifyContent: "center" },
-//   navLabel: { fontSize: 12, marginTop: 2 },
-//   profileBtn: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     paddingVertical: 14,
-//     marginHorizontal: 16,
-//     borderBottomWidth: 1,
-//     borderColor: "#e5e7eb",
+//   navLabel: { fontSize: 12, fontWeight: "600", marginTop: 2 },
+
+//   smallBtn: {
+//     backgroundColor: "#2563eb",
+//     paddingHorizontal: 12,
+//     paddingVertical: 8,
+//     borderRadius: 8,
+//     marginLeft: 8,
 //   },
-//   profileBtnText: { marginLeft: 10, color: "#111827", fontSize: 15 },
+//   outlineBtn: {
+//     borderWidth: 1,
+//     borderColor: "#2563eb",
+//     paddingHorizontal: 12,
+//     paddingVertical: 8,
+//     borderRadius: 8,
+//     marginLeft: 8,
+//     backgroundColor: "#fff",
+//   },
 // });
+
+
 import React, { useEffect, useState, useRef } from "react";
 import {
   View,
