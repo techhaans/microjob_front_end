@@ -4,8 +4,8 @@ import { Platform } from "react-native";
 
 const BASE_URL =
   Platform.OS === "android"
-    ? "http://192.168.97.218:8080/api" // 192.168.97.218
-    : "http://192.168.97.218:8080/api";
+    ? "http://192.168.92.218:8080/api" // 192.168.92.218
+    : "http://192.168.92.218:8080/api";
 
 // ----------------- Axios Instance -----------------
 const api = axios.create({

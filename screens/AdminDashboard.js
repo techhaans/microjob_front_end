@@ -13,7 +13,7 @@
 // import { useFocusEffect } from "@react-navigation/native";
 // import { SafeAreaView } from "react-native-safe-area-context"; // ✅ Added
 
-// const BASE_URL = "http:// 192.168.97.218:8080/api";
+// const BASE_URL = "http:// 192.168.92.218:8080/api";
 
 // export default function AdminDashboard({ navigation }) {
 //   const [kycList, setKycList] = useState([]);
@@ -337,7 +337,7 @@
 // import { useFocusEffect } from "@react-navigation/native";
 // import { SafeAreaView } from "react-native-safe-area-context";
 
-// const BASE_URL = "http:// 192.168.97.218:8080/api";
+// const BASE_URL = "http:// 192.168.92.218:8080/api";
 
 // export default function AdminDashboard({ navigation }) {
 //   const [kycList, setKycList] = useState([]);
@@ -691,7 +691,7 @@
 // import { useFocusEffect } from "@react-navigation/native";
 // import { SafeAreaView } from "react-native-safe-area-context";
 
-// const BASE_URL = "http:// 192.168.97.218:8080/api";
+// const BASE_URL = "http:// 192.168.92.218:8080/api";
 
 // export default function AdminDashboard({ navigation }) {
 //   const [kycList, setKycList] = useState([]);
@@ -1053,6 +1053,377 @@
 //   },
 //   activityText: { color: "#fff", fontWeight: "700" },
 // });
+// import React, { useState, useCallback } from "react";
+// import {
+//   View,
+//   Text,
+//   ScrollView,
+//   ActivityIndicator,
+//   TouchableOpacity,
+//   Alert,
+//   StyleSheet,
+// } from "react-native";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
+// import axios from "axios";
+// import { useFocusEffect } from "@react-navigation/native";
+// import { SafeAreaView } from "react-native-safe-area-context";
+
+// const BASE_URL = "http://192.168.92.218:8080/api";
+
+// export default function AdminDashboard({ navigation }) {
+//   const [kycList, setKycList] = useState([]);
+//   const [activityList, setActivityList] = useState([]);
+//   const [loading, setLoading] = useState(true);
+//   const [selectedType, setSelectedType] = useState("DOER");
+//   const [viewMode, setViewMode] = useState("KYC");
+
+//   // 🔹 Fetch Pending KYC
+//   const fetchKyc = async () => {
+//     setLoading(true);
+//     try {
+//       const token = await AsyncStorage.getItem("adminToken");
+//       if (!token) return navigation.replace("AdminLogin");
+
+//       const res = await axios.get(`${BASE_URL}/admin/kyc/pending`, {
+//         headers: { Authorization: `Bearer ${token}` },
+//       });
+
+//       const allKyc = Array.isArray(res.data?.data?.content)
+//         ? res.data.data.content
+//         : [];
+
+//       const filteredList = allKyc
+//         .filter(
+//           (item) =>
+//             item?.status === "PENDING" && item?.roleType === selectedType
+//         )
+//         .map((item) => ({
+//           ...item,
+//           role: item?.roleType === "DOER" ? "Doer" : "Poster",
+//         }));
+
+//       setKycList(filteredList);
+//     } catch (err) {
+//       console.error("Fetch KYC Error:", err.response?.data || err.message);
+//       Alert.alert("Error", "Failed to fetch KYC requests");
+//       setKycList([]);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   // 🔹 Fetch Admin Activity (Doers or Posters)
+//   const fetchAdminActivity = async (type) => {
+//     setLoading(true);
+//     try {
+//       const token = await AsyncStorage.getItem("adminToken");
+//       if (!token) return navigation.replace("AdminLogin");
+
+//       const endpoint =
+//         type === "DOER"
+//           ? `${BASE_URL}/admin/kyc/all_doers`
+//           : `${BASE_URL}/admin/kyc/all_posters`;
+
+//       const res = await axios.get(endpoint, {
+//         headers: { Authorization: `Bearer ${token}` },
+//       });
+
+//       const list = Array.isArray(res.data?.data?.content)
+//         ? res.data.data.content
+//         : [];
+
+//       setActivityList(list);
+//       setSelectedType(type);
+//       setViewMode("ACTIVITY");
+//     } catch (err) {
+//       console.error(
+//         "Admin activity fetch error:",
+//         err.response?.data || err.message
+//       );
+//       Alert.alert("Error", "Failed to fetch admin activities.");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   useFocusEffect(
+//     useCallback(() => {
+//       if (viewMode === "KYC") fetchKyc();
+//     }, [selectedType, viewMode])
+//   );
+
+//   // 🔹 Logout
+//   const handleLogout = async () => {
+//     await AsyncStorage.removeItem("adminToken");
+//     navigation.replace("RoleSelect");
+//   };
+
+//   // 🔹 Render Pending KYC Card
+//   const renderKycItem = (kyc) => {
+//     if (!kyc) return null;
+//     return (
+//       <TouchableOpacity
+//         key={kyc.id}
+//         style={styles.card}
+//         onPress={() =>
+//           navigation.navigate("AdminKycDetail", {
+//             kycId: kyc.id,
+//             role: kyc.role,
+//           })
+//         }
+//       >
+//         <Text style={styles.name}>Name: {kyc.userName || "N/A"}</Text>
+//         <Text>Phone: {kyc.userPhone || "N/A"}</Text>
+//         <Text>Role: {kyc.role}</Text>
+//         {kyc.docType && <Text>Document Type: {kyc.docType}</Text>}
+//         <Text>Status: {kyc.status}</Text>
+//         <Text style={styles.viewText}>Tap to view details</Text>
+//       </TouchableOpacity>
+//     );
+//   };
+
+//   // 🔹 Render Admin Activity Card
+//   const renderActivityItem = (item) => {
+//     if (!item) return null;
+//     return (
+//       <View key={item.id || item.email || Math.random()} style={styles.card}>
+//         <Text style={styles.name}>Name: {item.name || "N/A"}</Text>
+//         {item.email && <Text>Email: {item.email}</Text>}
+//         {item.phone && <Text>Phone: {item.phone}</Text>}
+//         {item.bio && <Text>Bio: {item.bio}</Text>}
+//         {item.skills && Array.isArray(item.skills) && (
+//           <Text>Skills: {item.skills.join(", ")}</Text>
+//         )}
+//         {item.kycLevel !== undefined && <Text>KYC Level: {item.kycLevel}</Text>}
+//         {item.isVerified !== undefined && (
+//           <Text>Verified: {item.isVerified ? "✅ Yes" : "❌ No"}</Text>
+//         )}
+//         {item.verificationStatus && (
+//           <Text>Status: {item.verificationStatus}</Text>
+//         )}
+//         {item.rejectionReason && (
+//           <Text style={{ color: "red" }}>
+//             Rejection Reason: {item.rejectionReason}
+//           </Text>
+//         )}
+//         {item.about && <Text>About: {item.about}</Text>}
+//         {item.rejectionResponse && (
+//           <Text style={{ color: "red" }}>
+//             Rejection Response: {item.rejectionResponse}
+//           </Text>
+//         )}
+//         {item.KycStatus !== undefined && (
+//           <Text>
+//             KYC Status: {item.KycStatus ? "✅ Verified" : "⏳ Pending"}
+//           </Text>
+//         )}
+//         {item.addresses && item.addresses.length > 0 && (
+//           <>
+//             <Text style={{ fontWeight: "bold", marginTop: 8 }}>Addresses:</Text>
+//             {item.addresses.map((addr) => (
+//               <Text key={addr.id} style={{ marginLeft: 10 }}>
+//                 • {addr.label} - {addr.area} ({addr.pinCode})
+//               </Text>
+//             ))}
+//           </>
+//         )}
+//       </View>
+//     );
+//   };
+
+//   // 🔹 Loading Spinner
+//   if (loading) {
+//     return (
+//       <View style={styles.loadingContainer}>
+//         <ActivityIndicator size="large" color="#2196f3" />
+//       </View>
+//     );
+//   }
+
+//   // 🔹 Main Dashboard
+//   return (
+//     <>
+//       <SafeAreaView style={{ backgroundColor: "#2196f3" }}>
+//         <View style={styles.header}>
+//           <Text style={styles.headerTitle}>Admin Dashboard</Text>
+//           <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+//             <Text style={styles.logoutText}>Logout</Text>
+//           </TouchableOpacity>
+//         </View>
+//       </SafeAreaView>
+
+//       <ScrollView style={styles.container}>
+//         <Text style={styles.title}>
+//           {viewMode === "KYC" ? "Pending KYC Requests" : "Admin Activities"}
+//         </Text>
+
+//         {viewMode === "KYC" && (
+//           <View style={styles.toggleContainer}>
+//             <TouchableOpacity
+//               style={[
+//                 styles.toggleBtn,
+//                 selectedType === "DOER" && styles.selectedBtn,
+//               ]}
+//               onPress={() => setSelectedType("DOER")}
+//             >
+//               <Text
+//                 style={[
+//                   styles.toggleText,
+//                   selectedType === "DOER" && styles.selectedText,
+//                 ]}
+//               >
+//                 Doers
+//               </Text>
+//             </TouchableOpacity>
+//             <TouchableOpacity
+//               style={[
+//                 styles.toggleBtn,
+//                 selectedType === "POSTER" && styles.selectedBtn,
+//               ]}
+//               onPress={() => setSelectedType("POSTER")}
+//             >
+//               <Text
+//                 style={[
+//                   styles.toggleText,
+//                   selectedType === "POSTER" && styles.selectedText,
+//                 ]}
+//               >
+//                 Posters
+//               </Text>
+//             </TouchableOpacity>
+//           </View>
+//         )}
+
+//         {/* 🔹 KYC List */}
+//         {viewMode === "KYC" &&
+//           (kycList.length === 0 ? (
+//             <Text style={styles.empty}>
+//               No pending {selectedType.toLowerCase()} KYC requests
+//             </Text>
+//           ) : (
+//             kycList.map((kyc) => renderKycItem(kyc))
+//           ))}
+
+//         {/* 🔹 Admin Activity List */}
+//         {viewMode === "ACTIVITY" &&
+//           (activityList.length === 0 ? (
+//             <Text style={styles.empty}>No profiles found</Text>
+//           ) : (
+//             activityList.map((item) => renderActivityItem(item))
+//           ))}
+
+//         {/* 🔹 Admin Actions */}
+//         <View style={styles.activityContainer}>
+//           <Text style={styles.activityTitle}>Admin Actions</Text>
+
+//           <TouchableOpacity
+//             style={styles.activityBtn}
+//             onPress={() => fetchAdminActivity("DOER")}
+//           >
+//             <Text style={styles.activityText}>View All Doers</Text>
+//           </TouchableOpacity>
+
+//           <TouchableOpacity
+//             style={styles.activityBtn}
+//             onPress={() => fetchAdminActivity("POSTER")}
+//           >
+//             <Text style={styles.activityText}>View All Posters</Text>
+//           </TouchableOpacity>
+
+//           <TouchableOpacity
+//             style={styles.activityBtn}
+//             onPress={() => navigation.navigate("AdminCategory")}
+//           >
+//             <Text style={styles.activityText}>Manage Categories</Text>
+//           </TouchableOpacity>
+
+//           {viewMode === "ACTIVITY" && (
+//             <TouchableOpacity
+//               style={[styles.activityBtn, { backgroundColor: "#777" }]}
+//               onPress={() => setViewMode("KYC")}
+//             >
+//               <Text style={styles.activityText}>← Back to KYC Requests</Text>
+//             </TouchableOpacity>
+//           )}
+//         </View>
+//       </ScrollView>
+//     </>
+//   );
+// }
+
+// // ✅ Styles
+// const styles = StyleSheet.create({
+//   container: { flex: 1, padding: 15, backgroundColor: "#f0f4f7" },
+//   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
+//   header: {
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     alignItems: "center",
+//     backgroundColor: "#2196f3",
+//     paddingVertical: 10,
+//     paddingHorizontal: 20,
+//     elevation: 4,
+//   },
+//   headerTitle: { color: "#fff", fontSize: 18, fontWeight: "700" },
+//   logoutBtn: {
+//     backgroundColor: "#ff3b30",
+//     paddingVertical: 6,
+//     paddingHorizontal: 15,
+//     borderRadius: 8,
+//   },
+//   logoutText: { color: "#fff", fontWeight: "bold" },
+//   title: { fontSize: 22, fontWeight: "bold", marginVertical: 15 },
+//   card: {
+//     backgroundColor: "#fff",
+//     padding: 15,
+//     borderRadius: 12,
+//     marginBottom: 15,
+//     shadowColor: "#000",
+//     shadowOpacity: 0.1,
+//     shadowRadius: 4,
+//     elevation: 3,
+//   },
+//   name: { fontSize: 17, fontWeight: "600" },
+//   empty: { fontSize: 16, color: "gray", marginVertical: 10 },
+//   viewText: { marginTop: 10, color: "#2196f3", fontWeight: "600" },
+//   toggleContainer: {
+//     flexDirection: "row",
+//     justifyContent: "center",
+//     marginBottom: 15,
+//   },
+//   toggleBtn: {
+//     flex: 1,
+//     padding: 10,
+//     marginHorizontal: 5,
+//     backgroundColor: "#ddd",
+//     borderRadius: 8,
+//     alignItems: "center",
+//   },
+//   selectedBtn: { backgroundColor: "#2196f3" },
+//   toggleText: { fontWeight: "600", color: "#333" },
+//   selectedText: { color: "#fff" },
+//   activityContainer: {
+//     marginTop: 20,
+//     backgroundColor: "#fff",
+//     padding: 15,
+//     borderRadius: 10,
+//     elevation: 2,
+//   },
+//   activityTitle: {
+//     fontSize: 18,
+//     fontWeight: "700",
+//     marginBottom: 10,
+//     color: "#0b4da0",
+//   },
+//   activityBtn: {
+//     backgroundColor: "#2196f3",
+//     padding: 10,
+//     borderRadius: 8,
+//     alignItems: "center",
+//     marginVertical: 5,
+//   },
+//   activityText: { color: "#fff", fontWeight: "700" },
+// });
 import React, { useState, useCallback } from "react";
 import {
   View,
@@ -1060,7 +1431,6 @@ import {
   ScrollView,
   ActivityIndicator,
   TouchableOpacity,
-  Alert,
   StyleSheet,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -1068,7 +1438,23 @@ import axios from "axios";
 import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const BASE_URL = "http://192.168.97.218:8080/api";
+const BASE_URL = "http://192.168.92.218:8080/api";
+
+function ErrorBanner({ message, onClose }) {
+  if (!message) return null;
+  return (
+    <View style={styles.errorBanner}>
+      <Text style={{ color: "#fff", flex: 1 }}>{message}</Text>
+      {onClose && (
+        <TouchableOpacity onPress={onClose}>
+          <Text style={{ color: "#fff", fontWeight: "700", marginLeft: 10 }}>
+            X
+          </Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
 
 export default function AdminDashboard({ navigation }) {
   const [kycList, setKycList] = useState([]);
@@ -1076,10 +1462,11 @@ export default function AdminDashboard({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [selectedType, setSelectedType] = useState("DOER");
   const [viewMode, setViewMode] = useState("KYC");
+  const [errorMessage, setErrorMessage] = useState("");
 
-  // 🔹 Fetch Pending KYC
   const fetchKyc = async () => {
     setLoading(true);
+    setErrorMessage("");
     try {
       const token = await AsyncStorage.getItem("adminToken");
       if (!token) return navigation.replace("AdminLogin");
@@ -1104,17 +1491,23 @@ export default function AdminDashboard({ navigation }) {
 
       setKycList(filteredList);
     } catch (err) {
-      console.error("Fetch KYC Error:", err.response?.data || err.message);
-      Alert.alert("Error", "Failed to fetch KYC requests");
+      // Do not console.error here — set friendly message
+      const msg =
+        err?.response?.data?.message ||
+        (err?.response?.data?.error
+          ? JSON.stringify(err.response.data.error)
+          : "") ||
+        "Failed to fetch KYC requests";
+      setErrorMessage(msg);
       setKycList([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // 🔹 Fetch Admin Activity (Doers or Posters)
   const fetchAdminActivity = async (type) => {
     setLoading(true);
+    setErrorMessage("");
     try {
       const token = await AsyncStorage.getItem("adminToken");
       if (!token) return navigation.replace("AdminLogin");
@@ -1136,11 +1529,14 @@ export default function AdminDashboard({ navigation }) {
       setSelectedType(type);
       setViewMode("ACTIVITY");
     } catch (err) {
-      console.error(
-        "Admin activity fetch error:",
-        err.response?.data || err.message
-      );
-      Alert.alert("Error", "Failed to fetch admin activities.");
+      const msg =
+        err?.response?.data?.message ||
+        (err?.response?.data?.error
+          ? JSON.stringify(err.response.data.error)
+          : "") ||
+        "Failed to fetch admin activities.";
+      setErrorMessage(msg);
+      setActivityList([]);
     } finally {
       setLoading(false);
     }
@@ -1152,13 +1548,11 @@ export default function AdminDashboard({ navigation }) {
     }, [selectedType, viewMode])
   );
 
-  // 🔹 Logout
   const handleLogout = async () => {
     await AsyncStorage.removeItem("adminToken");
     navigation.replace("RoleSelect");
   };
 
-  // 🔹 Render Pending KYC Card
   const renderKycItem = (kyc) => {
     if (!kyc) return null;
     return (
@@ -1182,7 +1576,6 @@ export default function AdminDashboard({ navigation }) {
     );
   };
 
-  // 🔹 Render Admin Activity Card
   const renderActivityItem = (item) => {
     if (!item) return null;
     return (
@@ -1206,20 +1599,9 @@ export default function AdminDashboard({ navigation }) {
             Rejection Reason: {item.rejectionReason}
           </Text>
         )}
-        {item.about && <Text>About: {item.about}</Text>}
-        {item.rejectionResponse && (
-          <Text style={{ color: "red" }}>
-            Rejection Response: {item.rejectionResponse}
-          </Text>
-        )}
-        {item.KycStatus !== undefined && (
-          <Text>
-            KYC Status: {item.KycStatus ? "✅ Verified" : "⏳ Pending"}
-          </Text>
-        )}
         {item.addresses && item.addresses.length > 0 && (
           <>
-            <Text style={{ fontWeight: "bold", marginTop: 8 }}>Addresses:</Text>
+            <Text style={{ fontWeight: "700", marginTop: 8 }}>Addresses:</Text>
             {item.addresses.map((addr) => (
               <Text key={addr.id} style={{ marginLeft: 10 }}>
                 • {addr.label} - {addr.area} ({addr.pinCode})
@@ -1231,7 +1613,6 @@ export default function AdminDashboard({ navigation }) {
     );
   };
 
-  // 🔹 Loading Spinner
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -1240,7 +1621,6 @@ export default function AdminDashboard({ navigation }) {
     );
   }
 
-  // 🔹 Main Dashboard
   return (
     <>
       <SafeAreaView style={{ backgroundColor: "#2196f3" }}>
@@ -1250,6 +1630,12 @@ export default function AdminDashboard({ navigation }) {
             <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
         </View>
+        {errorMessage ? (
+          <ErrorBanner
+            message={errorMessage}
+            onClose={() => setErrorMessage("")}
+          />
+        ) : null}
       </SafeAreaView>
 
       <ScrollView style={styles.container}>
@@ -1294,7 +1680,6 @@ export default function AdminDashboard({ navigation }) {
           </View>
         )}
 
-        {/* 🔹 KYC List */}
         {viewMode === "KYC" &&
           (kycList.length === 0 ? (
             <Text style={styles.empty}>
@@ -1304,7 +1689,6 @@ export default function AdminDashboard({ navigation }) {
             kycList.map((kyc) => renderKycItem(kyc))
           ))}
 
-        {/* 🔹 Admin Activity List */}
         {viewMode === "ACTIVITY" &&
           (activityList.length === 0 ? (
             <Text style={styles.empty}>No profiles found</Text>
@@ -1312,7 +1696,6 @@ export default function AdminDashboard({ navigation }) {
             activityList.map((item) => renderActivityItem(item))
           ))}
 
-        {/* 🔹 Admin Actions */}
         <View style={styles.activityContainer}>
           <Text style={styles.activityTitle}>Admin Actions</Text>
 
@@ -1351,7 +1734,6 @@ export default function AdminDashboard({ navigation }) {
   );
 }
 
-// ✅ Styles
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 15, backgroundColor: "#f0f4f7" },
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
@@ -1423,4 +1805,12 @@ const styles = StyleSheet.create({
     marginVertical: 5,
   },
   activityText: { color: "#fff", fontWeight: "700" },
+
+  errorBanner: {
+    backgroundColor: "#b00020",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
+  },
 });

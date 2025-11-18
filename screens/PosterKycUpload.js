@@ -382,7 +382,7 @@
 //       });
 
 //       const res = await axios.post(
-//         `http:// 192.168.97.218:8080/api/poster/profile/doc/upload?docType=PanCard`,
+//         `http:// 192.168.92.218:8080/api/poster/profile/doc/upload?docType=PanCard`,
 //         formData,
 //         {
 //           headers: {
@@ -589,7 +589,7 @@ export default function PosterKYCUpload({ navigation }) {
       });
 
       const res = await axios.post(
-        `http://192.168.97.218:8080/api/poster/profile/doc/upload?docType=PanCard`,
+        `http://192.168.92.218:8080/api/poster/profile/doc/upload?docType=PanCard`,
         formData,
         {
           headers: {

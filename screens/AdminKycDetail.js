@@ -22,7 +22,7 @@
 //   const [reason, setReason] = useState("");
 //   const [downloading, setDownloading] = useState(false);
 
-//   const BASE_URL = "http:// 192.168.97.218:8080"; // replace with HTTPS if possible
+//   const BASE_URL = "http:// 192.168.92.218:8080"; // replace with HTTPS if possible
 
 //   useEffect(() => {
 //     fetchKycDetail();
@@ -245,7 +245,7 @@ export default function AdminKycDetail({ route, navigation }) {
   const [reason, setReason] = useState("");
   const [downloading, setDownloading] = useState(false);
 
-  const BASE_URL = "http:// 192.168.97.218:8080"; // replace with HTTPS in production
+  const BASE_URL = "http:// 192.168.92.218:8080"; // replace with HTTPS in production
 
   useEffect(() => {
     fetchKycDetail();
@@ -442,7 +442,7 @@ const styles = StyleSheet.create({
 //   const { kycId, userName, docType } = route.params;
 //   const [downloading, setDownloading] = useState(false);
 
-//   const BASE_URL = "https:// 192.168.97.218:8080"; // replace with your API base URL
+//   const BASE_URL = "https:// 192.168.92.218:8080"; // replace with your API base URL
 
 //   const handleDownload = async () => {
 //     setDownloading(true);

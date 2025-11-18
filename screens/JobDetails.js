@@ -595,7 +595,7 @@
 // import axios from "axios";
 // import { useRoute, useNavigation } from "@react-navigation/native";
 
-// const BASE_URL = "http://192.168.97.218:8080"; // ⚠️ replace with your backend URL
+// const BASE_URL = "http://192.168.92.218:8080"; // ⚠️ replace with your backend URL
 
 // export default function JobDetails() {
 //   const route = useRoute();
@@ -837,7 +837,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { useRoute, useNavigation } from "@react-navigation/native";
 
-const BASE_URL = "http://192.168.97.218:8080"; // ⚠️ replace with your backend URL
+const BASE_URL = "http://192.168.92.218:8080"; // ⚠️ replace with your backend URL
 
 export default function JobDetails() {
   const route = useRoute();
