@@ -4,8 +4,8 @@ import { Platform } from "react-native";
 
 const BASE_URL =
   Platform.OS === "android"
-    ? "http://192.168.92.218:8080/api" // 192.168.92.218
-    : "http://192.168.92.218:8080/api";
+    ? "http://192.168.1.40:8080/api" // 192.168.1.40
+    : "http://192.168.1.40:8080/api";
 
 // ----------------- Axios Instance -----------------
 const api = axios.create({
@@ -36,7 +36,45 @@ export const fetchPosterProfile = async () => {
     };
   }
 };
+// Fetch price items for a poster job
+// Fetch price items for a poster job
+export const getPosterJobPriceItems = async (jobId) => {
+  try {
+    const res = await api.get(`/poster/jobs/${jobId}/price-items`);
+    return res.data; // should be { status, data, message }
+  } catch (err) {
+    console.error(
+      "❌ getPosterJobPriceItems Error:",
+      err.response?.data || err.message
+    );
+    return {
+      status: "ERROR",
+      data: [],
+      message: err.response?.data?.message || "Failed to fetch price items",
+    };
+  }
+};
+export const fetchUserProfile = async () => {
+  try {
+    const token = await AsyncStorage.getItem("authToken");
+    if (!token) throw new Error("No auth token found");
 
+    const res = await axios.get(`${BASE_URL}/user/profile`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    return res.data; // { status, data, message }
+  } catch (err) {
+    console.error(
+      "❌ fetchUserProfile Error:",
+      err.response?.data || err.message
+    );
+    return {
+      status: "ERROR",
+      message: err.response?.data?.message || "Failed to fetch user profile",
+    };
+  }
+};
 export const updatePosterProfile = async (body) => {
   try {
     const res = await api.put("/poster/profile/", body);
@@ -92,6 +130,25 @@ export const deleteAddress = async (id) => {
     };
   }
 };
+export const updatePosterJob = async (jobId, payload) => {
+  try {
+    const response = await api.put(`/poster/jobs/update/${jobId}`, payload);
+    return response.data;
+  } catch (error) {
+    console.log("Update poster job error:", error);
+    return error.response?.data || { error: "Unknown error" };
+  }
+};
+
+// export const getPosterAddressList = async () => {
+//   try {
+//     const res = await apiClient.get("/poster/profile/address/get");
+//     return res.data; // return { data, status, message, timestamp }
+//   } catch (error) {
+//     console.log("Address fetch error:", error);
+//     throw error;
+//   }
+// };
 
 export const fetchPosterAddresses = async () => {
   try {
@@ -121,7 +178,15 @@ export const savePosterAddress = async (address) => {
     };
   }
 };
-
+export const getJobCategories = async () => {
+  try {
+    const response = await api.get("/poster/jobs/categories");
+    return response.data;
+  } catch (error) {
+    console.log("Category fetch error:", error);
+    throw error;
+  }
+};
 // ----------------- KYC APIs -----------------
 export const uploadPosterKyc = async (docType, file) => {
   try {
@@ -276,20 +341,51 @@ export const createPosterJob = async (jobData) => {
   }
 };
 // ----------------- ✏️ Update Poster Job (PATCH) -----------------
-export const updatePosterJob = async (jobId, updateData) => {
+// export const updatePosterJob = async (jobId, updateData) => {
+//   try {
+//     const res = await api.patch(`/poster/jobs/update/${jobId}`, updateData, {
+//       headers: { "Content-Type": "application/json" },
+//     });
+//     return res.data;
+//   } catch (err) {
+//     console.error(
+//       "❌ updatePosterJob Error:",
+//       err.response?.data || err.message
+//     );
+//     return {
+//       status: "ERROR",
+//       message: err.response?.data?.message || "Failed to update job",
+//     };
+//   }
+// };
+export const getPosterAddressList = async () => {
   try {
-    const res = await api.patch(`/poster/jobs/update/${jobId}`, updateData, {
-      headers: { "Content-Type": "application/json" },
+    const response = await api.get("/poster/profile/address/get");
+    return response.data;
+  } catch (error) {
+    console.log("Address fetch error:", error);
+    throw error;
+  }
+};
+
+export const fetchPosterJobDetails = async (jobId) => {
+  try {
+    const token = await AsyncStorage.getItem("authToken");
+    if (!token) throw new Error("No auth token found");
+
+    const res = await axios.get(`${BASE_URL}/poster/jobs/${jobId}`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
-    return res.data;
+
+    return res.data; // { status, data, message }
   } catch (err) {
     console.error(
-      "❌ updatePosterJob Error:",
+      "❌ fetchPosterJobDetails Error:",
       err.response?.data || err.message
     );
     return {
       status: "ERROR",
-      message: err.response?.data?.message || "Failed to update job",
+      message: err.response?.data?.message || "Failed to fetch job details",
     };
   }
 };
@@ -337,33 +433,32 @@ export const getPosterJobs = async (
     };
   }
 };
+
+// export const updatePosterJob = async (jobId, payload) => {
+//   const token = await AsyncStorage.getItem("token"); // make sure your token is saved
+//   return axios
+//     .put(`${API_BASE}/jobs/${jobId}`, payload, {
+//       headers: {
+//         Authorization: `Bearer ${token}`,
+//         "Content-Type": "application/json",
+//       },
+//     })
+//     .then((res) => res.data);
+// };
 const handleSaveUpdate = async () => {
   try {
-    // Build payload dynamically — only include non-empty fields
-    const payload = {};
-
-    if (title?.trim()) payload.title = title.trim();
-    if (description?.trim()) payload.description = description.trim();
-    if (categoryCode) payload.categoryCode = String(categoryCode);
-    if (amountPaise) payload.amountInRs = Number(amountPaise) / 100; // convert paise → rupees
-    if (deadline) payload.deadLine = deadline.toISOString();
-    if (jobType) payload.jobType = jobType;
-    if (addressId && jobType === "PHYSICAL")
-      payload.addressId = Number(addressId);
-
-    console.log("PATCH Payload:", payload);
-
-    if (Object.keys(payload).length === 0) {
-      return Alert.alert(
-        "Nothing to update",
-        "Please modify at least one field before saving."
-      );
-    }
+    const payload = {
+      title: selectedJob.title,
+      description: selectedJob.description,
+      categoryCode: selectedJob.category, // ensure backend expects categoryCode
+      amountInRs: selectedJob.amountInRs,
+      deadLine: selectedJob.deadLine,
+      jobType: selectedJob.jobType,
+    };
 
     const res = await updatePosterJob(selectedJob.id, payload);
 
     if (res?.status === "SUCCESS") {
-      // Optional: price items update (only if you allow editing them)
       if (priceItems?.length > 0) {
         for (const item of priceItems) {
           await addJobPriceItem(selectedJob.id, {
@@ -381,10 +476,73 @@ const handleSaveUpdate = async () => {
       Alert.alert("Error", res?.message || "Failed to update job");
     }
   } catch (err) {
-    console.error("❌ handleSaveUpdate Error:", err);
+    console.error(
+      "❌ handleSaveUpdate Error:",
+      err.response?.data || err.message
+    );
     Alert.alert("Error", "Something went wrong while updating the job.");
   }
 };
+
+// export const addJobPriceItem = async (jobId, pricePayload) => {
+//   const token = await AsyncStorage.getItem("token");
+//   return axios
+//     .post(`${API_BASE}/jobs/${jobId}/price-items`, pricePayload, {
+//       headers: {
+//         Authorization: `Bearer ${token}`,
+//         "Content-Type": "application/json",
+//       },
+//     })
+//     .then((res) => res.data);
+// };
+// const handleSaveUpdate = async () => {
+//   try {
+//     // Build payload dynamically — only include non-empty fields
+//     const payload = {};
+
+//     if (title?.trim()) payload.title = title.trim();
+//     if (description?.trim()) payload.description = description.trim();
+//     if (categoryCode) payload.categoryCode = String(categoryCode);
+//     if (amountPaise) payload.amountInRs = Number(amountPaise) / 100; // convert paise → rupees
+//     if (deadline) payload.deadLine = deadline.toISOString();
+//     if (jobType) payload.jobType = jobType;
+//     if (addressId && jobType === "PHYSICAL")
+//       payload.addressId = Number(addressId);
+
+//     console.log("PATCH Payload:", payload);
+
+//     if (Object.keys(payload).length === 0) {
+//       return Alert.alert(
+//         "Nothing to update",
+//         "Please modify at least one field before saving."
+//       );
+//     }
+
+//     const res = await updatePosterJob(selectedJob.id, payload);
+
+//     if (res?.status === "SUCCESS") {
+//       // Optional: price items update (only if you allow editing them)
+//       if (priceItems?.length > 0) {
+//         for (const item of priceItems) {
+//           await addJobPriceItem(selectedJob.id, {
+//             label: item.label,
+//             description: item.description || "",
+//             priceRupees: item.priceRupees,
+//           });
+//         }
+//       }
+
+//       Alert.alert("✅ Success", "Job updated successfully");
+//       setUpdateModalVisible(false);
+//       loadJobs(jobStatusFilter);
+//     } else {
+//       Alert.alert("Error", res?.message || "Failed to update job");
+//     }
+//   } catch (err) {
+//     console.error("❌ handleSaveUpdate Error:", err);
+//     Alert.alert("Error", "Something went wrong while updating the job.");
+//   }
+// };
 
 export const deletePosterJob = async (jobId) => {
   try {
@@ -416,16 +574,63 @@ export const fetchJobPriceItems = async (jobId) => {
   }
 };
 
-export const addJobPriceItem = async (jobId, item) => {
+// export const addJobPriceItem = async (jobId, item) => {
+//   try {
+//     const res = await api.post(`/poster/jobs/${jobId}/price-items/add`, item);
+//     return res.data;
+//   } catch (err) {
+//     console.error(
+//       "❌ addJobPriceItem Error:",
+//       err.response?.data || err.message
+//     );
+//     return { status: "ERROR", message: "Failed to add price item" };
+//   }
+// };
+// export const addJobPriceItem = async (jobId, item) => {
+//   try {
+//     const res = await api.post(`/poster/jobs/${jobId}/price-items`, item);
+//     return res.data;
+//   } catch (err) {
+//     console.error(
+//       "❌ addJobPriceItem Error:",
+//       err.response?.data || err.message
+//     );
+//     return { status: "ERROR", message: "Failed to add price item" };
+//   }
+// };
+
+export const addJobPriceItem = async (jobId, itemData) => {
   try {
-    const res = await api.post(`/poster/jobs/${jobId}/price-items/add`, item);
-    return res.data;
+    // Get token from storage
+    const token = await AsyncStorage.getItem("authToken");
+
+    const payload = {
+      label: itemData.label,
+      description: itemData.description,
+      priceRupees: itemData.priceRupees,
+    };
+
+    console.log("Payload to backend:", payload);
+
+    const response = await axios.post(
+      `http://192.168.1.40:8080/api/poster/jobs/${jobId}/price-items/add`,
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+      }
+    );
+
+    console.log("Response:", response.data);
+    return response.data;
   } catch (err) {
     console.error(
       "❌ addJobPriceItem Error:",
       err.response?.data || err.message
     );
-    return { status: "ERROR", message: "Failed to add price item" };
+    throw err;
   }
 };
 
@@ -474,6 +679,85 @@ export const fetchCategories = async () => {
     };
   }
 };
+// ----------------- 💰 Job Price Items APIs -----------------
+
+// Fetch all price items for a job
+export const fetchPosterJobPriceItems = async (jobId) => {
+  try {
+    const res = await api.get(`/poster/jobs/${jobId}/price-items`);
+    return res.data; // { status, data, message }
+  } catch (err) {
+    console.error(
+      "❌ fetchPosterJobPriceItems Error:",
+      err.response?.data || err.message
+    );
+    return {
+      status: "ERROR",
+      data: [],
+      message: "Failed to fetch price items",
+    };
+  }
+};
+
+// Add a new price item
+export const addPosterJobPriceItem = async (jobId, itemData) => {
+  try {
+    const payload = {
+      label: itemData.label,
+      description: itemData.description || "",
+      priceRupees: itemData.priceRupees,
+    };
+
+    const res = await api.post(
+      `/poster/jobs/${jobId}/price-items/add`,
+      payload
+    );
+    return res.data;
+  } catch (err) {
+    console.error(
+      "❌ addPosterJobPriceItem Error:",
+      err.response?.data || err.message
+    );
+    return { status: "ERROR", message: "Failed to add price item" };
+  }
+};
+
+// Update an existing price item
+export const updatePosterJobPriceItem = async (jobId, itemId, itemData) => {
+  try {
+    const payload = {
+      label: itemData.label,
+      description: itemData.description || "",
+      priceRupees: itemData.priceRupees,
+    };
+
+    const res = await api.put(
+      `/poster/jobs/${jobId}/price-items/${itemId}`,
+      payload
+    );
+    return res.data;
+  } catch (err) {
+    console.error(
+      "❌ updatePosterJobPriceItem Error:",
+      err.response?.data || err.message
+    );
+    return { status: "ERROR", message: "Failed to update price item" };
+  }
+};
+
+// Delete a price item
+export const deletePosterJobPriceItem = async (jobId, itemId) => {
+  try {
+    const res = await api.delete(`/poster/jobs/${jobId}/price-items/${itemId}`);
+    return res.data;
+  } catch (err) {
+    console.error(
+      "❌ deletePosterJobPriceItem Error:",
+      err.response?.data || err.message
+    );
+    return { status: "ERROR", message: "Failed to delete price item" };
+  }
+};
 
 // ----------------- Logout -----------------
 export const logoutPoster = async () => {
@@ -485,5 +769,3 @@ export const logoutPoster = async () => {
     return { status: "ERROR", message: "Logout failed" };
   }
 };
-
-export default api;

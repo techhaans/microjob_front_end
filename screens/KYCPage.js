@@ -276,8 +276,8 @@ export default function KYCPage({ navigation }) {
 
       const BASE_URL =
         Platform.OS === "android"
-          ? "http://10.0.2.2:8080"
-          : "http://localhost:8080";
+          ? "http://192.168.1.40:8080"
+          : "http://192.168.1.40:8080";
 
       let fileUri = file.uri;
       if (Platform.OS === "android" && !fileUri.startsWith("file://")) {

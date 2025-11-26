@@ -13,7 +13,7 @@
 // import { useFocusEffect } from "@react-navigation/native";
 // import { SafeAreaView } from "react-native-safe-area-context"; // ✅ Added
 
-// const BASE_URL = "http:// 192.168.92.218:8080/api";
+// const BASE_URL = "http:// 192.168.1.40:8080/api";
 
 // export default function AdminDashboard({ navigation }) {
 //   const [kycList, setKycList] = useState([]);
@@ -337,7 +337,7 @@
 // import { useFocusEffect } from "@react-navigation/native";
 // import { SafeAreaView } from "react-native-safe-area-context";
 
-// const BASE_URL = "http:// 192.168.92.218:8080/api";
+// const BASE_URL = "http:// 192.168.1.40:8080/api";
 
 // export default function AdminDashboard({ navigation }) {
 //   const [kycList, setKycList] = useState([]);
@@ -691,7 +691,7 @@
 // import { useFocusEffect } from "@react-navigation/native";
 // import { SafeAreaView } from "react-native-safe-area-context";
 
-// const BASE_URL = "http:// 192.168.92.218:8080/api";
+// const BASE_URL = "http:// 192.168.1.40:8080/api";
 
 // export default function AdminDashboard({ navigation }) {
 //   const [kycList, setKycList] = useState([]);
@@ -1068,7 +1068,7 @@
 // import { useFocusEffect } from "@react-navigation/native";
 // import { SafeAreaView } from "react-native-safe-area-context";
 
-// const BASE_URL = "http://192.168.92.218:8080/api";
+// const BASE_URL = "http://192.168.1.40:8080/api";
 
 // export default function AdminDashboard({ navigation }) {
 //   const [kycList, setKycList] = useState([]);
@@ -1438,7 +1438,7 @@ import axios from "axios";
 import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const BASE_URL = "http://192.168.92.218:8080/api";
+const BASE_URL = "http://192.168.1.40:8080/api";
 
 function ErrorBanner({ message, onClose }) {
   if (!message) return null;

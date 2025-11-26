@@ -13,7 +13,7 @@
 
 // // Axios instance
 // const api = axios.create({
-//   baseURL: "http:// 192.168.92.218:8080/api", // use your machine IP
+//   baseURL: "http:// 192.168.1.40:8080/api", // use your machine IP
 //   headers: { "Content-Type": "application/json" },
 // });
 
@@ -137,7 +137,7 @@
 
 // // Axios instance
 // const api = axios.create({
-//   baseURL: "http://192.168.92.218:8080/api", // 🧠 use your backend machine IP
+//   baseURL: "http://192.168.1.40:8080/api", // 🧠 use your backend machine IP
 //   headers: { "Content-Type": "application/json" },
 // });
 
@@ -300,7 +300,7 @@
 
 // // Axios instance
 // const api = axios.create({
-//   baseURL: "http://192.168.92.218:8080/api",
+//   baseURL: "http://192.168.1.40:8080/api",
 //   headers: { "Content-Type": "application/json" },
 // });
 
@@ -494,7 +494,7 @@
 
 // // Axios instance
 // const api = axios.create({
-//   baseURL: "http://192.168.92.218:8080/api",
+//   baseURL: "http://192.168.1.40:8080/api",
 //   headers: { "Content-Type": "application/json" },
 // });
 
@@ -679,7 +679,7 @@ import axios from "axios";
 
 // Axios Base URL
 const api = axios.create({
-  baseURL: "http://192.168.92.218:8080/api",
+  baseURL: "http://192.168.1.40:8080/api",
   headers: { "Content-Type": "application/json" },
 });
 

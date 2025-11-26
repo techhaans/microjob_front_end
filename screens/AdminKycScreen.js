@@ -69,7 +69,135 @@
 //   empty: { fontSize: 16, color: "gray", marginVertical: 10 },
 // });
 
+// import React, { useEffect, useState } from "react";
+// import {
+//   View,
+//   Text,
+//   FlatList,
+//   ActivityIndicator,
+//   TouchableOpacity,
+//   Alert,
+//   StyleSheet,
+// } from "react-native";
+// import { getPendingKycs, approveKyc, rejectKyc } from "../api/admin";
 
+// export default function AdminKycScreen({ navigation }) {
+//   const [kycs, setKycs] = useState([]);
+//   const [loading, setLoading] = useState(false);
+
+//   const loadPendingKycs = async () => {
+//     try {
+//       setLoading(true);
+//       const data = await getPendingKycs();
+//       setKycs(data);
+//     } catch (err) {
+//       Alert.alert("Error", err.message);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const handleApprove = async (id) => {
+//     try {
+//       await approveKyc(id);
+//       Alert.alert("Success", "KYC approved successfully!");
+//       loadPendingKycs();
+//     } catch (err) {
+//       Alert.alert("Error", err.message);
+//     }
+//   };
+
+//   const handleReject = async (id) => {
+//     Alert.prompt(
+//       "Reject Reason",
+//       "Please enter reason for rejection",
+//       async (reason) => {
+//         if (!reason) return;
+//         try {
+//           await rejectKyc(id, reason);
+//           Alert.alert("Rejected", "KYC rejected successfully!");
+//           loadPendingKycs();
+//         } catch (err) {
+//           Alert.alert("Error", err.message);
+//         }
+//       }
+//     );
+//   };
+
+//   useEffect(() => {
+//     loadPendingKycs();
+//   }, []);
+
+//   const renderItem = ({ item }) => (
+//     <View style={styles.card}>
+//       <Text style={styles.name}>{item.userName}</Text>
+//       <Text>Phone: {item.userPhone}</Text>
+//       <Text>Document: {item.docType}</Text>
+
+//       <View style={styles.btnRow}>
+//         <TouchableOpacity
+//           style={[styles.btn, { backgroundColor: "#4CAF50" }]}
+//           onPress={() => handleApprove(item.id)}
+//         >
+//           <Text style={styles.btnText}>Approve</Text>
+//         </TouchableOpacity>
+//         <TouchableOpacity
+//           style={[styles.btn, { backgroundColor: "#F44336" }]}
+//           onPress={() => handleReject(item.id)}
+//         >
+//           <Text style={styles.btnText}>Reject</Text>
+//         </TouchableOpacity>
+//       </View>
+//     </View>
+//   );
+
+//   if (loading)
+//     return (
+//       <View style={styles.loader}>
+//         <ActivityIndicator size="large" />
+//       </View>
+//     );
+
+//   return (
+//     <View style={styles.container}>
+//       <Text style={styles.title}>Pending KYC Approvals</Text>
+//       {kycs.length === 0 ? (
+//         <Text style={styles.noData}>No pending KYCs</Text>
+//       ) : (
+//         <FlatList
+//           data={kycs}
+//           renderItem={renderItem}
+//           keyExtractor={(item) => item.id.toString()}
+//           refreshing={loading}
+//           onRefresh={loadPendingKycs}
+//         />
+//       )}
+//     </View>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   container: { flex: 1, padding: 15, backgroundColor: "#f8f9fa" },
+//   title: { fontSize: 20, fontWeight: "700", marginBottom: 10, textAlign: "center" },
+//   loader: { flex: 1, justifyContent: "center", alignItems: "center" },
+//   card: {
+//     backgroundColor: "#fff",
+//     padding: 15,
+//     borderRadius: 8,
+//     marginBottom: 10,
+//     elevation: 2,
+//   },
+//   name: { fontSize: 16, fontWeight: "700" },
+//   btnRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 10 },
+//   btn: {
+//     flex: 0.48,
+//     padding: 10,
+//     borderRadius: 6,
+//     alignItems: "center",
+//   },
+//   btnText: { color: "#fff", fontWeight: "700" },
+//   noData: { textAlign: "center", marginTop: 30, fontSize: 16, color: "#666" },
+// });
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -81,11 +209,14 @@ import {
   StyleSheet,
 } from "react-native";
 import { getPendingKycs, approveKyc, rejectKyc } from "../api/admin";
+import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
 
 export default function AdminKycScreen({ navigation }) {
   const [kycs, setKycs] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // Load Pending KYCs
   const loadPendingKycs = async () => {
     try {
       setLoading(true);
@@ -98,6 +229,7 @@ export default function AdminKycScreen({ navigation }) {
     }
   };
 
+  // Approve KYC
   const handleApprove = async (id) => {
     try {
       await approveKyc(id);
@@ -108,6 +240,7 @@ export default function AdminKycScreen({ navigation }) {
     }
   };
 
+  // Reject KYC with reason
   const handleReject = async (id) => {
     Alert.prompt(
       "Reject Reason",
@@ -125,10 +258,35 @@ export default function AdminKycScreen({ navigation }) {
     );
   };
 
+  // Download KYC
+  const downloadKycFile = async (downloadUrl, fileName = "kyc.jpg") => {
+    try {
+      const fileUri = FileSystem.documentDirectory + fileName;
+
+      const downloadResumable = FileSystem.createDownloadResumable(
+        downloadUrl,
+        fileUri
+      );
+
+      const { uri } = await downloadResumable.downloadAsync();
+      console.log("File downloaded to:", uri);
+
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri);
+      } else {
+        Alert.alert("Downloaded", "File saved at: " + uri);
+      }
+    } catch (err) {
+      console.error("Download KYC failed:", err);
+      Alert.alert("Error", "Download failed: " + err.message);
+    }
+  };
+
   useEffect(() => {
     loadPendingKycs();
   }, []);
 
+  // Render each KYC card
   const renderItem = ({ item }) => (
     <View style={styles.card}>
       <Text style={styles.name}>{item.userName}</Text>
@@ -142,11 +300,21 @@ export default function AdminKycScreen({ navigation }) {
         >
           <Text style={styles.btnText}>Approve</Text>
         </TouchableOpacity>
+
         <TouchableOpacity
           style={[styles.btn, { backgroundColor: "#F44336" }]}
           onPress={() => handleReject(item.id)}
         >
           <Text style={styles.btnText}>Reject</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.btn, { backgroundColor: "#2196F3" }]}
+          onPress={() =>
+            downloadKycFile(item.downloadUrl, `KYC_${item.id}.jpg`)
+          }
+        >
+          <Text style={styles.btnText}>Download</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -179,7 +347,12 @@ export default function AdminKycScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 15, backgroundColor: "#f8f9fa" },
-  title: { fontSize: 20, fontWeight: "700", marginBottom: 10, textAlign: "center" },
+  title: {
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 10,
+    textAlign: "center",
+  },
   loader: { flex: 1, justifyContent: "center", alignItems: "center" },
   card: {
     backgroundColor: "#fff",
@@ -189,9 +362,13 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   name: { fontSize: 16, fontWeight: "700" },
-  btnRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 10 },
+  btnRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
   btn: {
-    flex: 0.48,
+    flex: 0.3,
     padding: 10,
     borderRadius: 6,
     alignItems: "center",

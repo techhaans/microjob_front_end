@@ -46,6 +46,7 @@ import PosterKycUpload from "./screens/PosterKycUpload";
 import AddressList from "./screens/AddressList";
 import AddressForm from "./screens/AddressForm";
 import CreateJobScreen from "./screens/createPosterJob";
+import UpdateJobScreen from "./screens/UpdateJobScreen";
 
 // Admin Screens
 import AdminLogin from "./screens/AdminLogin";
@@ -182,6 +183,11 @@ export default function App() {
             name="CreateJobScreen"
             component={CreateJobScreen}
             options={{ headerShown: true, title: "Create Job" }}
+          />
+          <Stack.Screen
+            name="UpdateJobScreen"
+            component={UpdateJobScreen}
+            options={{ title: "Update Job" }}
           />
           <Stack.Screen name="JobDetails" component={JobDetails} />
         </Stack.Group>

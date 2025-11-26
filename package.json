@@ -22,7 +22,7 @@
     "axios": "^1.12.2",
     "expo": "~54.0.9",
     "expo-document-picker": "~14.0.7",
-    "expo-file-system": "~19.0.17",
+    "expo-file-system": "~19.0.19",
     "expo-image-picker": "~17.0.8",
     "expo-intent-launcher": "~13.0.7",
     "expo-linear-gradient": "~15.0.7",
@@ -53,5 +53,11 @@
     "react-navigation": "^5.0.0",
     "use-debounce": "^10.0.6"
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "@react-native-community/cli": "^20.0.2",
+    "@react-native/metro-config": "^0.82.1",
+    "metro": "^0.83.3",
+    "metro-react-native-babel-preset": "^0.77.0"
+  }
 }
