@@ -1,157 +1,189 @@
-// import axios from "axios";
-// import AsyncStorage from "@react-native-async-storage/async-storage";
-// import { Platform } from "react-native";
+// // import axios from "axios";
+// // import AsyncStorage from "@react-native-async-storage/async-storage";
+// // import { Platform } from "react-native";
 
-// // ✅ Base URL (your backend IP)
-// const BASE_URL =
-//   Platform.OS === "android"
-//     ? "http://192.168.1.40:8080/api"
-//     : "http://192.168.1.40:8080/api";
-// //192.168.1.40
+// // // ✅ Base URL (your backend IP)
+// // const BASE_URL =
+// //   Platform.OS === "android"
+// //     ? "http://192.168.1.40:8080/api"
+// //     : "http://192.168.1.40:8080/api";
+// // //192.168.1.40
 
-// // ✅ Axios instance
-// const api = axios.create({
-//   baseURL: BASE_URL,
-//   headers: { "Content-Type": "application/json" },
-//   timeout: 15000,
-// });
+// // // ✅ Axios instance
+// // const api = axios.create({
+// //   baseURL: BASE_URL,
+// //   headers: { "Content-Type": "application/json" },
+// //   timeout: 15000,
+// // });
 
-// // ✅ Attach token automatically
-// api.interceptors.request.use(async (config) => {
-//   const token = await AsyncStorage.getItem("authToken");
-//   if (token) config.headers.Authorization = `Bearer ${token}`;
-//   return config;
-// });
+// // // ✅ Attach token automatically
+// // api.interceptors.request.use(async (config) => {
+// //   const token = await AsyncStorage.getItem("authToken");
+// //   if (token) config.headers.Authorization = `Bearer ${token}`;
+// //   return config;
+// // });
 
-// // ============================================================
-// // 🔐 AUTH (OTP LOGIN FLOW)
-// // ============================================================
+// // // ============================================================
+// // // 🔐 AUTH (OTP LOGIN FLOW)
+// // // ============================================================
 
-// // ✅ Send OTP
-// export const sendDoerOtp = async (phone) => {
-//   const formatted = phone.startsWith("+") ? phone : "+91" + phone;
-//   const res = await api.post("/auth/otp/doer-send", { phone: formatted });
-//   return res.data;
-// };
-
-// // // ✅ Verify OTP + Save JWT
-// // export const verifyDoerOtp = async (sessionId, otp) => {
-// //   const res = await api.post("/auth/otp/doer/verify", { sessionId, otp });
-// //   const data = res.data?.data;
-
-// //   if (data?.token) {
-// //     await AsyncStorage.setItem("authToken", data.token);
-// //     if (data.roleCode) await AsyncStorage.setItem("userRole", data.roleCode);
-// //   }
-
+// // // ✅ Send OTP
+// // export const sendDoerOtp = async (phone) => {
+// //   const formatted = phone.startsWith("+") ? phone : "+91" + phone;
+// //   const res = await api.post("/auth/otp/doer-send", { phone: formatted });
 // //   return res.data;
 // // };
 
-// export const verifyDoerPhoneOtp = async (sessionId, otp) => {
-//   const res = await api.post("/doer/profile/phone/verify", {
-//     sessionId: String(sessionId),
-//     otp: String(otp),
-//   });
+// // // // ✅ Verify OTP + Save JWT
+// // // export const verifyDoerOtp = async (sessionId, otp) => {
+// // //   const res = await api.post("/auth/otp/doer/verify", { sessionId, otp });
+// // //   const data = res.data?.data;
 
-//   return res.data;
-// };
+// // //   if (data?.token) {
+// // //     await AsyncStorage.setItem("authToken", data.token);
+// // //     if (data.roleCode) await AsyncStorage.setItem("userRole", data.roleCode);
+// // //   }
 
-// // ============================================================
-// // 👤 PROFILE
-// // ============================================================
+// // //   return res.data;
+// // // };
 
-// export const fetchDoerProfile = async () => {
-//   const res = await api.get("/doer/profile/get");
-//   return res.data;
-// };
-
-// // export const updateDoerProfile = async (payload) => {
-// //   const res = await api.put("/doer/profile/", payload);
-// //   return res.data;
-// // };
-// export const updateDoerProfile = async (payload) => {
-//   try {
-//     console.log("🚀 Sending update payload:", payload);
-
-//     const res = await api.put("/doer/profile/", payload, {
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//     });
-
-//     console.log("✅ Update Response:", res.data);
-//     return res.data;
-//   } catch (error) {
-//     console.log("❌ Update Error:", error.response?.data || error);
-//     throw error;
-//   }
-// };
-
-// // ============================================================
-// // 🪪 KYC UPLOAD (JWT Protected)
-// // ============================================================
-
-// export const uploadDoerKyc = async (fileUri, docType) => {
-//   try {
-//     const token = await AsyncStorage.getItem("authToken");
-//     if (!token) throw new Error("JWT token missing. Please login again.");
-
-//     const formData = new FormData();
-//     formData.append("file", {
-//       uri: fileUri,
-//       name: fileUri.split("/").pop(),
-//       type: "image/jpeg", // or "application/pdf"
-//     });
-
-//     const res = await axios.post(
-//       `${BASE_URL}/doer/profile/doc/upload?docType=${encodeURIComponent(
-//         docType
-//       )}`,
-//       formData,
-//       {
-//         headers: {
-//           "Content-Type": "multipart/form-data",
-//           Authorization: `Bearer ${token}`,
-//         },
-//       }
-//     );
-
-//     return res.data;
-//   } catch (err) {
-//     console.error("KYC Upload Error:", err.response?.data || err.message);
-//     throw err;
-//   }
-// };
-
-// // ============================================================
-// // 🧰 FETCH DOER CATEGORIES (SKILLS)
-// // ============================================================
-
-// export const fetchDoerCategories = async () => {
-//   const token = await AsyncStorage.getItem("authToken");
-//   if (!token) throw new Error("Token not found");
-
-//   const res = await api.get("/doer/jobs/categories", {
-//     headers: {
-//       Authorization: token.startsWith("Bearer ") ? token : `Bearer ${token}`,
-//     },
-//   });
-
-//   return res.data;
-// };
-
-// // // ✅ Fetch Available Jobs
-// // export const fetchAvailableJobs = async (page = 0, size = 20) => {
-// //   const res = await api.get("/doer/jobs/available", {
-// //     params: { page, size },
+// // export const verifyDoerPhoneOtp = async (sessionId, otp) => {
+// //   const res = await api.post("/doer/profile/phone/verify", {
+// //     sessionId: String(sessionId),
+// //     otp: String(otp),
 // //   });
+
 // //   return res.data;
 // // };
-// // ✅ Fetch Available Jobs (with GPS + Radius)
+
+// // // ============================================================
+// // // 👤 PROFILE
+// // // ============================================================
+
+// // export const fetchDoerProfile = async () => {
+// //   const res = await api.get("/doer/profile/get");
+// //   return res.data;
+// // };
+
+// // // export const updateDoerProfile = async (payload) => {
+// // //   const res = await api.put("/doer/profile/", payload);
+// // //   return res.data;
+// // // };
+// // export const updateDoerProfile = async (payload) => {
+// //   try {
+// //     console.log("🚀 Sending update payload:", payload);
+
+// //     const res = await api.put("/doer/profile/", payload, {
+// //       headers: {
+// //         "Content-Type": "application/json",
+// //       },
+// //     });
+
+// //     console.log("✅ Update Response:", res.data);
+// //     return res.data;
+// //   } catch (error) {
+// //     console.log("❌ Update Error:", error.response?.data || error);
+// //     throw error;
+// //   }
+// // };
+
+// // // ============================================================
+// // // 🪪 KYC UPLOAD (JWT Protected)
+// // // ============================================================
+
+// // export const uploadDoerKyc = async (fileUri, docType) => {
+// //   try {
+// //     const token = await AsyncStorage.getItem("authToken");
+// //     if (!token) throw new Error("JWT token missing. Please login again.");
+
+// //     const formData = new FormData();
+// //     formData.append("file", {
+// //       uri: fileUri,
+// //       name: fileUri.split("/").pop(),
+// //       type: "image/jpeg", // or "application/pdf"
+// //     });
+
+// //     const res = await axios.post(
+// //       `${BASE_URL}/doer/profile/doc/upload?docType=${encodeURIComponent(
+// //         docType
+// //       )}`,
+// //       formData,
+// //       {
+// //         headers: {
+// //           "Content-Type": "multipart/form-data",
+// //           Authorization: `Bearer ${token}`,
+// //         },
+// //       }
+// //     );
+
+// //     return res.data;
+// //   } catch (err) {
+// //     console.error("KYC Upload Error:", err.response?.data || err.message);
+// //     throw err;
+// //   }
+// // };
+
+// // // ============================================================
+// // // 🧰 FETCH DOER CATEGORIES (SKILLS)
+// // // ============================================================
+
+// // export const fetchDoerCategories = async () => {
+// //   const token = await AsyncStorage.getItem("authToken");
+// //   if (!token) throw new Error("Token not found");
+
+// //   const res = await api.get("/doer/jobs/categories", {
+// //     headers: {
+// //       Authorization: token.startsWith("Bearer ") ? token : `Bearer ${token}`,
+// //     },
+// //   });
+
+// //   return res.data;
+// // };
+
+// // // // ✅ Fetch Available Jobs
+// // // export const fetchAvailableJobs = async (page = 0, size = 20) => {
+// // //   const res = await api.get("/doer/jobs/available", {
+// // //     params: { page, size },
+// // //   });
+// // //   return res.data;
+// // // };
+// // // ✅ Fetch Available Jobs (with GPS + Radius)
+// // // export const fetchAvailableJobs = async (
+// // //   lat,
+// // //   lon,
+// // //   radius = 5, // meters
+// // //   page = 0,
+// // //   size = 20,
+// // //   sort = ["createdAt,desc"]
+// // // ) => {
+// // //   try {
+// // //     const token = await AsyncStorage.getItem("authToken");
+// // //     if (!token) throw new Error("Auth token missing");
+
+// // //     const headers = { Authorization: `Bearer ${token}` };
+
+// // //     const params = { lat, lon, radius, page, size, sort };
+
+// // //     // ❌ old: `${BASE_URL}/api/doer/jobs/available`
+// // //     // ✅ fixed:
+// // //     const { data } = await axios.get(`${BASE_URL}/doer/jobs/available`, {
+// // //       headers,
+// // //       params,
+// // //     });
+
+// // //     return data;
+// // //   } catch (err) {
+// // //     console.warn(
+// // //       "⚠️ Fetch Available Jobs Error:",
+// // //       err.response?.data || err.message
+// // //     );
+// // //     throw err;
+// // //   }
+// // // };
 // // export const fetchAvailableJobs = async (
 // //   lat,
 // //   lon,
-// //   radius = 5, // meters
+// //   radius = 40, // km ✔️ correct
 // //   page = 0,
 // //   size = 20,
 // //   sort = ["createdAt,desc"]
@@ -164,8 +196,6 @@
 
 // //     const params = { lat, lon, radius, page, size, sort };
 
-// //     // ❌ old: `${BASE_URL}/api/doer/jobs/available`
-// //     // ✅ fixed:
 // //     const { data } = await axios.get(`${BASE_URL}/doer/jobs/available`, {
 // //       headers,
 // //       params,
@@ -180,236 +210,209 @@
 // //     throw err;
 // //   }
 // // };
-// export const fetchAvailableJobs = async (
-//   lat,
-//   lon,
-//   radius = 40, // km ✔️ correct
-//   page = 0,
-//   size = 20,
-//   sort = ["createdAt,desc"]
-// ) => {
-//   try {
-//     const token = await AsyncStorage.getItem("authToken");
-//     if (!token) throw new Error("Auth token missing");
 
-//     const headers = { Authorization: `Bearer ${token}` };
+// // // ============================================================
+// // // 📱 PHONE VERIFICATION (AFTER PROFILE SAVE)
+// // // ============================================================
 
-//     const params = { lat, lon, radius, page, size, sort };
-
-//     const { data } = await axios.get(`${BASE_URL}/doer/jobs/available`, {
-//       headers,
-//       params,
-//     });
-
-//     return data;
-//   } catch (err) {
-//     console.warn(
-//       "⚠️ Fetch Available Jobs Error:",
-//       err.response?.data || err.message
-//     );
-//     throw err;
-//   }
-// };
-
-// // ============================================================
-// // 📱 PHONE VERIFICATION (AFTER PROFILE SAVE)
-// // ============================================================
-
-// // ✅ Send OTP to registered phone
-// export const sendPhoneOtp = async () => {
-//   try {
-//     const token = await AsyncStorage.getItem("authToken");
-//     if (!token) throw new Error("JWT token missing. Please login again.");
-
-//     const res = await axios.post(
-//       `${BASE_URL}/doer/profile/phone/send-otp`,
-//       {},
-//       {
-//         headers: { Authorization: `Bearer ${token}` },
-//       }
-//     );
-
-//     return res.data; // expect { data: { message, sessionId, expiryMin } }
-//   } catch (err) {
-//     console.error("Send Phone OTP Error:", err.response?.data || err.message);
-//     return (
-//       err.response?.data || {
-//         status: "ERROR",
-//         message: "Network error while sending OTP",
-//       }
-//     );
-//   }
-// };
-
-// // export const verifyPhoneOtp = async (sessionId, otp) => {
+// // // ✅ Send OTP to registered phone
+// // export const sendPhoneOtp = async () => {
 // //   try {
 // //     const token = await AsyncStorage.getItem("authToken");
 // //     if (!token) throw new Error("JWT token missing. Please login again.");
 
 // //     const res = await axios.post(
-// //       `${BASE_URL}/doer/profile/phone/verify`,
-// //       {
-// //         sessionId: String(sessionId),
-// //         otp: String(otp),
-// //       },
+// //       `${BASE_URL}/doer/profile/phone/send-otp`,
+// //       {},
 // //       {
 // //         headers: { Authorization: `Bearer ${token}` },
 // //       }
 // //     );
 
-// //     return res.data;
+// //     return res.data; // expect { data: { message, sessionId, expiryMin } }
 // //   } catch (err) {
+// //     console.error("Send Phone OTP Error:", err.response?.data || err.message);
 // //     return (
 // //       err.response?.data || {
 // //         status: "ERROR",
-// //         message: "Network error while verifying OTP",
+// //         message: "Network error while sending OTP",
 // //       }
 // //     );
 // //   }
 // // };
-// export const verifyPhoneOtp = async (sessionId, otp) => {
-//   try {
-//     const response = await api.post("/doer/profile/phone/verify", {
-//       sessionId: sessionId,
-//       otp: otp,
-//     });
-//     return response.data;
-//   } catch (error) {
-//     console.error("verifyPhoneOtp error:", error.response?.data || error);
-//     throw error.response?.data || error;
-//   }
-// };
 
-// // ============================================================
-// // 🪪 FETCH KYC STATUS (NEW)
-// // ============================================================
+// // // export const verifyPhoneOtp = async (sessionId, otp) => {
+// // //   try {
+// // //     const token = await AsyncStorage.getItem("authToken");
+// // //     if (!token) throw new Error("JWT token missing. Please login again.");
 
-// export const fetchKycStatus = async (userId) => {
-//   try {
-//     const token = await AsyncStorage.getItem("authToken");
-//     if (!token) throw new Error("JWT token missing. Please login again.");
+// // //     const res = await axios.post(
+// // //       `${BASE_URL}/doer/profile/phone/verify`,
+// // //       {
+// // //         sessionId: String(sessionId),
+// // //         otp: String(otp),
+// // //       },
+// // //       {
+// // //         headers: { Authorization: `Bearer ${token}` },
+// // //       }
+// // //     );
 
-//     const res = await axios.get(`${BASE_URL}/doer/profile/kyc-status`, {
-//       params: { userId },
-//       headers: { Authorization: `Bearer ${token}` },
-//     });
+// // //     return res.data;
+// // //   } catch (err) {
+// // //     return (
+// // //       err.response?.data || {
+// // //         status: "ERROR",
+// // //         message: "Network error while verifying OTP",
+// // //       }
+// // //     );
+// // //   }
+// // // };
+// // export const verifyPhoneOtp = async (sessionId, otp) => {
+// //   try {
+// //     const response = await api.post("/doer/profile/phone/verify", {
+// //       sessionId: sessionId,
+// //       otp: otp,
+// //     });
+// //     return response.data;
+// //   } catch (error) {
+// //     console.error("verifyPhoneOtp error:", error.response?.data || error);
+// //     throw error.response?.data || error;
+// //   }
+// // };
 
-//     // Expected response: { status: "SUCCESS", data: { status: "pending|verified|failed", reason: "..." } }
-//     return res.data;
-//   } catch (err) {
-//     console.error("Fetch KYC Status Error:", err.response?.data || err.message);
-//     return { status: "ERROR", message: "Failed to fetch KYC status" };
-//   }
-// };
-// // // Accept a job
+// // // ============================================================
+// // // 🪪 FETCH KYC STATUS (NEW)
+// // // ============================================================
+
+// // export const fetchKycStatus = async (userId) => {
+// //   try {
+// //     const token = await AsyncStorage.getItem("authToken");
+// //     if (!token) throw new Error("JWT token missing. Please login again.");
+
+// //     const res = await axios.get(`${BASE_URL}/doer/profile/kyc-status`, {
+// //       params: { userId },
+// //       headers: { Authorization: `Bearer ${token}` },
+// //     });
+
+// //     // Expected response: { status: "SUCCESS", data: { status: "pending|verified|failed", reason: "..." } }
+// //     return res.data;
+// //   } catch (err) {
+// //     console.error("Fetch KYC Status Error:", err.response?.data || err.message);
+// //     return { status: "ERROR", message: "Failed to fetch KYC status" };
+// //   }
+// // };
+// // // // Accept a job
+// // // export const acceptJob = async (jobId) => {
+// // //   try {
+// // //     const res = await api.post(`/doer/jobs/accept/${jobId}`);
+// // //     return res.data; // { status, message, data, timestamp }
+// // //   } catch (err) {
+// // //     console.warn("Accept Job Error:", err.message || err);
+// // //     return { status: "ERROR", message: "Failed to accept job" };
+// // //   }
+// // // };
+// // // ✅ Accept Job — FIXED ✅
 // // export const acceptJob = async (jobId) => {
 // //   try {
 // //     const res = await api.post(`/doer/jobs/accept/${jobId}`);
-// //     return res.data; // { status, message, data, timestamp }
-// //   } catch (err) {
-// //     console.warn("Accept Job Error:", err.message || err);
-// //     return { status: "ERROR", message: "Failed to accept job" };
+// //     return res.data; // returns ApiResponse (data, message, status, timestamp)
+// //   } catch (error) {
+// //     console.log("❌ Accept Job Error:", error.response?.data || error.message);
+// //     throw error;
 // //   }
 // // };
-// // ✅ Accept Job — FIXED ✅
-// export const acceptJob = async (jobId) => {
-//   try {
-//     const res = await api.post(`/doer/jobs/accept/${jobId}`);
-//     return res.data; // returns ApiResponse (data, message, status, timestamp)
-//   } catch (error) {
-//     console.log("❌ Accept Job Error:", error.response?.data || error.message);
-//     throw error;
-//   }
-// };
-// // ✅ Current Jobs
-// export const fetchCurrentJobs = async () => {
-//   const res = await api.get("/doer/jobs/current");
-//   return res.data;
-// };
-// // ✅ Fetch Job History
-// // ✅ Fetch Job History (fixed)
-// export const fetchJobHistory = async (
-//   page = 0,
-//   size = 10,
-//   sort = ["createdAt,desc"]
-// ) => {
-//   const token = await AsyncStorage.getItem("authToken");
-//   const headers = { Authorization: `Bearer ${token}` };
-//   const params = { page, size, sort };
+// // // ✅ Current Jobs
+// // export const fetchCurrentJobs = async () => {
+// //   const res = await api.get("/doer/jobs/current");
+// //   return res.data;
+// // };
+// // // ✅ Fetch Job History
+// // // ✅ Fetch Job History (fixed)
+// // export const fetchJobHistory = async (
+// //   page = 0,
+// //   size = 10,
+// //   sort = ["createdAt,desc"]
+// // ) => {
+// //   const token = await AsyncStorage.getItem("authToken");
+// //   const headers = { Authorization: `Bearer ${token}` };
+// //   const params = { page, size, sort };
 
-//   // ✅ FIXED: removed duplicate /api
-//   const { data } = await axios.get(`${BASE_URL}/doer/jobs/history`, {
-//     headers,
-//     params,
-//   });
+// //   // ✅ FIXED: removed duplicate /api
+// //   const { data } = await axios.get(`${BASE_URL}/doer/jobs/history`, {
+// //     headers,
+// //     params,
+// //   });
 
-//   return data?.data?.content || [];
-// };
-// /* ======================================================
-//    USER PROFILE APIS
-// ====================================================== */
+// //   return data?.data?.content || [];
+// // };
+// // /* ======================================================
+// //    USER PROFILE APIS
+// // ====================================================== */
 
-// /** GET USER PROFILE */
-// export const getUserProfileAPI = async () => {
-//   const res = await api.get("/user/profile");
-//   return res.data;
-// };
+// // /** GET USER PROFILE */
+// // export const getUserProfileAPI = async () => {
+// //   const res = await api.get("/user/profile");
+// //   return res.data;
+// // };
 
-// /** UPDATE USER PROFILE  (PATCH /api/user/profile/update) */
-// export const updateUserProfileAPI = async (body) => {
-//   const res = await api.patch("/user/profile/update", body, {
-//     headers: { "Content-Type": "application/json" },
-//   });
-//   return res.data;
-// };
+// // /** UPDATE USER PROFILE  (PATCH /api/user/profile/update) */
+// // export const updateUserProfileAPI = async (body) => {
+// //   const res = await api.patch("/user/profile/update", body, {
+// //     headers: { "Content-Type": "application/json" },
+// //   });
+// //   return res.data;
+// // };
 
-// /** UPLOAD USER PROFILE PHOTO (POST multipart) */
-// export const uploadProfilePhotoAPI = async (formData) => {
-//   const res = await api.post("/user/profile/photo/upload", formData, {
-//     headers: {
-//       Accept: "application/json",
-//     },
-//   });
-//   return res.data;
-// };
+// // /** UPLOAD USER PROFILE PHOTO (POST multipart) */
+// // export const uploadProfilePhotoAPI = async (formData) => {
+// //   const res = await api.post("/user/profile/photo/upload", formData, {
+// //     headers: {
+// //       Accept: "application/json",
+// //     },
+// //   });
+// //   return res.data;
+// // };
 
-// /* ======================================================
-//    DOER PROFILE APIS
-// ====================================================== */
+// // /* ======================================================
+// //    DOER PROFILE APIS
+// // ====================================================== */
 
-// /** CREATE OR UPDATE DOER PROFILE (PUT /api/doer/profile/) */
-// export const createOrUpdateDoerProfileAPI = async (body) => {
-//   const res = await api.put("/doer/profile/", body, {
-//     headers: { "Content-Type": "application/json" },
-//   });
-//   return res.data;
-// };
+// // /** CREATE OR UPDATE DOER PROFILE (PUT /api/doer/profile/) */
+// // export const createOrUpdateDoerProfileAPI = async (body) => {
+// //   const res = await api.put("/doer/profile/", body, {
+// //     headers: { "Content-Type": "application/json" },
+// //   });
+// //   return res.data;
+// // };
 
-// // ============================================================
-// // 🚪 LOGOUT
-// // ============================================================
+// // // ============================================================
+// // // 🚪 LOGOUT
+// // // ============================================================
 
-// export const logoutDoer = async () => {
-//   await AsyncStorage.removeItem("authToken");
-//   await AsyncStorage.removeItem("userRole");
-// };
+// // export const logoutDoer = async () => {
+// //   await AsyncStorage.removeItem("authToken");
+// //   await AsyncStorage.removeItem("userRole");
+// // };
+
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 
-/* ======================================================
-   BASE URL + AXIOS INSTANCE
-====================================================== */
+// 👉 Import BASE_URL from ipconfig.js
+import { BASE_URL } from "./ipconfig";
 
-const BASE_URL =
-  Platform.OS === "android"
-    ? "http://192.168.1.40:8080/api"
-    : "http://192.168.1.40:8080/api";
-
+// Create axios instance
 const api = axios.create({
   baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" },
-  timeout: 15000,
+});
+
+// Add token interceptor
+api.interceptors.request.use(async (config) => {
+  const token = await AsyncStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 // Attach JWT token
@@ -630,6 +633,136 @@ export const uploadProfilePhotoAPI = async (formData) => {
 
 export const createOrUpdateDoerProfileAPI = async (body) => {
   const res = await api.put("/doer/profile/", body);
+  return res.data;
+};
+
+/* ======================================================
+   JOB PROGRESS ACTIONS (START, PAUSE, RESUME, etc...)
+====================================================== */
+
+// Start job
+export const startJob = async (jobId) => {
+  const res = await api.post(`/doer/jobs/${jobId}/start`);
+  return res.data;
+};
+const fetchProcessJobs = async () => {
+  try {
+    setLoading(true);
+    const response = await api.get("/doer/jobs/current", {
+      params: { page: 0, size: 50 },
+    });
+    setProcessJobs(response.data.content); // or response.data.data based on API
+  } catch (err) {
+    console.error("Error fetching process jobs", err);
+  } finally {
+    setLoading(false);
+  }
+};
+
+// Resume job
+export const resumeJob = async (jobId) => {
+  const res = await api.post(`/doer/jobs/${jobId}/resume`);
+  return res.data;
+};
+
+// Pause job
+export const pauseJob = async (jobId) => {
+  const res = await api.post(`/doer/jobs/${jobId}/pause`);
+  return res.data;
+};
+
+// Mark job as partially done
+export const partialJob = async (jobId) => {
+  const res = await api.post(`/doer/jobs/${jobId}/partial`);
+  return res.data;
+};
+
+// Mark job as fully done
+export const completeJob = async (jobId) => {
+  const res = await api.post(`/doer/jobs/${jobId}/done`);
+  return res.data;
+};
+
+// Cancel job
+export const cancelJob = async (jobId) => {
+  const res = await api.post(`/doer/jobs/${jobId}/cancel`);
+  return res.data;
+};
+
+// Report job as fake
+export const reportFakeJob = async (jobId) => {
+  const res = await api.post(`/doer/jobs/${jobId}/report-fake`);
+  return res.data;
+};
+
+export const sendInterest = async (jobId, message = "I am interested") => {
+  const payload = { message }; // message MUST be a STRING
+
+  const res = await api.post(`/doer/jobs/${jobId}/interests`, payload);
+  return res.data;
+};
+// ------------------- NOTIFICATIONS -------------------
+
+// Get notifications list (pagination + unread filter)
+export const getNotifications = async (
+  onlyUnread = false,
+  page = 0,
+  size = 20
+) => {
+  try {
+    const response = await api.get(
+      `/notifications/?onlyUnread=${onlyUnread}&page=${page}&size=${size}`
+    );
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Mark single notification as read
+export const markNotificationRead = async (id) => {
+  try {
+    const response = await api.post(`/notifications/${id}/read`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Mark all notifications as read
+export const markAllNotificationsRead = async () => {
+  try {
+    const response = await api.post(`/notifications/read-all`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Get unread notifications count
+export const getUnreadNotificationCount = async () => {
+  try {
+    const response = await api.get(`/notifications/unread-count`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+/* ======================================================
+   DOER INVOICE
+====================================================== */
+
+// Get invoice JSON (for UI)
+export const fetchDoerInvoice = async (jobId) => {
+  const res = await api.get(`/api/doer/jobs/${jobId}/invoice`);
+  return res.data;
+};
+
+// Download invoice PDF
+export const downloadDoerInvoicePdf = async (jobId) => {
+  const res = await api.get(`/api/doer/jobs/${jobId}/invoice/pdf`, {
+    responseType: "arraybuffer",
+  });
   return res.data;
 };
 

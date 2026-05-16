@@ -47,6 +47,7 @@ import AddressList from "./screens/AddressList";
 import AddressForm from "./screens/AddressForm";
 import CreateJobScreen from "./screens/createPosterJob";
 import UpdateJobScreen from "./screens/UpdateJobScreen";
+import JobActionScreen from "./screens/JobActionScreen";
 
 // Admin Screens
 import AdminLogin from "./screens/AdminLogin";
@@ -54,6 +55,9 @@ import AdminRegister from "./screens/AdminRegister";
 import AdminDashboard from "./screens/AdminDashboard";
 import AdminKycDetail from "./screens/AdminKycDetail";
 import AdminCategory from "./screens/AdminCategory";
+//chat Apis
+import ChatListScreen from "./screens/ChatListScreen";
+import ChatRoomScreen from "./screens/ChatRoomScreen";
 
 // SuperAdmin Screens
 import SuperAdminDashboard from "./screens/SuperAdminDashboard";
@@ -168,6 +172,11 @@ export default function App() {
         <Stack.Group>
           <Stack.Screen name="PosterDashboard" component={PosterDashboard} />
           <Stack.Screen
+            name="JobActionScreen"
+            component={JobActionScreen}
+            options={{ headerShown: true, title: "Job Actions" }}
+          />
+          <Stack.Screen
             name="PosterProfileView"
             component={PosterProfileView}
           />
@@ -190,6 +199,20 @@ export default function App() {
             options={{ title: "Update Job" }}
           />
           <Stack.Screen name="JobDetails" component={JobDetails} />
+        </Stack.Group>
+        {/* Chat Screens (Common for DOER & POSTER) */}
+        <Stack.Group>
+          <Stack.Screen
+            name="ChatListScreen"
+            component={ChatListScreen}
+            options={{ headerShown: true, title: "Chats" }}
+          />
+
+          <Stack.Screen
+            name="ChatRoomScreen"
+            component={ChatRoomScreen}
+            options={{ headerShown: true, title: "Chat" }}
+          />
         </Stack.Group>
 
         {/* Admin Screens */}

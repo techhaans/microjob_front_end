@@ -4,7 +4,7 @@ import { Platform } from "react-native";
 
 const BASE_URL =
   Platform.OS === "android"
-    ? "http://192.168.1.40:8080/api" // 192.168.1.40
+    ? "http://192.168.1.40:8080/api" //  192.168.1.40
     : "http://192.168.1.40:8080/api";
 
 // ----------------- Axios Instance -----------------
@@ -139,16 +139,6 @@ export const updatePosterJob = async (jobId, payload) => {
     return error.response?.data || { error: "Unknown error" };
   }
 };
-
-// export const getPosterAddressList = async () => {
-//   try {
-//     const res = await apiClient.get("/poster/profile/address/get");
-//     return res.data; // return { data, status, message, timestamp }
-//   } catch (error) {
-//     console.log("Address fetch error:", error);
-//     throw error;
-//   }
-// };
 
 export const fetchPosterAddresses = async () => {
   try {
@@ -306,9 +296,43 @@ export const verifyPosterPhoneOtp = async (sessionId, otp) => {
 };
 
 // ----------------- Poster Jobs -----------------
+// export const createPosterJob = async (jobData) => {
+//   try {
+//     // Validate and convert fields
+//     const amountInRs = parseInt(jobData.amountInRs, 10);
+//     if (isNaN(amountInRs) || amountInRs <= 0) {
+//       return { status: "ERROR", message: "Invalid amountInRs" };
+//     }
+
+//     const payload = {
+//       title: jobData.title?.trim(),
+//       description: jobData.description?.trim(),
+//       categoryCode: jobData.categoryCode, // send string if backend expects string
+//       amountInRs,
+//       deadline: jobData.deadline || new Date().toISOString(),
+//       addressId:
+//         jobData.jobType === "PHYSICAL" ? Number(jobData.addressId) : null,
+//       jobType: jobData.jobType || "PHYSICAL",
+//     };
+
+//     console.log("Payload to backend:", payload);
+
+//     const res = await api.post("/poster/jobs/create", payload);
+//     return res.data;
+//   } catch (err) {
+//     console.error(
+//       "❌ createPosterJob Error:",
+//       err.response?.data || err.message
+//     );
+//     return {
+//       status: "ERROR",
+//       message: err.response?.data?.message || "Failed to create job",
+//     };
+//   }
+// };
+
 export const createPosterJob = async (jobData) => {
   try {
-    // Validate and convert fields
     const amountInRs = parseInt(jobData.amountInRs, 10);
     if (isNaN(amountInRs) || amountInRs <= 0) {
       return { status: "ERROR", message: "Invalid amountInRs" };
@@ -317,47 +341,36 @@ export const createPosterJob = async (jobData) => {
     const payload = {
       title: jobData.title?.trim(),
       description: jobData.description?.trim(),
-      categoryCode: jobData.categoryCode, // send string if backend expects string
+      categoryCode: jobData.categoryCode,
       amountInRs,
       deadline: jobData.deadline || new Date().toISOString(),
       addressId:
         jobData.jobType === "PHYSICAL" ? Number(jobData.addressId) : null,
       jobType: jobData.jobType || "PHYSICAL",
+
+      // ⭐ Added
+      photoUrl: jobData.photoUrl || null,
+      radiusInKm: jobData.radiusInKm || 0,
     };
 
-    console.log("Payload to backend:", payload);
+    console.log("Payload:", payload);
 
     const res = await api.post("/poster/jobs/create", payload);
-    return res.data;
+
+    return {
+      status: "SUCCESS",
+      data: res.data?.data,
+      message: "🎉 Your job has been created successfully!",
+    };
   } catch (err) {
-    console.error(
-      "❌ createPosterJob Error:",
-      err.response?.data || err.message
-    );
+    console.error("createPosterJob Error:", err.response?.data || err.message);
     return {
       status: "ERROR",
       message: err.response?.data?.message || "Failed to create job",
     };
   }
 };
-// ----------------- ✏️ Update Poster Job (PATCH) -----------------
-// export const updatePosterJob = async (jobId, updateData) => {
-//   try {
-//     const res = await api.patch(`/poster/jobs/update/${jobId}`, updateData, {
-//       headers: { "Content-Type": "application/json" },
-//     });
-//     return res.data;
-//   } catch (err) {
-//     console.error(
-//       "❌ updatePosterJob Error:",
-//       err.response?.data || err.message
-//     );
-//     return {
-//       status: "ERROR",
-//       message: err.response?.data?.message || "Failed to update job",
-//     };
-//   }
-// };
+
 export const getPosterAddressList = async () => {
   try {
     const response = await api.get("/poster/profile/address/get");
@@ -433,18 +446,6 @@ export const getPosterJobs = async (
     };
   }
 };
-
-// export const updatePosterJob = async (jobId, payload) => {
-//   const token = await AsyncStorage.getItem("token"); // make sure your token is saved
-//   return axios
-//     .put(`${API_BASE}/jobs/${jobId}`, payload, {
-//       headers: {
-//         Authorization: `Bearer ${token}`,
-//         "Content-Type": "application/json",
-//       },
-//     })
-//     .then((res) => res.data);
-// };
 const handleSaveUpdate = async () => {
   try {
     const payload = {
@@ -484,66 +485,6 @@ const handleSaveUpdate = async () => {
   }
 };
 
-// export const addJobPriceItem = async (jobId, pricePayload) => {
-//   const token = await AsyncStorage.getItem("token");
-//   return axios
-//     .post(`${API_BASE}/jobs/${jobId}/price-items`, pricePayload, {
-//       headers: {
-//         Authorization: `Bearer ${token}`,
-//         "Content-Type": "application/json",
-//       },
-//     })
-//     .then((res) => res.data);
-// };
-// const handleSaveUpdate = async () => {
-//   try {
-//     // Build payload dynamically — only include non-empty fields
-//     const payload = {};
-
-//     if (title?.trim()) payload.title = title.trim();
-//     if (description?.trim()) payload.description = description.trim();
-//     if (categoryCode) payload.categoryCode = String(categoryCode);
-//     if (amountPaise) payload.amountInRs = Number(amountPaise) / 100; // convert paise → rupees
-//     if (deadline) payload.deadLine = deadline.toISOString();
-//     if (jobType) payload.jobType = jobType;
-//     if (addressId && jobType === "PHYSICAL")
-//       payload.addressId = Number(addressId);
-
-//     console.log("PATCH Payload:", payload);
-
-//     if (Object.keys(payload).length === 0) {
-//       return Alert.alert(
-//         "Nothing to update",
-//         "Please modify at least one field before saving."
-//       );
-//     }
-
-//     const res = await updatePosterJob(selectedJob.id, payload);
-
-//     if (res?.status === "SUCCESS") {
-//       // Optional: price items update (only if you allow editing them)
-//       if (priceItems?.length > 0) {
-//         for (const item of priceItems) {
-//           await addJobPriceItem(selectedJob.id, {
-//             label: item.label,
-//             description: item.description || "",
-//             priceRupees: item.priceRupees,
-//           });
-//         }
-//       }
-
-//       Alert.alert("✅ Success", "Job updated successfully");
-//       setUpdateModalVisible(false);
-//       loadJobs(jobStatusFilter);
-//     } else {
-//       Alert.alert("Error", res?.message || "Failed to update job");
-//     }
-//   } catch (err) {
-//     console.error("❌ handleSaveUpdate Error:", err);
-//     Alert.alert("Error", "Something went wrong while updating the job.");
-//   }
-// };
-
 export const deletePosterJob = async (jobId) => {
   try {
     const res = await api.delete(`/poster/jobs/delete/${jobId}`);
@@ -573,31 +514,6 @@ export const fetchJobPriceItems = async (jobId) => {
     return { status: "ERROR", message: "Failed to fetch price items" };
   }
 };
-
-// export const addJobPriceItem = async (jobId, item) => {
-//   try {
-//     const res = await api.post(`/poster/jobs/${jobId}/price-items/add`, item);
-//     return res.data;
-//   } catch (err) {
-//     console.error(
-//       "❌ addJobPriceItem Error:",
-//       err.response?.data || err.message
-//     );
-//     return { status: "ERROR", message: "Failed to add price item" };
-//   }
-// };
-// export const addJobPriceItem = async (jobId, item) => {
-//   try {
-//     const res = await api.post(`/poster/jobs/${jobId}/price-items`, item);
-//     return res.data;
-//   } catch (err) {
-//     console.error(
-//       "❌ addJobPriceItem Error:",
-//       err.response?.data || err.message
-//     );
-//     return { status: "ERROR", message: "Failed to add price item" };
-//   }
-// };
 
 export const addJobPriceItem = async (jobId, itemData) => {
   try {
@@ -756,6 +672,427 @@ export const deletePosterJobPriceItem = async (jobId, itemId) => {
       err.response?.data || err.message
     );
     return { status: "ERROR", message: "Failed to delete price item" };
+  }
+};
+
+// ----------------- Poster Job Status APIs -----------------
+
+/**
+ * Mark a poster job as partially completed
+ * @param {number} jobId
+ * @returns {Promise<Object>} { status, data, message }
+ */
+export const markJobPartial = async (jobId) => {
+  try {
+    const token = await AsyncStorage.getItem("authToken");
+    const res = await axios.post(
+      `${BASE_URL}/poster/jobs/${jobId}/partial`,
+      {}, // No body needed
+      {
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+      }
+    );
+    return res.data; // { status, message, data, timestamp }
+  } catch (err) {
+    console.error(
+      "❌ markJobPartial Error:",
+      err.response?.data || err.message
+    );
+    return {
+      status: "ERROR",
+      message: err.response?.data?.message || "Failed to mark job partial",
+    };
+  }
+};
+
+/**
+ * Confirm that a poster job has been completed
+ * @param {number} jobId
+ * @returns {Promise<Object>} { status, data, message }
+ */
+export const confirmJobCompleted = async (jobId) => {
+  try {
+    const token = await AsyncStorage.getItem("authToken");
+    const res = await axios.post(
+      `${BASE_URL}/poster/jobs/${jobId}/confirm-completed`,
+      {}, // No body needed
+      {
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+      }
+    );
+    return res.data; // { status, message, data, timestamp }
+  } catch (err) {
+    console.error(
+      "❌ confirmJobCompleted Error:",
+      err.response?.data || err.message
+    );
+    return {
+      status: "ERROR",
+      message:
+        err.response?.data?.message || "Failed to confirm job completion",
+    };
+  }
+};
+
+const handleConfirmCompleted = async (jobId, status) => {
+  if (status !== "PARTIAL" && status !== "IN_PROGRESS") {
+    Alert.alert("Error", "Cannot complete this job in current state.");
+    return;
+  }
+  setLoadingJobIds((prev) => [...prev, jobId]);
+  try {
+    const res = await confirmJobCompleted(jobId);
+    if (res.status === "SUCCESS") {
+      Alert.alert("Success", "Job confirmed as completed");
+      loadJobs(jobStatusFilter);
+    } else {
+      Alert.alert("Error", res.message || "Failed to confirm completion");
+    }
+  } catch (err) {
+    console.warn(err);
+    Alert.alert("Error", "Failed to confirm completion");
+  }
+  setLoadingJobIds((prev) => prev.filter((id) => id !== jobId));
+};
+
+// --------------------------------------
+// NOTIFICATIONS (CORRECT BACKEND ROUTES)
+// --------------------------------------
+
+// export const fetchNotifications = async (
+//   onlyUnread = false,
+//   page = 0,
+//   size = 20
+// ) => {
+//   try {
+//     const res = await api.get("/notifications/", {
+//       params: { onlyUnread, page, size },
+//     });
+
+//     return res.data?.data?.content ?? [];
+//   } catch (err) {
+//     console.error(
+//       "❌ fetchNotifications Error:",
+//       err.response?.status,
+//       err.response?.data
+//     );
+//     throw err;
+//   }
+// };
+
+// /**
+//  * Get unread notification count
+//  */
+// export const getUnreadNotificationCount = async () => {
+//   try {
+//     const res = await api.get("/notifications/unread-count/");
+
+//     const obj = res.data?.data ?? {};
+
+//     return (
+//       obj.additionalProp1 ?? obj.additionalProp2 ?? obj.additionalProp3 ?? 0
+//     );
+//   } catch (err) {
+//     console.error(
+//       "❌ getUnreadNotificationCount Error:",
+//       err.response?.status,
+//       err.response?.data
+//     );
+//     throw err;
+//   }
+// };
+
+// /**
+//  * Mark a single notification as read
+//  */
+// // export const markNotificationRead = async (notificationId) => {
+// //   try {
+// //     const res = await api.post(`/notifications/${notificationId}/read/`);
+// //     return res.data;
+// //   } catch (err) {
+// //     console.error(
+// //       "❌ markNotificationRead Error:",
+// //       err.response?.status,
+// //       err.response?.data
+// //     );
+// //     throw err;
+// //   }
+// // };
+
+// // /**
+// //  * Mark ALL notifications as read
+// //  */
+// // export const markAllNotificationsRead = async () => {
+// //   try {
+// //     const res = await api.post("/notifications/read-all");
+// //     return res.data;
+// //   } catch (err) {
+// //     console.error(
+// //       "❌ markAllNotificationsRead Error:",
+// //       err.response?.status,
+// //       err.response?.data
+// //     );
+// //     throw err;
+// //   }
+// // };
+// export const fetchNotifications = async (
+//   onlyUnread = false,
+//   page = 0,
+//   size = 20
+// ) => {
+//   try {
+//     const res = await api.get("/notifications/", {
+//       params: { onlyUnread, page, size },
+//     });
+
+//     return res.data?.data?.content ?? [];
+//   } catch (err) {
+//     console.error(
+//       "❌ fetchNotifications Error:",
+//       err.response?.status,
+//       err.response?.data
+//     );
+//     throw err;
+//   }
+// };
+
+// /**
+//  * Get unread notification count
+//  */
+// export const getUnreadNotificationCount = async () => {
+//   try {
+//     const res = await api.get("/notifications/unread-count");
+
+//     return res.data?.data?.unreadCount ?? 0;
+//   } catch (err) {
+//     console.error(
+//       "❌ getUnreadNotificationCount Error:",
+//       err.response?.status,
+//       err.response?.data
+//     );
+//     return 0;
+//   }
+// };
+
+// /**
+//  * Mark a single notification as read
+//  */
+// export const markNotificationRead = async (notificationId) => {
+//   try {
+//     const res = await api.post(`/notifications/${notificationId}/read`);
+//     return res.data;
+//   } catch (err) {
+//     console.error(
+//       "❌ markNotificationRead Error:",
+//       err.response?.status,
+//       err.response?.data
+//     );
+//     throw err;
+//   }
+// };
+
+// /**
+//  * Mark ALL notifications as read
+//  */
+// export const markAllNotificationsRead = async () => {
+//   try {
+//     const res = await api.post("/notifications/read-all");
+//     return res.data;
+//   } catch (err) {
+//     console.error(
+//       "❌ markAllNotificationsRead Error:",
+//       err.response?.status,
+//       err.response?.data
+//     );
+//     throw err;
+//   }
+// };
+
+// /** Mark a single notification as read */
+// export const markNotificationRead = async (id) => {
+//   try {
+//     const res = await api.post(`/notifications/${id}/read`);
+//     return res.data; // {data, message, status, timestamp}
+//   } catch (err) {
+//     console.error(
+//       "❌ markNotificationRead Error:",
+//       err.response?.status,
+//       err.response?.data
+//     );
+//     throw err;
+//   }
+// };
+
+// ----------------- Accept / Reject Job Interest APIs -----------------
+
+/** Accept a doer's interest in a job */
+// export const acceptJobInterest = async (jobId, interestId) => {
+//   try {
+//     const res = await api.post(
+//       `/poster/jobs/${jobId}/interests/${interestId}/accept`
+//     );
+
+//     return res.data; // { status, message, data }
+//   } catch (err) {
+//     console.error(
+//       "❌ acceptJobInterest Error:",
+//       err.response?.data || err.message
+//     );
+//     return {
+//       status: "ERROR",
+//       message: err.response?.data?.message || "Failed to accept interest",
+//     };
+//   }
+// };
+
+// ----------------- Job Interests (Doer → Poster) -----------------
+
+export const getJobInterests = async (jobId) => {
+  try {
+    console.log("🔍 Calling getJobInterests API...", jobId);
+
+    const res = await api.get(`/poster/jobs/${jobId}/interests`);
+
+    console.log("✅ getJobInterests API SUCCESS:", res.data);
+
+    return res.data; // { status, data: [...], message }
+  } catch (err) {
+    console.error(
+      "❌ getJobInterests ERROR:",
+      err.response?.data || err.message
+    );
+    return {
+      status: "ERROR",
+      message: err.response?.data?.message || "Failed to load job interests",
+      data: [],
+    };
+  }
+};
+
+/**
+ * Accept a doer's interest in a job
+ * @param {number} jobId
+ * @param {number} interestId
+ * @returns {Promise<{status: string, message: string, data?: object}>}
+ */
+export const acceptJobInterest = async (jobId, interestId) => {
+  try {
+    const res = await api.post(
+      `/poster/jobs/${jobId}/interests/${interestId}/accept`
+    );
+    return res.data;
+  } catch (err) {
+    console.error(
+      "❌ acceptJobInterest Error:",
+      err.response?.data || err.message
+    );
+    return {
+      status: "ERROR",
+      message: err.response?.data?.message || "Failed to accept interest",
+    };
+  }
+};
+
+/**
+ * Reject a doer's interest in a job
+ * @param {number} jobId
+ * @param {number} interestId
+ * @returns {Promise<{status: string, message: string, data?: object}>}
+ */
+export const rejectJobInterest = async (jobId, interestId) => {
+  try {
+    const res = await api.post(
+      `/poster/jobs/${jobId}/interests/${interestId}/reject`
+    );
+    return res.data;
+  } catch (err) {
+    console.error(
+      "❌ rejectJobInterest Error:",
+      err.response?.data || err.message
+    );
+    return {
+      status: "ERROR",
+      message: err.response?.data?.message || "Failed to reject interest",
+    };
+  }
+};
+
+/**
+ * Fetch notifications (all or only unread)
+ * @param {boolean} onlyUnread
+ * @param {number} page
+ * @param {number} size
+ * @returns {Promise<Array>}
+ */
+export const fetchNotifications = async (
+  onlyUnread = false,
+  page = 0,
+  size = 20
+) => {
+  try {
+    const res = await api.get("/notifications/", {
+      params: { onlyUnread, page, size },
+    });
+    return res.data?.data?.content ?? [];
+  } catch (err) {
+    console.error(
+      "❌ fetchNotifications Error:",
+      err.response?.data || err.message
+    );
+    return [];
+  }
+};
+
+/**
+ * Get unread notification count
+ * @returns {Promise<number>}
+ */
+export const getUnreadNotificationCount = async () => {
+  try {
+    const res = await api.get("/notifications/unread-count");
+    return res.data?.data?.unreadCount ?? 0;
+  } catch (err) {
+    console.error(
+      "❌ getUnreadNotificationCount Error:",
+      err.response?.data || err.message
+    );
+    return 0;
+  }
+};
+
+/**
+ * Mark a single notification as read
+ * @param {number} notificationId
+ */
+export const markNotificationRead = async (notificationId) => {
+  try {
+    const res = await api.post(`/notifications/${notificationId}/read`);
+    return res.data;
+  } catch (err) {
+    console.error(
+      "❌ markNotificationRead Error:",
+      err.response?.data || err.message
+    );
+    return { status: "ERROR", message: "Failed to mark notification read" };
+  }
+};
+
+/**
+ * Mark all notifications as read
+ */
+export const markAllNotificationsRead = async () => {
+  try {
+    const res = await api.post("/notifications/read-all");
+    return res.data;
+  } catch (err) {
+    console.error(
+      "❌ markAllNotificationsRead Error:",
+      err.response?.data || err.message
+    );
+    return {
+      status: "ERROR",
+      message: "Failed to mark all notifications read",
+    };
   }
 };
 
